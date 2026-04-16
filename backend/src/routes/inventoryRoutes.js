@@ -25,8 +25,9 @@ router.post('/blendomat', async (req, res) => {
         const { 
             blendSize, 
             algorithm, 
-            supervisionSettings, 
-            selectedLots = [] 
+            supervisionSettings,
+            rules: uiRules = [], 
+            stock: selectedLots = [] 
         } = req.body;
 
         if (!blendSize || blendSize <= 0) {
@@ -38,12 +39,15 @@ router.post('/blendomat', async (req, res) => {
             ? selectedLots 
             : await StockRepository.getAllAvailable();
             
-        const rules = await StandardsRepository.getActiveRules();
+        // Use UI rules if provided, otherwise fetch from DB
+        const rules = uiRules.length > 0 
+            ? uiRules 
+            : await StandardsRepository.getActiveRules();
 
         // Execution of the business logic engine
         const result = optimizeBlend(stock, rules, supervisionSettings, blendSize, algorithm);
 
-        res.json({ success: true, result });
+        res.json(result);
     } catch (error) {
         console.error('Core Logic failure:', error);
         res.status(500).json({ 

@@ -139,7 +139,7 @@
 
               <div
                 v-if="algorithmTooltipVisible"
-                class="absolute top-full right-0 mt-2 z-40 w-90 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl"
+                class="absolute top-full right-0 mt-2 z-40 w-96 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl"
               >
                 <div class="mb-3 border-b border-teal-400/60 pb-2">
                   <h4 class="text-sm font-bold text-teal-700">Algoritmos de Mezcla</h4>

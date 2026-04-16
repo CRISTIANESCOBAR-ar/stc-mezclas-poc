@@ -26,15 +26,15 @@ export class StandardsRepository {
      */
     static async getActiveRules() {
         const queryText = `
-            SELECT 
+            SELECT
                 parametro,
-                valor_ideal_min as limite_min_absoluto,
-                NULL as limite_max_absoluto,
+                limite_min_absoluto,
+                limite_max_absoluto,
                 rango_tol_min,
                 rango_tol_max,
                 porcentaje_min_ideal,
                 valor_ideal_min,
-                NULL as promedio_objetivo_max,
+                promedio_objetivo_max,
                 'Config version: ' || version_nombre as descricao
             FROM tb_config_tolerancias
             ORDER BY parametro
