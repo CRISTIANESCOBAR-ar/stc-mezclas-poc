@@ -1833,9 +1833,13 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted, onBeforeUnmount, watch } from 'vue';
+import { storeToRefs } from 'pinia';
 import { CottonBale } from '../models/CottonBale.js';
 import ExcelJS from 'exceljs';
 import Swal from 'sweetalert2';
+import { useStandardsStore } from '../stores/standards.js';
+
+const standardsStore = useStandardsStore();
 
 // --- Configuración de Columnas ---
 const allColumns = [
@@ -1875,8 +1879,7 @@ const selectedColumnKeys = ref(new Set(
 const showColumnSelector = ref(false);
 const showRuleSelector = ref(false);
 
-const activeVersionName = ref('');
-const activeRules = ref([]);
+const { versionActual: activeVersionName, tolerancias: activeRules } = storeToRefs(standardsStore);
 
 const isBlendMode = ref(false);
 const blendPlan = ref(null);
@@ -2101,20 +2104,7 @@ const supervisionSettings = reactive(
 // --- Métodos de Lógica ---
 const loading = ref(false);
 
-const fetchStandards = async () => {
-  try {
-    const res = await fetch('/api/config/standards');
-    if (res.ok) {
-      const data = await res.json();
-      if (data.success) {
-        activeVersionName.value = data.version_actual;
-        activeRules.value = data.tolerancias || [];
-      }
-    }
-  } catch (e) {
-    console.error('Error loading standards', e);
-  }
-};
+const fetchStandards = () => standardsStore.fetch();
 
 // Checkbox global para cada variable
 const isAllSelected = (key) => {

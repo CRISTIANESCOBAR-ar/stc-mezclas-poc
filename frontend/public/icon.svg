@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Fondo redondeado indigo -->
+  <rect width="512" height="512" rx="96" fill="#3730a3"/>
+
+  <!-- Tres hilos de algodón en curva = mezcla -->
+  <path d="M80 195 Q256 135 432 195" stroke="white"       stroke-width="30" fill="none" stroke-linecap="round"/>
+  <path d="M80 256 Q256 196 432 256" stroke="#a5b4fc"     stroke-width="30" fill="none" stroke-linecap="round"/>
+  <path d="M80 317 Q256 257 432 317" stroke="#e0e7ff"     stroke-width="30" fill="none" stroke-linecap="round"/>
+
+  <!-- Fardo / nodo central -->
+  <rect x="206" y="206" width="100" height="100" rx="14" fill="white" opacity="0.15"/>
+  <rect x="218" y="218" width="76"  height="76"  rx="10" fill="white" opacity="0.25"/>
+
+  <!-- Letras STC centradas -->
+  <text x="256" y="274"
+        font-family="Arial, sans-serif"
+        font-size="52"
+        font-weight="800"
+        text-anchor="middle"
+        fill="white"
+        letter-spacing="-2">STC</text>
+</svg>

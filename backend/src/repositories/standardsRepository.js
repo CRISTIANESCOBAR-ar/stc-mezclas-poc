@@ -48,4 +48,44 @@ export class StandardsRepository {
             throw new Error(`Database Error: Could not fetch standards. Details: ${error.message}`);
         }
     }
+
+    /**
+     * Upserts mixing rules into PostgreSQL.
+     * @param {MixingRuleDTO[]} rules
+     */
+    static async saveRules(rules) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            for (const r of rules) {
+                await client.query(`
+                    UPDATE tb_config_tolerancias SET
+                        limite_min_absoluto   = $2,
+                        limite_max_absoluto   = $3,
+                        rango_tol_min         = $4,
+                        rango_tol_max         = $5,
+                        porcentaje_min_ideal  = $6,
+                        valor_ideal_min       = $7,
+                        promedio_objetivo_max = $8
+                    WHERE parametro = $1
+                `, [
+                    r.parametro,
+                    r.limite_min_absoluto   ?? null,
+                    r.limite_max_absoluto   ?? null,
+                    r.rango_tol_min         ?? null,
+                    r.rango_tol_max         ?? null,
+                    r.porcentaje_min_ideal  ?? null,
+                    r.valor_ideal_min       ?? null,
+                    r.promedio_objetivo_max ?? null,
+                ]);
+            }
+            await client.query('COMMIT');
+        } catch (error) {
+            await client.query('ROLLBACK');
+            console.error('Error saving rules to PostgreSQL:', error.message);
+            throw new Error(`Database Error: Could not save standards. Details: ${error.message}`);
+        } finally {
+            client.release();
+        }
+    }
 }
