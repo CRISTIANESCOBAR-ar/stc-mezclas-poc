@@ -8,21 +8,21 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'icon.svg'],
+      includeAssets: ['favicon.ico', 'icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png'],
       manifest: {
         name: 'STC Mezclas — Optimizador',
         short_name: 'STC Mezclas',
         description: 'Optimizador de mezclas de algodón — STC PoC',
-        theme_color: '#3730a3',
-        background_color: '#f8fafc',
+        theme_color: '#f3f4f6',
+        background_color: '#f3f4f6',
         display: 'standalone',
         start_url: '/',
         lang: 'es',
         icons: [
-          { src: 'pwa-64x64.png',           sizes: '64x64',     type: 'image/png' },
-          { src: 'pwa-192x192.png',          sizes: '192x192',   type: 'image/png' },
-          { src: 'pwa-512x512.png',          sizes: '512x512',   type: 'image/png' },
-          { src: 'maskable-icon-512x512.png', sizes: '512x512',  type: 'image/png', purpose: 'maskable' },
+          { src: 'icon-192.png',         sizes: '192x192', type: 'image/png' },
+          { src: 'icon-512.png',         sizes: '512x512', type: 'image/png' },
+          { src: 'icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
       workbox: {

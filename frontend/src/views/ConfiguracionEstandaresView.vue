@@ -52,14 +52,6 @@
               <h2 class="font-bold text-slate-700 text-sm">Reglas de Mezcla — <span class="text-indigo-600">{{ versionActual }}</span></h2>
               <span class="text-xs text-slate-400">{{ tolerancias.length }} parámetros</span>
             </div>
-            <button
-              @click="guardar"
-              :disabled="loading"
-              class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white text-xs font-bold rounded-md shadow-sm transition-all active:scale-95"
-            >
-              <span v-if="loading">Guardando…</span>
-              <span v-else>💾 Guardar cambios</span>
-            </button>
           </div>
 
           <div class="overflow-x-auto">
@@ -115,14 +107,31 @@
             </table>
           </div>
 
-          <!-- Leyenda -->
-          <div class="px-3 py-2 bg-slate-50 border-t border-slate-200 flex flex-wrap gap-3 text-xs text-slate-600">
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-yellow-100 border border-yellow-300"></span> Tolerancia</span>
-            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-green-100 border border-green-300"></span> Zona ideal</span>
-            <span class="flex items-center gap-1">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Hover para definición HVI
-            </span>
+          <!-- Leyenda + Botón guardar -->
+          <div class="px-3 py-2 bg-slate-50 border-t border-slate-200 flex items-center justify-between flex-wrap gap-2">
+            <div class="flex flex-wrap gap-3 text-xs text-slate-600">
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-yellow-100 border border-yellow-300"></span> Tolerancia</span>
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded bg-green-100 border border-green-300"></span> Zona ideal</span>
+              <span class="flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8h.01" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Hover para definición HVI
+              </span>
+            </div>
+            <button
+              @click="guardar"
+              :disabled="loading"
+              class="inline-flex items-center gap-1 px-2 py-1 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 12a9 9 0 1 1-3-6.7"/><polyline points="21 3 21 9 15 9"/>
+              </svg>
+              <span>{{ loading ? 'Guardando…' : 'Guardar cambios' }}</span>
+            </button>
           </div>
         </div>
 

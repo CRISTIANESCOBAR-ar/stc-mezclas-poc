@@ -4,13 +4,4 @@ export default {
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
-  theme: {
-    extend: {
-      colors: {
-        'navy-dark': '#0f172a',
-        'navy-primary': '#1e3a8a',
-      }
-    },
-  },
-  plugins: [],
 }
