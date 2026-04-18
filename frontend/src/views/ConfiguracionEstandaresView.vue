@@ -147,7 +147,7 @@
               v-for="alg in ALGORITHMS"
               :key="alg.key"
               :for="`alg-${alg.key}`"
-              class="block cursor-pointer rounded-lg border-2 p-2.5 transition-all"
+              class="flex flex-col cursor-pointer rounded-lg border-2 p-2.5 transition-all"
               :class="defaultAlgorithm === alg.key
                 ? `${alg.activeBorder} ${alg.activeBg}`
                 : 'border-slate-200 bg-white hover:border-slate-300'"
@@ -173,7 +173,7 @@
                 </span>
               </div>
               <!-- Descripción -->
-              <p class="text-xs text-slate-600 leading-relaxed mb-2">{{ alg.description }}</p>
+              <p class="text-xs text-slate-600 leading-relaxed mb-2 flex-1">{{ alg.description }}</p>
               <!-- Ejemplo -->
               <div class="rounded-md bg-slate-50 border border-slate-200 p-2">
                 <p class="text-[11px] font-semibold text-slate-700 mb-0.5">Ejemplo práctico</p>
