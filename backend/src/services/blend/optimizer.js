@@ -462,19 +462,84 @@ function classifyStock(stock, rules, supervisionSettings) {
     });
 }
 
+function calcularEstadisticas(groupedBlends, rules, supervisionSettings) {
+    const activeRules = rules.filter(r => {
+        const k = r.parametro === 'LEN' ? 'UHML' : (r.parametro === '+b' ? 'PLUS_B' : r.parametro);
+        const s = supervisionSettings[k];
+        return s && (s.target || s.hardCap || s.tolerance);
+    });
+
+    const stats = {};
+
+    groupedBlends.forEach(blend => {
+        const bId = blend.id;
+        const fardos = blend.fardos;
+        const totalFardos = fardos.length;
+
+        // Peso por fardo: usa PESO/QTDE_ESTOQUE si disponible, sino peso unitario = 1
+        const pesoUnitario = (f) => {
+            const p = Number(f.PESO);
+            const q = Number(f.QTDE_ESTOQUE) || 1;
+            return p > 0 ? p / q : 1;
+        };
+        const pesoPorMezcla = fardos.reduce((sum, f) => sum + pesoUnitario(f), 0);
+        const mezclasBloque = Number(blend.mezclasBloque) || getMixesFromBlockId(bId);
+        const pesoTotalBloque = pesoPorMezcla * mezclasBloque;
+
+        stats[bId] = {
+            totalFardos,
+            mezclasBloque,
+            pesoPorMezcla,
+            pesoTotalBloque,
+            pesoTotal: pesoPorMezcla,
+            variables: {}
+        };
+
+        // Siempre calcular LEN, MIC, STR, ELG + parámetros de reglas activas
+        const coreParams = ['LEN', 'MIC', 'STR', 'ELG'];
+        const paramsToCompute = [...new Set([...coreParams, ...activeRules.map(r => r.parametro)])];
+
+        paramsToCompute.forEach(ruleParam => {
+            const vKey = ruleParam === 'LEN' ? 'UHML' : (ruleParam === '+b' ? 'PLUS_B' : ruleParam);
+            const rule = activeRules.find(r => r.parametro === ruleParam);
+
+            const sumPonderada = fardos.reduce((s, f) => s + ((Number(f[vKey]) || 0) * pesoUnitario(f)), 0);
+            const prom = pesoPorMezcla > 0 ? sumPonderada / pesoPorMezcla : 0;
+
+            stats[bId].variables[ruleParam] = { promedioGeneral: prom };
+
+            if (rule) {
+                const fardosA = fardos.filter(f => {
+                    const reasons = Array.isArray(f._toleranceReasons) ? f._toleranceReasons : [];
+                    return f._category === 'A' || !reasons.includes(ruleParam);
+                });
+                const fardosB = fardos.filter(f => {
+                    const reasons = Array.isArray(f._toleranceReasons) ? f._toleranceReasons : [];
+                    return f._category === 'B' && reasons.includes(ruleParam);
+                });
+
+                const sumPesoA = fardosA.reduce((s, f) => s + pesoUnitario(f), 0);
+                const sumPesoB = fardosB.reduce((s, f) => s + pesoUnitario(f), 0);
+
+                const sumA = fardosA.reduce((s, f) => s + ((Number(f[vKey]) || 0) * pesoUnitario(f)), 0);
+                const sumB = fardosB.reduce((s, f) => s + ((Number(f[vKey]) || 0) * pesoUnitario(f)), 0);
+
+                stats[bId].variables[ruleParam].promedioIdeal      = sumPesoA > 0 ? sumA / sumPesoA : 0;
+                stats[bId].variables[ruleParam].promedioTolerancia = sumPesoB > 0 ? sumB / sumPesoB : 0;
+                stats[bId].variables[ruleParam].pctIdeal           = totalFardos > 0 ? (fardosA.length / totalFardos) * 100 : 0;
+                stats[bId].variables[ruleParam].pctTolerancia      = totalFardos > 0 ? (fardosB.length / totalFardos) * 100 : 0;
+            }
+        });
+    });
+
+    return stats;
+}
+
 function generateResult(stock, groupedBlends, rules, supervisionSettings) {
     const plan = buildFullStockPlanRows(stock, groupedBlends);
-    const stats = {};
     const cols = groupedBlends.map(g => g.id);
-    groupedBlends.forEach(g => {
-        const s = { mezclasBloque: g.mezclasBloque };
-        ['UHML', 'STR', 'MIC', 'PLUS_B', 'CG', 'TRASH'].forEach(k => {
-            const vals = g.fardos.map(f => Number(f[k])).filter(v => !isNaN(v));
-            if (vals.length) s[k] = vals.reduce((a, b) => a + b) / vals.length;
-        });
-        stats[g.id] = s;
-    });
-    return { success: true, plan, columnasMezcla: cols, estadisticas: stats };
+    const estadisticas = calcularEstadisticas(groupedBlends, rules, supervisionSettings);
+    return { success: true, plan, columnasMezcla: cols, estadisticas };
 }
 
 function buildFullStockPlanRows(stock, groupedBlends = []) {

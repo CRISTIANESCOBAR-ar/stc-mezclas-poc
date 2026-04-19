@@ -1,67 +1,15 @@
 <template>
   <div class="p-6 bg-gray-50 min-h-screen">
-    <div class="flex items-center justify-between mb-6">
-      <h1 class="text-2xl font-bold text-gray-800">Gestión de Inventario (Materia Prima)</h1>
-      <div v-if="activeVersionName" class="shrink-0">
-        <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-green-100 text-green-800 border border-green-200 shadow-sm">
-          <svg class="w-3.5 h-3.5 mr-1.5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Versión Activa: {{ activeVersionName }}
-        </span>
-      </div>
-    </div>
 
-    <!-- Controles Superiores: Filtros y Configuración Unificada -->
-    <div class="bg-white p-4 rounded-lg shadow mb-6">
-      
-      <!-- Única Fila de Controles -->
-      <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
-        
-        <!-- Bloque Izquierda: Versión y Búsqueda -->
-        <div class="flex flex-col md:flex-row md:items-center gap-4 flex-1">
-          <!-- Buscador -->
-          <div class="flex items-center space-x-3 flex-1 max-w-2xl">
-            <label class="hidden lg:block text-sm font-semibold text-gray-700 whitespace-nowrap">
-              Buscar:
-            </label>
-            <div class="relative flex-1">
-              <input 
-                v-model="filters.searchText" 
-                type="text" 
-                placeholder="Productor, Lote, Destino..." 
-                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2 pr-10 border"
-              />
-              <button 
-                v-if="filters.searchText"
-                @click="filters.searchText = ''"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
-              >
-                <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
-                </svg>
-              </button>
-            </div>
-          </div>
+    <!-- Controles Superiores -->
+    <div class="bg-white px-4 py-3 rounded-lg shadow mb-6">
+      <div class="flex items-center gap-0 flex-wrap">
 
-          <!-- Selector de Fardos -->
-          <div class="flex items-center space-x-2 shrink-0">
-            <label class="text-sm font-semibold text-gray-700 whitespace-nowrap">Fardos:</label>
-            <input 
-              v-model.number="filters.fardos" 
-              type="number" 
-              min="1"
-              max="99"
-              class="w-12 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2 border text-center"
-              placeholder="0"
-            />
-          </div>
-
-          <!-- Selector de Algoritmo -->
-          <div class="relative flex shrink-0 ml-2">
-            <div class="flex flex-col items-center gap-1.5">
-              <span class="text-sm font-semibold text-gray-600 text-center">Algoritmo de armado de Mezclas</span>
-              <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 shadow-inner">
+        <!-- 1. Algoritmo de armado de Mezclas -->
+        <div class="relative flex items-center gap-1.5 pr-4">
+          <div class="flex flex-col items-center gap-1.5">
+            <span class="text-xs font-semibold text-gray-600 text-center whitespace-nowrap">Algoritmo de armado de Mezclas</span>
+            <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 shadow-inner">
               <button
                 @click="blendAlgorithm = 'standard'; showAlgorithmOptionTooltip('standard')"
                 @mouseenter="showAlgorithmOptionTooltip('standard')"
@@ -101,157 +49,158 @@
                     : 'text-gray-500 hover:text-gray-700'
                 ]"
               >GB + Norma</button>
-              </div>
-
-              <div
-                v-if="algorithmOptionTooltipVisible && currentAlgorithmOptionTooltip"
-                class="absolute top-full left-1/2 z-40 mt-2 w-96 -translate-x-1/2 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl"
-              >
-                <div class="mb-2 flex items-center justify-between border-b border-slate-200 pb-2">
-                  <h5 class="text-sm font-bold text-slate-800">{{ currentAlgorithmOptionTooltip.title }}</h5>
-                  <span :class="currentAlgorithmOptionTooltip.badgeClass" class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
-                    {{ currentAlgorithmOptionTooltip.badge }}
-                  </span>
-                </div>
-                <p class="text-xs text-slate-700 leading-relaxed">{{ currentAlgorithmOptionTooltip.description }}</p>
-                <div class="mt-2 rounded-md bg-slate-50 p-2.5 border border-slate-200">
-                  <p class="text-[11px] font-semibold text-slate-700">Ejemplo práctico</p>
-                  <p class="mt-1 text-[11px] text-slate-600 leading-relaxed">{{ currentAlgorithmOptionTooltip.example }}</p>
-                </div>
-              </div>
             </div>
 
             <div
-              class="relative"
-              @mouseenter="algorithmTooltipVisible = true"
-              @mouseleave="algorithmTooltipVisible = false"
+              v-if="algorithmOptionTooltipVisible && currentAlgorithmOptionTooltip"
+              class="absolute top-full left-0 z-40 mt-2 w-96 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl"
             >
-              <button
-                type="button"
-                class="inline-flex h-5 w-5 items-center justify-center rounded-full border border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors"
-                aria-label="Información de algoritmos"
-                @click.stop="algorithmTooltipVisible = !algorithmTooltipVisible"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </button>
-
-              <div
-                v-if="algorithmTooltipVisible"
-                class="absolute top-full right-0 mt-2 z-40 w-96 rounded-xl border border-slate-200 bg-white p-3 shadow-2xl"
-              >
-                <div class="mb-3 border-b border-teal-400/60 pb-2">
-                  <h4 class="text-sm font-bold text-teal-700">Algoritmos de Mezcla</h4>
-                  <p class="mt-1 text-xs text-slate-600">Define cómo se arma cada receta de fardos.</p>
-                </div>
-
-                <div class="space-y-2.5 text-xs">
-                  <div class="rounded-md border-l-4 border-slate-400 bg-slate-50 p-2.5">
-                    <p class="font-semibold text-slate-800">Estándar (Round Robin)</p>
-                    <p class="mt-1 text-slate-600">Consumo secuencial y balanceado por turnos. Prioriza completar la mezcla respetando límites activos.</p>
-                  </div>
-
-                  <div class="rounded-md border-l-4 border-blue-500 bg-blue-50 p-2.5">
-                    <p class="font-semibold text-blue-900">Golden Batch</p>
-                    <p class="mt-1 text-blue-800">Maximiza bloques idénticos (N alto) con distribución proporcional del stock. La tolerancia se muestra como referencia.</p>
-                  </div>
-
-                  <div class="rounded-md border-l-4 border-indigo-500 bg-indigo-50 p-2.5">
-                    <p class="font-semibold text-indigo-900">GB + Norma</p>
-                    <p class="mt-1 text-indigo-800">Aplica Golden Batch y además hace cumplir el cupo de tolerancia. Puede reducir N para cumplir norma.</p>
-                  </div>
-                </div>
+              <div class="mb-2 flex items-center justify-between border-b border-slate-200 pb-2">
+                <h5 class="text-sm font-bold text-slate-800">{{ currentAlgorithmOptionTooltip.title }}</h5>
+                <span :class="currentAlgorithmOptionTooltip.badgeClass" class="rounded-full px-2 py-0.5 text-[10px] font-semibold">
+                  {{ currentAlgorithmOptionTooltip.badge }}
+                </span>
               </div>
-            </div>
-          </div>
-
-          <!-- Selector de Modo de Stock -->
-          <div class="flex items-center space-x-2 shrink-0 border-l pl-4 border-gray-300 ml-2">
-            <div class="flex flex-col items-center gap-1.5">
-              <span class="text-sm font-semibold text-gray-600 text-center">Stock Base</span>
-              <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 shadow-inner">
-                <button
-                  @click="filters.stockMode = 'available'"
-                  :class="[
-                    'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
-                    filters.stockMode === 'available'
-                      ? 'bg-emerald-600 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  ]"
-                >Disponible</button>
-                <button
-                  @click="filters.stockMode = 'total'"
-                  :class="[
-                    'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
-                    filters.stockMode === 'total'
-                      ? 'bg-slate-600 text-white shadow-sm'
-                      : 'text-gray-500 hover:text-gray-700'
-                  ]"
-                >Total</button>
+              <p class="text-xs text-slate-700 leading-relaxed">{{ currentAlgorithmOptionTooltip.description }}</p>
+              <div class="mt-2 rounded-md bg-slate-50 p-2.5 border border-slate-200">
+                <p class="text-[11px] font-semibold text-slate-700">Ejemplo práctico</p>
+                <p class="mt-1 text-[11px] text-slate-600 leading-relaxed">{{ currentAlgorithmOptionTooltip.example }}</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Bloque Derecha: Botones de Configuración -->
-        <div class="flex items-center space-x-6 shrink-0 border-t pt-4 xl:border-t-0 xl:pt-0">
-          
-          <div class="flex flex-col items-start gap-2">
-            <!-- Botón de Supervisión -->
-            <button 
-              @click="showRuleSelector = !showRuleSelector"
-              class="flex items-center space-x-2 text-indigo-600 text-sm font-semibold hover:text-indigo-800 transition-colors focus:outline-none"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-              </svg>
-              <span>Reglas de Mezclas</span>
-            </button>
+        <!-- Separador -->
+        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
 
-            <div class="flex items-center gap-3">
-              <!-- Botón de Columnas -->
-              <button 
-                @click="showColumnSelector = !showColumnSelector"
-                class="flex items-center space-x-1.5 text-blue-600 text-xs font-semibold hover:text-blue-800 transition-colors focus:outline-none"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>Ver Columnas</span>
-              </button>
-
-              <!-- Checkbox Agrupar Lotes Pequeños -->
-              <div class="flex items-center gap-2 border-l border-gray-200 pl-3">
-                 <label class="flex items-center space-x-1 cursor-pointer select-none" title="Agrupar lotes pequeños por condiciones de uso">
-                    <input type="checkbox" v-model="filters.groupSmallLots" class="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-                    <span class="text-xs text-slate-700 font-medium whitespace-nowrap">Agrupar</span>
-                 </label>
-                 
-                 <div v-if="filters.groupSmallLots" class="flex items-center gap-1 transition-all duration-300">
-                    <span class="text-xs text-gray-400 font-bold">≤</span>
-                    <input type="number" 
-                        v-model.number="filters.smallLotThreshold"
-                        min="1" max="999"
-                        class="w-10 text-xs text-center border-gray-300 rounded-sm py-0.5 px-0 placeholder-gray-300 focus:ring-indigo-500 focus:border-indigo-500 shadow-sm"
-                        placeholder="20" />
-                 </div>
-              </div>
-            </div>
+        <!-- 2. Stock Base -->
+        <div class="flex flex-col items-center gap-1.5 pr-4">
+          <span class="text-xs font-semibold text-gray-600 text-center whitespace-nowrap">Stock Base</span>
+          <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 shadow-inner">
+            <button
+              @click="filters.stockMode = 'available'"
+              :class="[
+                'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
+                filters.stockMode === 'available'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              ]"
+            >Disponible</button>
+            <button
+              @click="filters.stockMode = 'total'"
+              :class="[
+                'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
+                filters.stockMode === 'total'
+                  ? 'bg-slate-600 text-white shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              ]"
+            >Total</button>
           </div>
+        </div>
 
-          <!-- Botón Mezclas -->
-          <button 
-            @click="handleMezclas"
-            class="flex items-center space-x-2 text-green-600 text-sm font-bold hover:text-green-800 transition-colors focus:outline-none bg-green-50 px-3 py-1.5 rounded-md border border-green-200 shadow-sm"
+        <!-- Separador -->
+        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+
+        <!-- 3. Reglas de Mezclas + Ver Columnas -->
+        <div class="flex flex-col items-start gap-2 pr-4">
+          <button
+            @click="showRuleSelector = !showRuleSelector"
+            class="flex items-center space-x-2 text-indigo-600 text-sm font-semibold hover:text-indigo-800 transition-colors focus:outline-none"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
-            <span>Mezclas</span>
+            <span>Reglas de Mezclas</span>
+          </button>
+          <button
+            @click="showColumnSelector = !showColumnSelector"
+            class="flex items-center space-x-2 text-blue-600 text-sm font-semibold hover:text-blue-800 transition-colors focus:outline-none"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Ver Columnas</span>
           </button>
         </div>
+
+        <!-- Separador -->
+        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+
+        <!-- 4. Fardos + Agrupar (dos filas) -->
+        <div class="flex flex-col gap-1.5 pr-4">
+          <!-- Fardos -->
+          <div class="flex items-center justify-between gap-2">
+            <label class="text-xs font-semibold text-gray-700 whitespace-nowrap">Fardos:</label>
+            <input
+              v-model.number="filters.fardos"
+              type="number"
+              min="1"
+              max="99"
+              class="w-14 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs py-0.5 px-1 border text-center"
+              placeholder="0"
+            />
+          </div>
+          <!-- Agrupar -->
+          <div class="flex items-center justify-between gap-2">
+            <label class="flex items-center gap-1 cursor-pointer select-none" title="Agrupar lotes pequeños por condiciones de uso">
+              <input type="checkbox" v-model="filters.groupSmallLots" class="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
+              <span class="text-xs text-slate-700 font-medium whitespace-nowrap">Agrupar</span>
+            </label>
+            <div class="flex items-center gap-1">
+              <span :class="filters.groupSmallLots ? 'text-gray-500' : 'text-gray-300'" class="text-xs font-bold">≤</span>
+              <input type="number"
+                v-model.number="filters.smallLotThreshold"
+                min="1" max="999"
+                :disabled="!filters.groupSmallLots"
+                :class="filters.groupSmallLots
+                  ? 'border-gray-300 text-gray-800 bg-white focus:ring-indigo-500 focus:border-indigo-500'
+                  : 'border-gray-200 text-gray-300 bg-gray-50 cursor-not-allowed'"
+                class="w-14 text-xs text-center rounded-md py-0.5 px-1 placeholder-gray-300 shadow-sm border"
+                placeholder="20" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Separador -->
+        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+
+        <!-- 5. Buscar (label encima, input debajo) -->
+        <div class="flex flex-col gap-1 flex-1 min-w-[160px] pr-4">
+          <label class="text-xs font-semibold text-gray-700 whitespace-nowrap">Buscar:</label>
+          <div class="relative">
+            <input
+              v-model="filters.searchText"
+              type="text"
+              placeholder="Productor, Lote, Destino..."
+              class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs p-1.5 pr-8 border"
+            />
+            <button
+              v-if="filters.searchText"
+              @click="filters.searchText = ''"
+              class="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-400 hover:text-gray-600"
+            >
+              <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Separador -->
+        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+
+        <!-- 6. Botón Mezclas (derecha) -->
+        <button
+          @click="handleMezclas"
+          class="flex items-center space-x-2 text-green-600 text-sm font-bold hover:text-green-800 transition-colors focus:outline-none bg-green-50 px-3 py-1.5 rounded-md border border-green-200 shadow-sm shrink-0"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <span>Mezclas</span>
+        </button>
+
       </div>
 
       <!-- Expandible: Supervisión -->
@@ -842,395 +791,6 @@
                     </template>
                   </tr>
                 </template>
-              </tfoot>
-            </table>
-          </div>
-
-          <h3 class="text-lg font-bold text-gray-800 mb-3 mt-8 border-t pt-6">Proyección de Compra por Calidad</h3>
-          <div class="border rounded-lg bg-emerald-50/40 border-emerald-200 p-4">
-            <div class="grid grid-cols-1 lg:grid-cols-6 gap-3 mb-4">
-              <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Mezclas objetivo</label>
-                <input
-                  v-model.number="purchaseProjection.targetMixes"
-                  type="number"
-                  min="1"
-                  class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2 border"
-                />
-                <p v-if="purchaseProjection.targetMixes < purchaseProjection.minMixesForBlock" class="mt-1 text-[11px] text-amber-700 font-medium">
-                  Recomendado para bloque: mínimo {{ purchaseProjection.minMixesForBlock }} mezclas.
-                </p>
-              </div>
-
-              <div>
-                <label class="block text-xs font-semibold text-gray-700 mb-1">Fuente disponible</label>
-                <select
-                  v-model="purchaseProjection.source"
-                  class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm p-2 border"
-                >
-                  <option value="stock">Stock actual</option>
-                  <option value="remanente">Sobrante no usado</option>
-                </select>
-              </div>
-
-              <div class="bg-white rounded-md border border-emerald-100 px-3 py-2">
-                <p class="text-[11px] text-gray-500 uppercase tracking-wide">Fardos por mezcla</p>
-                <p class="text-lg font-bold text-emerald-700">{{ formatThousandInteger(filters.fardos || 0) }}</p>
-              </div>
-
-              <div v-if="purchaseProjection.source !== 'stock'" class="bg-white rounded-md border border-emerald-100 px-3 py-2">
-                <p class="text-[11px] text-gray-500 uppercase tracking-wide">Mezclas base generadas</p>
-                <p class="text-lg font-bold text-emerald-700">{{ formatThousandInteger(generatedMixesCount) }}</p>
-              </div>
-
-              <div class="bg-white rounded-md border border-emerald-100 px-3 py-2">
-                <p class="text-[11px] text-gray-500 uppercase tracking-wide">Stock total fuente</p>
-                <p class="text-lg font-bold text-emerald-700">{{ formatThousandInteger(projectionSourceTotals.stockFardos) }}</p>
-              </div>
-
-              <div class="bg-white rounded-md border border-emerald-100 px-3 py-2">
-                <p class="text-[11px] text-gray-500 uppercase tracking-wide">Peso total fuente (kg)</p>
-                <p class="text-lg font-bold text-emerald-700">{{ formatThousandInteger(projectionSourceTotals.stockPeso) }}</p>
-              </div>
-            </div>
-
-            <div v-if="purchaseProjectionError" class="mb-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {{ purchaseProjectionError }}
-            </div>
-
-            <div v-if="projectionVariablePurchaseRows.length" class="mt-4 overflow-x-auto border rounded-lg bg-white">
-              <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-emerald-100/60">
-                  <tr>
-                    <th class="px-3 py-2 text-left text-xs font-semibold text-emerald-900 uppercase tracking-wide">Variable</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Disponible</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Faltante</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Total Fardos</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Peso Medio Fardo</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Peso Total</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Fardos x Mezcla</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Tamaño Bloque</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Promedio actual</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Objetivo</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">A Comprar</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Promedio Final</th>
-                    <th class="px-3 py-2 text-right text-xs font-semibold text-emerald-900 uppercase tracking-wide">Kg compra global</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                  <tr v-for="item in projectionVariablePurchaseRows" :key="`var-buy-${item.uiKey}`" class="hover:bg-emerald-50/30">
-                    <td class="px-3 py-2 text-sm font-semibold text-gray-800">{{ item.label }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">{{ formatProjectionValue(item.disponibleFardos, 0) }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">{{ formatProjectionValue(item.faltanteFardos, 0) }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">{{ formatProjectionValue(item.totalFardos, 0) }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">{{ formatProjectionValue(item.pesoMedioFardo, 0) }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">{{ formatThousandInteger(item.pesoTotalKg) }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">{{ formatProjectionValue(item.fardosPorMezcla, 0) }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">{{ formatProjectionValue(item.tamanoBloque, 0) }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">{{ formatProjectionValue(item.promedioActual, 2) }}</td>
-                    <td class="px-3 py-2 text-sm text-right text-gray-700">
-                      <span v-if="item.objetivoComparador && item.objetivoValor !== null">
-                        {{ item.objetivoComparador }} {{ formatProjectionValue(item.objetivoValor, 2) }}
-                      </span>
-                      <span v-else>-</span>
-                    </td>
-                    <td class="px-3 py-2 text-sm text-right font-semibold text-indigo-800">
-                      <span v-if="item.comprarComparador && item.comprarValor !== null">
-                        {{ item.comprarComparador }} {{ formatProjectionValue(item.comprarValor, 2) }}
-                      </span>
-                      <span v-else>-</span>
-                    </td>
-                    <td class="px-3 py-2 text-sm text-right font-semibold text-emerald-800">
-                      {{ item.promedioFinal !== null ? formatProjectionValue(item.promedioFinal, 2) : '-' }}
-                    </td>
-                    <td class="px-3 py-2 text-sm text-right font-bold text-emerald-800">{{ formatThousandInteger(item.totalKgToBuy) }}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div v-else-if="!purchaseProjectionError" class="mt-4 rounded border border-gray-200 bg-white px-4 py-3 text-sm text-gray-500 italic">
-              No hay datos suficientes para mostrar el resumen global por variable.
-            </div>
-
-            <!-- ── Análisis por Reglas de Mezcla (solo Sobrante no usado) ──────────────── -->
-            <div v-if="purchaseProjection.source === 'remanente' && remanenteMixingRuleAnalysis" class="mt-5 space-y-4">
-
-              <!-- Cabecera general -->
-              <div class="flex items-baseline gap-3 px-1">
-                <span class="text-sm font-semibold text-slate-700">Análisis por Reglas de Mezcla</span>
-                <span class="text-xs text-slate-500">
-                  Bloque: {{ formatProjectionValue(remanenteMixingRuleAnalysis.totalBloqueF, 0) }} fardos
-                  ({{ filters.fardos }} × {{ purchaseProjection.targetMixes }} mezclas) ·
-                  Stock disponible: {{ formatProjectionValue(remanenteMixingRuleAnalysis.totalStockF, 0) }} fardos
-                </span>
-              </div>
-
-              <!-- Una card por variable -->
-              <div v-for="v in remanenteMixingRuleAnalysis.varAnalysis" :key="v.uiKey"
-                   class="overflow-x-auto border rounded-lg bg-white">
-
-                <!-- Encabezado de la variable -->
-                <div class="flex items-center gap-3 px-4 py-2 border-b"
-                     :class="v.aComprarF > 0 ? 'bg-red-50 border-red-200' : 'bg-emerald-50 border-emerald-200'">
-                  <span class="text-sm font-bold" :class="v.aComprarF > 0 ? 'text-red-800' : 'text-emerald-800'">
-                    {{ v.label }}
-                  </span>
-                  <span class="text-xs px-2 py-0.5 rounded font-mono bg-white border"
-                        :class="v.aComprarF > 0 ? 'border-red-300 text-red-700' : 'border-emerald-300 text-emerald-700'">
-                    Regla {{ v.tolLimitPct === 10 ? '90/10' : v.tolLimitPct === 20 ? '80/20' : (100-v.tolLimitPct)+'/'+v.tolLimitPct }}
-                  </span>
-                  <span class="text-xs text-slate-600">
-                    Obj promedio ≥ {{ formatProjectionValue(v.idealMin, 2) }} ·
-                    Tolerancia {{ v.tolMin }}–{{ v.tolMax }} max {{ v.tolLimitPct }}%
-                  </span>
-                  <span v-if="v.aComprarF === 0" class="text-xs font-semibold text-emerald-700">✓ Sin necesidad de compra</span>
-                  <span v-else class="text-xs font-semibold text-red-700">
-                    A comprar: {{ formatProjectionValue(v.aComprarF, 0) }} fardos
-                    ({{ formatThousandInteger(v.aComprarKg) }} kg)
-                  </span>
-                  <button @click="openMixDetailModal(v.uiKey)"
-                          class="ml-auto flex items-center gap-1 text-xs px-2.5 py-1 rounded border font-medium transition-colors"
-                          :class="v.aComprarF > 0
-                            ? 'bg-white border-red-300 text-red-700 hover:bg-red-50'
-                            : 'bg-white border-emerald-300 text-emerald-700 hover:bg-emerald-50'">
-                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-                    Ver detalle fardo a fardo
-                  </button>
-                </div>
-
-                <table class="min-w-full text-xs">
-                  <thead class="bg-slate-50 border-b border-slate-200">
-                    <tr>
-                      <th class="px-3 py-1.5 text-left font-semibold text-slate-600">Zona</th>
-                      <th class="px-3 py-1.5 text-left font-semibold text-slate-600">Rango</th>
-                      <th class="px-3 py-1.5 text-right font-semibold text-slate-600">Fardos</th>
-                      <th class="px-3 py-1.5 text-right font-semibold text-slate-600">Kg</th>
-                      <th class="px-3 py-1.5 text-right font-semibold text-slate-600">% Stock</th>
-                      <th class="px-3 py-1.5 text-right font-semibold text-slate-600">Prom. HVI</th>
-                      <th class="px-3 py-1.5 text-right font-semibold text-slate-600">Límite %</th>
-                      <th class="px-3 py-1.5 text-right font-semibold text-slate-600">Usable F</th>
-                      <th class="px-3 py-1.5 text-right font-semibold text-red-700">Sobrante F</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-100">
-                    <!-- Zona DESCARTADO -->
-                    <tr v-if="v.descF > 0" class="bg-gray-100">
-                      <td class="px-3 py-1.5 font-semibold text-gray-400">Descartado</td>
-                      <td class="px-3 py-1.5 text-gray-400">&lt; {{ v.tolMin }}</td>
-                      <td class="px-3 py-1.5 text-right text-gray-400">{{ formatProjectionValue(v.descF, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-gray-400">{{ formatThousandInteger(v.descKg) }}</td>
-                      <td class="px-3 py-1.5 text-right text-gray-400">{{ formatProjectionValue((v.descF/remanenteMixingRuleAnalysis.totalStockF)*100, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-gray-400">—</td>
-                      <td class="px-3 py-1.5 text-right text-gray-400">0</td>
-                      <td class="px-3 py-1.5 text-right text-gray-400">0</td>
-                      <td class="px-3 py-1.5 text-right text-gray-400">{{ formatProjectionValue(v.descF, 0) }}</td>
-                    </tr>
-                    <!-- Zona TOLERANCIA (restringida) -->
-                    <tr class="bg-amber-50/60">
-                      <td class="px-3 py-1.5 font-semibold text-amber-700">Tolerancia</td>
-                      <td class="px-3 py-1.5 text-amber-700">{{ v.tolMin }} – {{ v.tolMax }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-700">{{ formatProjectionValue(v.tolF, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-700">{{ formatThousandInteger(v.tolKg) }}</td>
-                      <td class="px-3 py-1.5 text-right font-semibold"
-                          :class="v.pctTolStock > v.tolLimitPct ? 'text-red-700' : 'text-slate-600'">
-                        {{ formatProjectionValue(v.pctTolStock, 0) }}
-                      </td>
-                      <td class="px-3 py-1.5 text-right text-slate-600">{{ v.tolF > 0 ? formatProjectionValue(v.tolAvg, 2) : '—' }}</td>
-                      <td class="px-3 py-1.5 text-right font-semibold text-amber-700">{{ v.tolLimitPct }}</td>
-                      <td class="px-3 py-1.5 text-right text-emerald-700">{{ formatProjectionValue(v.usableTolF, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right font-semibold"
-                          :class="v.sobranteTolF > 0 ? 'text-red-700' : 'text-gray-300'">
-                        {{ v.sobranteTolF > 0 ? formatProjectionValue(v.sobranteTolF, 0) : '—' }}
-                      </td>
-                    </tr>
-                    <!-- Zona SUB-IDEAL (libre) -->
-                    <tr class="bg-sky-50/40">
-                      <td class="px-3 py-1.5 font-semibold text-sky-700">Sub-ideal</td>
-                      <td class="px-3 py-1.5 text-sky-700">{{ v.tolMax }} – {{ v.idealMin }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-700">{{ formatProjectionValue(v.subF, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-700">{{ formatThousandInteger(v.subKg) }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-600">{{ formatProjectionValue((v.subF/remanenteMixingRuleAnalysis.totalStockF)*100, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-600">{{ v.subF > 0 ? formatProjectionValue(v.subAvg, 2) : '—' }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-400">—</td>
-                      <td class="px-3 py-1.5 text-right text-emerald-700">{{ formatProjectionValue(v.subF, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-gray-300">—</td>
-                    </tr>
-                    <!-- Zona IDEAL (libre) -->
-                    <tr class="bg-emerald-50/40">
-                      <td class="px-3 py-1.5 font-semibold text-emerald-700">Ideal</td>
-                      <td class="px-3 py-1.5 text-emerald-700">≥ {{ v.idealMin }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-700">{{ formatProjectionValue(v.ideF, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-700">{{ formatThousandInteger(v.ideKg) }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-600">{{ formatProjectionValue((v.ideF/remanenteMixingRuleAnalysis.totalStockF)*100, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-emerald-700 font-semibold">{{ v.ideF > 0 ? formatProjectionValue(v.ideAvg, 2) : '—' }}</td>
-                      <td class="px-3 py-1.5 text-right text-slate-400">—</td>
-                      <td class="px-3 py-1.5 text-right text-emerald-700">{{ formatProjectionValue(v.ideF, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right text-gray-300">—</td>
-                    </tr>
-                  </tbody>
-
-                  <!-- Líneas resumen -->
-                  <tfoot class="border-t-2 border-slate-300 text-xs">
-                    <!-- Total usable -->
-                    <tr class="bg-slate-50">
-                      <td colspan="2" class="px-3 py-1.5 font-semibold text-slate-700">Total usable del stock</td>
-                      <td class="px-3 py-1.5 text-right font-bold text-slate-800">{{ formatProjectionValue(v.totalUsableF, 0) }}</td>
-                      <td class="px-3 py-1.5 text-right font-bold text-slate-800">{{ formatThousandInteger(v.totalUsableKg) }}</td>
-                      <td colspan="5" class="px-3 py-1.5"></td>
-                    </tr>
-                    <!-- Faltante cantidad -->
-                    <tr :class="v.faltanteF > 0 ? 'bg-red-50' : 'bg-slate-50'">
-                      <td colspan="2" class="px-3 py-1.5 font-semibold"
-                          :class="v.faltanteF > 0 ? 'text-red-700' : 'text-slate-500'">
-                        {{ v.faltanteF > 0 ? '⚠ Faltante de cantidad' : '✓ Cantidad suficiente' }}
-                      </td>
-                      <td class="px-3 py-1.5 text-right font-bold"
-                          :class="v.faltanteF > 0 ? 'text-red-700' : 'text-emerald-600'">
-                        {{ v.faltanteF > 0 ? formatProjectionValue(v.faltanteF, 0) : '0' }}
-                      </td>
-                      <td class="px-3 py-1.5 text-right font-bold"
-                          :class="v.faltanteF > 0 ? 'text-red-700' : 'text-emerald-600'">
-                        {{ v.faltanteF > 0 ? formatThousandInteger(v.faltanteKg) : '—' }}
-                      </td>
-                      <td colspan="5" class="px-3 py-1.5"></td>
-                    </tr>
-                    <!-- Promedio estimado del bloque -->
-                    <tr :class="v.avgPromedioOK ? 'bg-emerald-50/60' : 'bg-amber-50'">
-                      <td colspan="2" class="px-3 py-1.5 font-semibold"
-                          :class="v.avgPromedioOK ? 'text-emerald-700' : 'text-amber-700'">
-                        {{ v.avgPromedioOK ? '✓ Promedio bloque OK' : '⚠ Promedio bloque insuficiente' }}
-                      </td>
-                      <td colspan="2" class="px-3 py-1.5 font-bold text-right"
-                          :class="v.avgPromedioOK ? 'text-emerald-700' : 'text-amber-700'">
-                        {{ formatProjectionValue(v.avgBloque, 2) }}
-                        <span class="font-normal text-slate-500 ml-1">(obj {{ formatProjectionValue(v.idealMin, 2) }})</span>
-                      </td>
-                      <td colspan="5" class="px-3 py-1.5"></td>
-                    </tr>
-                    <!-- A comprar -->
-                    <tr v-if="v.aComprarF > 0" class="bg-red-50 border-t border-red-200">
-                      <td colspan="2" class="px-3 py-1.5 font-bold text-red-800">A comprar</td>
-                      <td class="px-3 py-1.5 text-right font-bold text-red-800">{{ formatProjectionValue(v.aComprarF, 0) }} fardos</td>
-                      <td class="px-3 py-1.5 text-right font-bold text-red-800">{{ formatThousandInteger(v.aComprarKg) }} kg</td>
-                      <td colspan="2" class="px-3 py-1.5 text-slate-600">
-                        <span v-if="v.valorMinCompra !== null">
-                          valor HVI ≥ {{ formatProjectionValue(v.valorMinCompra, 2) }}
-                        </span>
-                      </td>
-                      <td colspan="3" class="px-3 py-1.5"></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-
-              <!-- Resumen final: restricción vinculante -->
-              <div class="border rounded-lg overflow-hidden">
-                <div class="bg-slate-700 px-4 py-2">
-                  <span class="text-sm font-semibold text-white">Resumen — Restricción vinculante</span>
-                </div>
-                <div class="px-4 py-3 bg-slate-50 flex flex-wrap gap-6 text-sm">
-                  <div>
-                    <span class="text-slate-500 text-xs uppercase tracking-wide">A comprar (fardos)</span>
-                    <p class="text-xl font-bold text-red-700">{{ formatProjectionValue(remanenteMixingRuleAnalysis.maxAComprarF, 0) }}</p>
-                  </div>
-                  <div>
-                    <span class="text-slate-500 text-xs uppercase tracking-wide">A comprar (kg)</span>
-                    <p class="text-xl font-bold text-red-700">{{ formatThousandInteger(remanenteMixingRuleAnalysis.maxAComprarKg) }}</p>
-                  </div>
-                  <div>
-                    <span class="text-slate-500 text-xs uppercase tracking-wide">Entradas (25.000 kg)</span>
-                    <p class="text-xl font-bold text-indigo-700">{{ formatProjectionValue(remanenteMixingRuleAnalysis.entradasN, 1) }}</p>
-                  </div>
-                  <div>
-                    <span class="text-slate-500 text-xs uppercase tracking-wide">Bloque objetivo</span>
-                    <p class="text-base font-semibold text-slate-700">
-                      {{ formatProjectionValue(remanenteMixingRuleAnalysis.totalBloqueF, 0) }} fardos ·
-                      {{ formatThousandInteger(remanenteMixingRuleAnalysis.totalBloqueKg) }} kg
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-3 text-xs text-emerald-900 bg-emerald-100/60 border border-emerald-200 rounded px-3 py-2">
-              <span class="font-semibold">Guía de calidad:</span>
-              La recomendación HVI se calcula en función de las variables activadas en “Reglas de Mezclas” y de la fuente seleccionada (stock o remanente).
-              <template v-if="projectionGlobalGuidance.length">
-                <div class="mt-1.5 space-y-0.5">
-                  <p v-for="item in projectionGlobalGuidance" :key="`global-hvi-${item.uiKey}`">
-                    <span class="font-semibold">{{ item.label }}:</span>
-                    base {{ formatProjectionValue(item.sourceAverage, 2) }} ·
-                    {{ buildGlobalGuidanceSummary(item) }} ·
-                    Kg compra global: {{ formatThousandInteger(item.totalKgToBuy) }}
-                  </p>
-                </div>
-              </template>
-              <template v-else>
-                Selecciona al menos una variable (Target/Tolerancia/Límites) para generar orientación de calidad.
-              </template>
-            </div>
-          </div>
-
-          <!-- CTA: Simular Plan de Mezclas -->
-          <div class="mt-6 flex justify-end">
-            <button
-              @click="mixPlanModal.visible = true"
-              :disabled="!saldoDisponibleRows.length || !activeRules.length"
-              class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold shadow hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-              </svg>
-              Simular Plan de Mezclas con Compra
-            </button>
-          </div>
-
-          <!-- Tabla de Remanentes / No Usados -->
-          <h3 class="text-lg font-bold text-gray-800 mb-3 mt-8 border-t pt-6">{{ projectionSourceTableTitle }}</h3>
-          <div class="overflow-x-auto border rounded-lg">
-            <table class="min-w-full divide-y divide-gray-200">
-              <thead class="bg-red-50">
-                <tr>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">Productor</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">Lote</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">Tam</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">Fardos</th>
-                  <th v-if="projectionSourceShowWeightColumns" class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">Kilogramos</th>
-                  <th v-if="projectionSourceShowWeightColumns" class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">Peso Medio</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">MIC</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">STR</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">LEN</th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-red-800 uppercase tracking-wider">{{ projectionSourceTableReasonLabel }}</th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-if="projectionSourceTableRows.length === 0">
-                  <td :colspan="projectionSourceTableColspan" class="px-4 py-4 text-center text-gray-500 italic">{{ projectionSourceTableEmptyMessage }}</td>
-                </tr>
-                <tr v-else v-for="(row, index) in projectionSourceTableRows" :key="`projection-source-${index}`" class="hover:bg-red-50/50">
-                  <td class="px-4 py-2 text-sm text-gray-900 font-medium">{{ row.PRODUTOR }}</td>
-                  <td class="px-4 py-2 text-sm text-gray-600">{{ row.LOTE }}</td>
-                  <td class="px-4 py-2 text-sm text-gray-600">{{ row.TAM || '-' }}</td>
-                  <td class="px-4 py-2 text-sm font-bold text-gray-800">{{ row.Fardos }}</td>
-                  <td v-if="projectionSourceShowWeightColumns" class="px-4 py-2 text-sm font-semibold text-gray-800">{{ formatThousandInteger(row.Kilogramos) }}</td>
-                  <td v-if="projectionSourceShowWeightColumns" class="px-4 py-2 text-sm text-gray-700">{{ formatProjectionValue(row.PesoMedio, 2) }}</td>
-                  <td class="px-4 py-2 text-sm" :class="getCellClass(row, 'MIC')">{{ formatValue(row.MIC, 'MIC') }}</td>
-                  <td class="px-4 py-2 text-sm" :class="getCellClass(row, 'STR')">{{ formatValue(row.STR, 'STR') }}</td>
-                  <td class="px-4 py-2 text-sm" :class="getCellClass(row, 'UHML')">{{ formatValue(row.LEN, 'UHML') }}</td>
-                  <td class="px-4 py-2 text-sm text-red-600 font-medium">{{ row.Motivo }}</td>
-                </tr>
-              </tbody>
-              <tfoot v-if="projectionSourceTableRows.length > 0" class="bg-gray-50 border-t-2 border-gray-300">
-                <tr>
-                  <td colspan="3" class="px-4 py-2 text-sm font-bold text-gray-800">Totales</td>
-                  <td class="px-4 py-2 text-sm font-bold text-gray-800">{{ formatThousandInteger(projectionSourceTableTotals.fardos) }}</td>
-                  <td v-if="projectionSourceShowWeightColumns" class="px-4 py-2 text-sm font-bold text-gray-800">{{ formatThousandInteger(projectionSourceTableTotals.kilogramos) }}</td>
-                  <td v-if="projectionSourceShowWeightColumns" class="px-4 py-2 text-sm font-bold text-gray-800">{{ formatProjectionValue(projectionSourceTableTotals.pesoMedio, 2) }}</td>
-                  <td class="px-4 py-2 text-sm font-bold text-gray-800">{{ formatProjectionValue(projectionSourceTableTotals.mic, 2) }}</td>
-                  <td class="px-4 py-2 text-sm font-bold text-gray-800">{{ formatProjectionValue(projectionSourceTableTotals.str, 2) }}</td>
-                  <td class="px-4 py-2 text-sm font-bold text-gray-800">{{ formatProjectionValue(projectionSourceTableTotals.len, 2) }}</td>
-                  <td class="px-4 py-2 text-sm text-gray-400">—</td>
-                </tr>
               </tfoot>
             </table>
           </div>
