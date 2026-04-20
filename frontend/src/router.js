@@ -16,6 +16,12 @@ const routes = [
     name: 'configuracion-estandares',
     component: () => import('./views/ConfiguracionEstandaresView.vue'),
     meta: { title: 'Configuración Estándares y Mezclas' } 
+  },
+  { 
+    path: '/hvi', 
+    name: 'hvi',
+    component: () => import('./views/HVIView.vue'),
+    meta: { title: 'Carga de Archivos HVI' } 
   }
 ]
 

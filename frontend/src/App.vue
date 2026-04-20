@@ -4,11 +4,6 @@
     <!-- Sidebar izquierdo -->
     <aside class="flex-none w-12 flex flex-col items-center bg-gray-100 border-r border-gray-200 py-3 z-50 shadow-sm select-none">
 
-      <!-- Logo -->
-      <div class="mb-4 flex flex-col items-center">
-        <img src="/LogoSantana.jpg" alt="Santana Textiles" class="w-8 h-8 object-contain rounded" />
-      </div>
-
       <!-- Separador -->
       <div class="w-5 h-px bg-gray-300 mb-2"></div>
 
@@ -47,6 +42,22 @@
           </svg>
           <span class="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md bg-white border border-gray-200 shadow-md px-2 py-1 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-50">
             {{ t('nav.settings') }}
+          </span>
+        </router-link>
+
+        <!-- HVI -->
+        <router-link
+          to="/hvi"
+          class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
+          :class="$route.path === '/hvi'
+            ? 'bg-indigo-100 text-indigo-700'
+            : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/>
+          </svg>
+          <span class="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md bg-white border border-gray-200 shadow-md px-2 py-1 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            HVI
           </span>
         </router-link>
 

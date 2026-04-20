@@ -190,5 +190,14 @@
     "pseudocode": "📋 Pseudocódigo",
     "lines": "{n} líneas",
     "spaces": "Espacios: 2"
+  },
+  "motivo": {
+    "excludedManual": "Excluido por selección manual (checkbox) - visible para panorama general",
+    "rejectedAbsolute": "Rechazado por límites absolutos",
+    "allUsed": "Usado en plan (se usó todo)",
+    "blockShortfall": "Saldo no alcanzó para completar asignación en el bloque",
+    "toleranceAllowed": "Usado en plan (tolerancia permitida)",
+    "notUsed": "No usado en ninguna mezcla",
+    "partialConsumption": "Usado en plan (consumo parcial)"
   }
 }

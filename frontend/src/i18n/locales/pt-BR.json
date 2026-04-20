@@ -185,6 +185,15 @@
     "gbNormaDesc": "Mantém a lógica Golden Batch mas obriga o cumprimento de cota de tolerância de qualidade em cada receita.",
     "gbNormaExample": "Se a receita ideal supera o % permitido de lotes em tolerância, corta essa cota e reduz N para cumprir norma."
   },
+  "motivo": {
+    "excludedManual": "Excluído por seleção manual (checkbox) — visível para panorama geral",
+    "rejectedAbsolute": "Rejeitado por limites absolutos",
+    "allUsed": "Usado no plano (tudo utilizado)",
+    "blockShortfall": "Saldo insuficiente para completar a atribuição no bloco",
+    "toleranceAllowed": "Usado no plano (tolerância permitida)",
+    "notUsed": "Não utilizado em nenhuma mistura",
+    "partialConsumption": "Usado no plano (consumo parcial)"
+  },
   "editor": {
     "codeJS": "</> Código JS",
     "pseudocode": "📋 Pseudocódigo",

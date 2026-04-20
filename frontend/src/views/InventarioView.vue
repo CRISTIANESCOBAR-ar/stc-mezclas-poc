@@ -2,11 +2,11 @@
   <div class="p-4 bg-gray-50 min-h-screen">
 
     <!-- Controles Superiores -->
-    <div v-if="!isBlendMode" class="bg-white px-4 py-3 rounded-lg shadow mb-4">
+    <div v-if="!isBlendMode" class="bg-white px-3 py-3 rounded-lg shadow mb-4">
       <div class="flex items-center gap-0 flex-wrap">
 
         <!-- 1. Algoritmo de armado de Mezclas -->
-        <div class="relative flex items-center gap-1.5 pr-4">
+        <div class="relative flex items-center gap-1.5 pr-2">
           <div class="flex flex-col items-center gap-1.5">
             <span class="text-xs font-semibold text-gray-600 text-center whitespace-nowrap">{{ t('inventory.algorithmLabel') }}</span>
             <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 shadow-inner">
@@ -17,7 +17,7 @@
                 @focus="showAlgorithmOptionTooltip('standard')"
                 @blur="hideAlgorithmOptionTooltip"
                 :class="[
-                  'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
+                  'px-2 py-0.5 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
                   blendAlgorithm === 'standard'
                     ? 'bg-slate-700 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
@@ -30,7 +30,7 @@
                 @focus="showAlgorithmOptionTooltip('stability')"
                 @blur="hideAlgorithmOptionTooltip"
                 :class="[
-                  'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
+                  'px-2 py-0.5 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
                   blendAlgorithm === 'stability'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
@@ -43,7 +43,7 @@
                 @focus="showAlgorithmOptionTooltip('stability-strict')"
                 @blur="hideAlgorithmOptionTooltip"
                 :class="[
-                  'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
+                  'px-2 py-0.5 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
                   blendAlgorithm === 'stability-strict'
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
@@ -71,10 +71,10 @@
         </div>
 
         <!-- Separador -->
-        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+        <div class="self-stretch w-px bg-gray-300 mx-2"></div>
 
         <!-- 2. Stock Base -->
-        <div class="flex flex-col items-center gap-1.5 pr-4">
+        <div class="flex flex-col items-center gap-1.5 pr-2">
           <span
             v-tippy="{ content: t('inventory.stockBaseTooltip'), theme: 'light', placement: 'top' }"
             class="text-xs font-semibold text-gray-600 text-center whitespace-nowrap cursor-help">{{ t('inventory.stockBase') }}</span>
@@ -82,7 +82,7 @@
             <button
               @click="filters.stockMode = 'available'"
               :class="[
-                'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
+                'px-2 py-0.5 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
                 filters.stockMode === 'available'
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
@@ -92,7 +92,7 @@
             <button
               @click="filters.stockMode = 'total'"
               :class="[
-                'px-3 py-1 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
+                'px-2 py-0.5 rounded-md text-xs font-semibold transition-all duration-150 whitespace-nowrap',
                 filters.stockMode === 'total'
                   ? 'bg-slate-600 text-white shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
@@ -103,16 +103,16 @@
         </div>
 
         <!-- Separador -->
-        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+        <div class="self-stretch w-px bg-gray-300 mx-2"></div>
 
         <!-- 3. Reglas de Mezclas + Ver Columnas -->
-        <div class="flex flex-col items-start gap-2 pr-4">
+        <div class="flex flex-col items-start gap-1.5 pr-2">
           <button
             @click="showRuleSelector = !showRuleSelector"
             v-tippy="{ content: t('inventory.blendRulesTooltip'), theme: 'light', placement: 'bottom' }"
-            class="flex items-center space-x-2 text-indigo-600 text-sm font-semibold hover:text-indigo-800 transition-colors focus:outline-none"
+            class="flex items-center space-x-1.5 text-indigo-600 text-xs font-semibold hover:text-indigo-800 transition-colors focus:outline-none"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
             <span>{{ t('inventory.blendRules') }}</span>
@@ -120,9 +120,9 @@
           <button
             @click="showColumnSelector = !showColumnSelector"
             v-tippy="{ content: t('inventory.viewColumnsTooltip'), theme: 'light', placement: 'bottom' }"
-            class="flex items-center space-x-2 text-blue-600 text-sm font-semibold hover:text-blue-800 transition-colors focus:outline-none"
+            class="flex items-center space-x-1.5 text-blue-600 text-xs font-semibold hover:text-blue-800 transition-colors focus:outline-none"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -131,10 +131,10 @@
         </div>
 
         <!-- Separador -->
-        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+        <div class="self-stretch w-px bg-gray-300 mx-2"></div>
 
         <!-- 4. Fardos + Agrupar (dos filas) -->
-        <div class="flex flex-col gap-1.5 pr-4">
+        <div class="flex flex-col gap-1.5 pr-2">
           <!-- Fardos -->
           <div class="flex items-center justify-between gap-2">
             <label
@@ -173,10 +173,10 @@
         </div>
 
         <!-- Separador -->
-        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+        <div class="self-stretch w-px bg-gray-300 mx-2"></div>
 
         <!-- 5. Buscar (label encima, input debajo) -->
-        <div class="flex flex-col gap-1 flex-1 min-w-[160px] pr-4">
+        <div class="flex flex-col gap-1 flex-1 min-w-[140px] pr-2">
           <label
             v-tippy="{ content: t('inventory.searchTooltip'), theme: 'light', placement: 'top' }"
             class="text-xs font-semibold text-gray-700 whitespace-nowrap cursor-help">{{ t('inventory.search') }}</label>
@@ -200,15 +200,15 @@
         </div>
 
         <!-- Separador -->
-        <div class="self-stretch w-px bg-gray-300 mx-3"></div>
+        <div class="self-stretch w-px bg-gray-300 mx-2"></div>
 
         <!-- 6. Botón Mezclas (derecha) -->
         <button
           @click="handleMezclas"
           v-tippy="{ content: t('inventory.blendsTooltip'), theme: 'light', placement: 'bottom' }"
-          class="flex items-center space-x-2 text-green-600 text-sm font-bold hover:text-green-800 transition-colors focus:outline-none bg-green-50 px-3 py-1.5 rounded-md border border-green-200 shadow-sm shrink-0"
+          class="flex items-center space-x-1.5 text-green-600 text-xs font-bold hover:text-green-800 transition-colors focus:outline-none bg-green-50 px-2.5 py-1 rounded-md border border-green-200 shadow-sm shrink-0"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
           <span>{{ t('inventory.blends') }}</span>
@@ -2038,14 +2038,14 @@ const getPlanMotivoLogistico = (row, sobranteOverride = null) => {
 
   if (!hasOverride && row.MotivoLogistico) return row.MotivoLogistico;
   if (row._excludedBySelection || row.Estado === 'EXCL.') {
-    return 'Excluido por selección manual (checkbox) - visible para panorama general';
+    return t('motivo.excludedManual');
   }
-  if (row.Estado === 'RECH.') return 'Rechazado por límites absolutos';
-  if (sobrante === 0) return 'Usado en plan (se usó todo)';
-  if (usados === 0) return 'Saldo no alcanzó para completar asignación en el bloque';
-  if (row.Estado === 'TOLER.') return 'Usado en plan (tolerancia permitida)';
-  if (row.Estado === 'NO USO') return 'No usado en ninguna mezcla';
-  return 'Usado en plan (consumo parcial)';
+  if (row.Estado === 'RECH.') return t('motivo.rejectedAbsolute');
+  if (sobrante === 0) return t('motivo.allUsed');
+  if (usados === 0) return t('motivo.blockShortfall');
+  if (row.Estado === 'TOLER.') return t('motivo.toleranceAllowed');
+  if (row.Estado === 'NO USO') return t('motivo.notUsed');
+  return t('motivo.partialConsumption');
 };
 
 const normalizeSortText = (value) => (value ?? '').toString().trim();
