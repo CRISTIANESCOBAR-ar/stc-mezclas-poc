@@ -1,14 +1,14 @@
 <template>
-  <div class="p-6 bg-gray-50 min-h-screen">
+  <div class="p-4 bg-gray-50 min-h-screen">
 
     <!-- Controles Superiores -->
-    <div class="bg-white px-4 py-3 rounded-lg shadow mb-6">
+    <div v-if="!isBlendMode" class="bg-white px-4 py-3 rounded-lg shadow mb-4">
       <div class="flex items-center gap-0 flex-wrap">
 
         <!-- 1. Algoritmo de armado de Mezclas -->
         <div class="relative flex items-center gap-1.5 pr-4">
           <div class="flex flex-col items-center gap-1.5">
-            <span class="text-xs font-semibold text-gray-600 text-center whitespace-nowrap">Algoritmo de armado de Mezclas</span>
+            <span class="text-xs font-semibold text-gray-600 text-center whitespace-nowrap">{{ t('inventory.algorithmLabel') }}</span>
             <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 shadow-inner">
               <button
                 @click="blendAlgorithm = 'standard'; showAlgorithmOptionTooltip('standard')"
@@ -22,7 +22,7 @@
                     ? 'bg-slate-700 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 ]"
-              >Estándar</button>
+              >{{ t('algo.standard') }}</button>
               <button
                 @click="blendAlgorithm = 'stability'; showAlgorithmOptionTooltip('stability')"
                 @mouseenter="showAlgorithmOptionTooltip('stability')"
@@ -35,7 +35,7 @@
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 ]"
-              >Golden Batch</button>
+              >{{ t('algo.goldenBatch') }}</button>
               <button
                 @click="blendAlgorithm = 'stability-strict'; showAlgorithmOptionTooltip('stability-strict')"
                 @mouseenter="showAlgorithmOptionTooltip('stability-strict')"
@@ -48,7 +48,7 @@
                     ? 'bg-indigo-600 text-white shadow-sm'
                     : 'text-gray-500 hover:text-gray-700'
                 ]"
-              >GB + Norma</button>
+              >{{ t('algo.gbNorma') }}</button>
             </div>
 
             <div
@@ -63,7 +63,7 @@
               </div>
               <p class="text-xs text-slate-700 leading-relaxed">{{ currentAlgorithmOptionTooltip.description }}</p>
               <div class="mt-2 rounded-md bg-slate-50 p-2.5 border border-slate-200">
-                <p class="text-[11px] font-semibold text-slate-700">Ejemplo práctico</p>
+                <p class="text-[11px] font-semibold text-slate-700">{{ t('config.practicalExample') }}</p>
                 <p class="mt-1 text-[11px] text-slate-600 leading-relaxed">{{ currentAlgorithmOptionTooltip.example }}</p>
               </div>
             </div>
@@ -75,7 +75,9 @@
 
         <!-- 2. Stock Base -->
         <div class="flex flex-col items-center gap-1.5 pr-4">
-          <span class="text-xs font-semibold text-gray-600 text-center whitespace-nowrap">Stock Base</span>
+          <span
+            v-tippy="{ content: t('inventory.stockBaseTooltip'), theme: 'light', placement: 'top' }"
+            class="text-xs font-semibold text-gray-600 text-center whitespace-nowrap cursor-help">{{ t('inventory.stockBase') }}</span>
           <div class="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 shadow-inner">
             <button
               @click="filters.stockMode = 'available'"
@@ -85,7 +87,8 @@
                   ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               ]"
-            >Disponible</button>
+              v-tippy="{ content: t('inventory.availableTooltip'), theme: 'light', placement: 'bottom' }"
+            >{{ t('inventory.available') }}</button>
             <button
               @click="filters.stockMode = 'total'"
               :class="[
@@ -94,7 +97,8 @@
                   ? 'bg-slate-600 text-white shadow-sm'
                   : 'text-gray-500 hover:text-gray-700'
               ]"
-            >Total</button>
+              v-tippy="{ content: t('inventory.totalTooltip'), theme: 'light', placement: 'bottom' }"
+            >{{ t('inventory.total') }}</button>
           </div>
         </div>
 
@@ -105,22 +109,24 @@
         <div class="flex flex-col items-start gap-2 pr-4">
           <button
             @click="showRuleSelector = !showRuleSelector"
+            v-tippy="{ content: t('inventory.blendRulesTooltip'), theme: 'light', placement: 'bottom' }"
             class="flex items-center space-x-2 text-indigo-600 text-sm font-semibold hover:text-indigo-800 transition-colors focus:outline-none"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
-            <span>Reglas de Mezclas</span>
+            <span>{{ t('inventory.blendRules') }}</span>
           </button>
           <button
             @click="showColumnSelector = !showColumnSelector"
+            v-tippy="{ content: t('inventory.viewColumnsTooltip'), theme: 'light', placement: 'bottom' }"
             class="flex items-center space-x-2 text-blue-600 text-sm font-semibold hover:text-blue-800 transition-colors focus:outline-none"
           >
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span>Ver Columnas</span>
+            <span>{{ t('inventory.viewColumns') }}</span>
           </button>
         </div>
 
@@ -131,7 +137,9 @@
         <div class="flex flex-col gap-1.5 pr-4">
           <!-- Fardos -->
           <div class="flex items-center justify-between gap-2">
-            <label class="text-xs font-semibold text-gray-700 whitespace-nowrap">Fardos:</label>
+            <label
+              v-tippy="{ content: t('inventory.balesTooltip'), theme: 'light', placement: 'left' }"
+              class="text-xs font-semibold text-gray-700 whitespace-nowrap cursor-help">{{ t('inventory.bales') }}</label>
             <input
               v-model.number="filters.fardos"
               type="number"
@@ -143,9 +151,11 @@
           </div>
           <!-- Agrupar -->
           <div class="flex items-center justify-between gap-2">
-            <label class="flex items-center gap-1 cursor-pointer select-none" title="Agrupar lotes pequeños por condiciones de uso">
+            <label
+              v-tippy="{ content: t('inventory.groupTooltip'), theme: 'light', placement: 'left' }"
+              class="flex items-center gap-1 cursor-pointer select-none">
               <input type="checkbox" v-model="filters.groupSmallLots" class="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span class="text-xs text-slate-700 font-medium whitespace-nowrap">Agrupar</span>
+              <span class="text-xs text-slate-700 font-medium whitespace-nowrap">{{ t('inventory.group') }}</span>
             </label>
             <div class="flex items-center gap-1">
               <span :class="filters.groupSmallLots ? 'text-gray-500' : 'text-gray-300'" class="text-xs font-bold">≤</span>
@@ -167,12 +177,14 @@
 
         <!-- 5. Buscar (label encima, input debajo) -->
         <div class="flex flex-col gap-1 flex-1 min-w-[160px] pr-4">
-          <label class="text-xs font-semibold text-gray-700 whitespace-nowrap">Buscar:</label>
+          <label
+            v-tippy="{ content: t('inventory.searchTooltip'), theme: 'light', placement: 'top' }"
+            class="text-xs font-semibold text-gray-700 whitespace-nowrap cursor-help">{{ t('inventory.search') }}</label>
           <div class="relative">
             <input
               v-model="filters.searchText"
               type="text"
-              placeholder="Productor, Lote, Destino..."
+              :placeholder="t('inventory.searchPlaceholder')"
               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 text-xs p-1.5 pr-8 border"
             />
             <button
@@ -193,19 +205,20 @@
         <!-- 6. Botón Mezclas (derecha) -->
         <button
           @click="handleMezclas"
+          v-tippy="{ content: t('inventory.blendsTooltip'), theme: 'light', placement: 'bottom' }"
           class="flex items-center space-x-2 text-green-600 text-sm font-bold hover:text-green-800 transition-colors focus:outline-none bg-green-50 px-3 py-1.5 rounded-md border border-green-200 shadow-sm shrink-0"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          <span>Mezclas</span>
+          <span>{{ t('inventory.blends') }}</span>
         </button>
 
       </div>
 
       <!-- Expandible: Supervisión -->
       <div v-if="showRuleSelector" class="mt-4 bg-gray-50 p-3 rounded border">
-        <p class="text-xs text-gray-500 mb-2 italic">Selecciona los parámetros que deseas visualizar en la tabla.</p>
+        <p class="text-xs text-gray-500 mb-2 italic">{{ t('rules.hint') }}</p>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div 
             v-for="param in monitoredParams" 
@@ -223,10 +236,10 @@
                 />
                 <span>{{ param.label }}</span>
               </div>
-              <span v-if="getRuleFor(param.key)" class="text-[10px] bg-green-100 text-green-800 px-1 rounded flex items-center" title="Regla encontrada">
+              <span v-if="getRuleFor(param.key)" class="text-[10px] bg-green-100 text-green-800 px-1 rounded flex items-center" :title="t('rules.ruleFound')">
                  ✓
               </span>
-              <span v-else class="text-[10px] bg-gray-100 text-gray-400 px-1 rounded" title="Sin regla definida">
+              <span v-else class="text-[10px] bg-gray-100 text-gray-400 px-1 rounded" :title="t('rules.noRule')">
                  -
               </span>
             </div>
@@ -234,7 +247,7 @@
               <label class="flex items-center justify-between space-x-2 text-xs cursor-pointer group">
                 <div class="flex items-center">
                   <input type="checkbox" v-model="supervisionSettings[param.key].target" class="text-green-600 rounded focus:ring-green-500">
-                  <span class="text-gray-600 ml-2">Promedio Objetivo 
+                  <span class="text-gray-600 ml-2">{{ t('rules.targetAvg') }}
                     <span class="w-2 h-2 rounded-full bg-green-200 inline-block ml-1 border border-green-300"></span>
                   </span>
                 </div>
@@ -246,7 +259,7 @@
               <label class="flex items-center justify-between space-x-2 text-xs cursor-pointer group">
                 <div class="flex items-center">
                   <input type="checkbox" v-model="supervisionSettings[param.key].hardCap" class="text-red-600 rounded focus:ring-red-500">
-                  <span class="text-gray-600 ml-2">Límites Absolutos
+                  <span class="text-gray-600 ml-2">{{ t('rules.absoluteLimits') }}
                     <span class="w-2 h-2 rounded-full bg-red-200 inline-block ml-1 border border-red-300"></span>
                   </span>
                 </div>
@@ -258,7 +271,7 @@
               <label class="flex items-center justify-between space-x-2 text-xs cursor-pointer group">
                 <div class="flex items-center">
                   <input type="checkbox" v-model="supervisionSettings[param.key].tolerance" class="text-yellow-500 rounded focus:ring-yellow-400">
-                  <span class="text-gray-600 ml-2">Rango Tolerancia
+                  <span class="text-gray-600 ml-2">{{ t('rules.toleranceRange') }}
                     <span class="w-2 h-2 rounded-full bg-yellow-100 inline-block ml-1 border border-yellow-300"></span>
                   </span>
                 </div>
@@ -299,28 +312,36 @@
       <div v-if="isBlendMode" class="p-4">
         <div class="flex justify-between items-center mb-4">
           <div class="flex flex-col gap-1">
-            <h2 class="text-xl font-bold text-gray-800">Plan de Mezclas Generado</h2>
+            <h2 class="text-xl font-bold text-gray-800">{{ t('blendPlan.title') }}</h2>
             <label class="inline-flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
               <input type="checkbox" v-model="showOnlyLargestBlendBlock" class="rounded text-indigo-600 focus:ring-indigo-500 h-3.5 w-3.5" />
-              <span>Mostrar solo bloque mayor</span>
+              <span>{{ t('blendPlan.showLargestBlock') }}</span>
               <span v-if="showOnlyLargestBlendBlock && primaryBlendBlockId" class="font-semibold text-indigo-700">({{ primaryBlendBlockId }})</span>
             </label>
           </div>
           <div class="flex items-center gap-2">
             <button 
               @click="exportToExcel"
-              class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-semibold text-sm transition-colors flex items-center gap-2"
+              v-tippy="{ content: t('blendPlan.exportExcelTooltip'), theme: 'light', placement: 'bottom' }"
+              class="inline-flex items-center gap-1 px-2 py-1 border border-green-200 bg-white text-green-700 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors duration-150 shadow-sm hover:shadow-md"
             >
-              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2m0 0v-8m0 8H3m15-8h3" />
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="11" x2="12" y2="17"/>
+                <line x1="9" y1="14" x2="15" y2="14"/>
               </svg>
-              Exportar a Excel
+              {{ t('blendPlan.exportExcel') }}
             </button>
             <button 
               @click="isBlendMode = false"
-              class="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 font-semibold text-sm transition-colors"
+              v-tippy="{ content: t('blendPlan.backInventoryTooltip'), theme: 'light', placement: 'bottom' }"
+              class="inline-flex items-center gap-1 px-2 py-1 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
             >
-              Volver al Inventario
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+              {{ t('blendPlan.backInventory') }}
             </button>
           </div>
         </div>
@@ -339,61 +360,55 @@
           </ul>
         </div>
 
-        <div v-if="appliedRulesSummary.length || appliedAlgorithmLabel || appliedCalculationTimestamp" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div v-if="appliedRulesSummary.length || appliedAlgorithmLabel || appliedCalculationTimestamp" class="mb-4 px-3 pt-1 pb-2 bg-blue-50 border border-blue-200 rounded-lg">
           <div class="mb-2 flex flex-col md:flex-row md:items-start md:justify-between gap-1.5 md:gap-3">
-            <h3 class="text-sm font-bold text-blue-800">Reglas aplicadas en este cálculo</h3>
+            <h3 class="text-sm font-bold text-blue-800">{{ t('blendPlan.appliedRules') }}</h3>
             <div class="text-xs text-blue-900 md:text-right">
               <div v-if="appliedAlgorithmLabel || appliedCalculationTimestamp">
                 <span v-if="appliedAlgorithmLabel">
-                  <span class="font-semibold">Algoritmo usado:</span>
+                  <span class="font-semibold">{{ t('blendPlan.algorithmUsed') }}</span>
                   <span class="ml-1">{{ appliedAlgorithmLabel }}</span>
                 </span>
                 <span v-if="appliedAlgorithmLabel && appliedCalculationTimestamp" class="mx-2">|</span>
                 <span v-if="appliedCalculationTimestamp">
-                  <span class="font-semibold">Ejecutado:</span>
+                  <span class="font-semibold">{{ t('blendPlan.executedAt') }}</span>
                   <span class="ml-1">{{ appliedCalculationTimestamp }}</span>
                 </span>
               </div>
             </div>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-            <div
-              v-for="(rule, idx) in appliedRulesSummary"
-              :key="`${rule.parametro}-${idx}`"
-              class="bg-white border border-blue-100 rounded px-2 py-1.5 text-xs"
-            >
-              <div class="text-gray-700">
-                <span class="font-semibold text-blue-900">{{ rule.parametro }}:</span>
-                <span class="ml-1">{{ rule.detalle }}</span>
-              </div>
-            </div>
+          <div class="bg-white border border-blue-100 rounded px-2 py-1 text-xs text-gray-700 flex flex-wrap gap-x-4 gap-y-0">
+            <span v-for="(rule, idx) in appliedRulesSummary" :key="`${rule.parametro}-${idx}`">
+              <span class="font-semibold text-blue-900">{{ rule.parametro }}:</span>
+              <span class="ml-1">{{ rule.detalle }}</span>
+            </span>
           </div>
         </div>
 
         <div v-if="isCalculatingBlend" class="text-center py-8 text-blue-600 font-bold">
-          Calculando optimización...
+          {{ t('blendPlan.calculating') }}
         </div>
 
         <div v-else-if="blendPlan">
           <!-- Tabla del Plan -->
-          <div class="overflow-x-auto mb-8 border rounded-lg">
+          <div class="overflow-x-auto mb-8 rounded-lg border border-slate-200 shadow-sm">
             <div class="flex flex-wrap items-center gap-3 px-4 py-2 bg-slate-50 border-b border-slate-200 text-xs">
-              <span class="font-semibold text-slate-700">Leyenda:</span>
+              <span class="font-semibold text-slate-700">{{ t('blendPlan.legend') }}</span>
               <span class="inline-flex items-center gap-1.5 text-slate-700">
                 <span class="w-3 h-3 rounded bg-green-100 border border-green-300"></span>
-                Objetivo
+                {{ t('blendPlan.legendTarget') }}
               </span>
               <span class="inline-flex items-center gap-1.5 text-slate-700">
                 <span class="w-3 h-3 rounded bg-yellow-50 border border-yellow-300"></span>
-                Tolerancia
+                {{ t('blendPlan.legendTolerance') }}
               </span>
               <span class="inline-flex items-center gap-1.5 text-slate-700">
                 <span class="w-3 h-3 rounded bg-red-100 border border-red-300"></span>
-                Fuera de regla
+                {{ t('blendPlan.legendOutOfRule') }}
               </span>
               <span class="inline-flex items-center gap-1.5 text-slate-700">
                 <span class="w-3 h-3 rounded bg-emerald-100 border border-emerald-300"></span>
-                Motivo: Sobrante 0 = se usó todo en el plan
+                {{ t('blendPlan.legendZeroRemainder') }}
               </span>
             </div>
             <table class="min-w-full divide-y divide-gray-200 compact-plan-table">
@@ -401,7 +416,7 @@
                 <tr>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button type="button" class="inline-flex items-center gap-1" @click="toggleBlendSort('PRODUTOR')">
-                      <span>Productor</span>
+                      <span>{{ t('table.producer') }}</span>
                       <svg class="w-3 h-3" :class="getBlendSortDirection('PRODUTOR') ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path v-if="getBlendSortDirection('PRODUTOR') === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         <path v-else-if="getBlendSortDirection('PRODUTOR') === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -411,7 +426,7 @@
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button type="button" class="inline-flex items-center gap-1" @click="toggleBlendSort('LOTE')">
-                      <span>Lote</span>
+                      <span>{{ t('table.lot') }}</span>
                       <svg class="w-3 h-3" :class="getBlendSortDirection('LOTE') ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path v-if="getBlendSortDirection('LOTE') === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         <path v-else-if="getBlendSortDirection('LOTE') === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -421,7 +436,7 @@
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button type="button" class="inline-flex items-center gap-1" @click="toggleBlendSort('TAM')">
-                      <span>Tam</span>
+                      <span>{{ t('table.size') }}</span>
                       <svg class="w-3 h-3" :class="getBlendSortDirection('TAM') ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path v-if="getBlendSortDirection('TAM') === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         <path v-else-if="getBlendSortDirection('TAM') === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -431,7 +446,7 @@
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button type="button" class="inline-flex items-center gap-1" @click="toggleBlendSort('CLASSIF')">
-                      <span>Clasif.</span>
+                      <span>{{ t('table.clasif') }}</span>
                       <svg class="w-3 h-3" :class="getBlendSortDirection('CLASSIF') ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path v-if="getBlendSortDirection('CLASSIF') === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         <path v-else-if="getBlendSortDirection('CLASSIF') === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -439,10 +454,10 @@
                       </svg>
                     </button>
                   </th>
-                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                  <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{{ t('table.status') }}</th>
                   <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button type="button" class="inline-flex items-center gap-1" @click="toggleBlendSort('Stock')">
-                      <span>Stock</span>
+                      <span>{{ t('table.stock') }}</span>
                       <svg class="w-3 h-3" :class="getBlendSortDirection('Stock') ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path v-if="getBlendSortDirection('Stock') === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         <path v-else-if="getBlendSortDirection('Stock') === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -452,7 +467,7 @@
                   </th>
                   <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button type="button" class="inline-flex items-center gap-1" @click="toggleBlendSort('Usados')">
-                      <span>Usados</span>
+                      <span>{{ t('table.used') }}</span>
                       <svg class="w-3 h-3" :class="getBlendSortDirection('Usados') ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path v-if="getBlendSortDirection('Usados') === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         <path v-else-if="getBlendSortDirection('Usados') === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -462,7 +477,7 @@
                   </th>
                   <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button type="button" class="inline-flex items-center gap-1" @click="toggleBlendSort('Sobrante')">
-                      <span>Sobrante</span>
+                      <span>{{ t('table.remainder') }}</span>
                       <svg class="w-3 h-3" :class="getBlendSortDirection('Sobrante') ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path v-if="getBlendSortDirection('Sobrante') === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         <path v-else-if="getBlendSortDirection('Sobrante') === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -472,7 +487,7 @@
                   </th>
                   <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     <button type="button" class="inline-flex items-center gap-1" @click="toggleBlendSort('MotivoLogistico')">
-                      <span>Motivo Sobrante</span>
+                      <span>{{ t('table.remainderReason') }}</span>
                       <svg class="w-3 h-3" :class="getBlendSortDirection('MotivoLogistico') ? 'text-blue-600' : 'text-gray-400'" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path v-if="getBlendSortDirection('MotivoLogistico') === 'asc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />
                         <path v-else-if="getBlendSortDirection('MotivoLogistico') === 'desc'" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -565,11 +580,11 @@
                   </td>
                   <td class="px-4 py-2 text-sm" :class="getCellClass(row, 'MIC')">{{ formatValue(row.MIC, 'MIC') }}</td>
                   <td class="px-4 py-2 text-sm" :class="getCellClass(row, 'STR')">{{ formatValue(row.STR, 'STR') }}</td>
-                  <td class="px-4 py-2 text-sm" :class="getCellClass(row, 'UHML')">{{ formatValue(row.LEN, 'UHML') }}</td>
+                  <td class="px-4 py-2 text-sm" :class="getCellClass(row, 'UHML')">{{ formatValue(row.UHML, 'UHML') }}</td>
                   <td class="px-4 py-2 text-sm" :class="getCellClass(row, 'ELG')">{{ formatValue(row.ELG, 'ELG') }}</td>
                   <template v-for="(col, colIndex) in activeBlendColumns" :key="`mix-row-${index}-${col}`">
                     <td class="px-4 py-2 text-sm text-center font-bold border-l border-gray-200" :class="row.mezclas[col] ? 'text-indigo-600 bg-indigo-50/30' : 'text-gray-300'">
-                      {{ row.mezclas[col] || '-' }}
+                      {{ row.mezclas[col] ? formatThousandInteger(row.mezclas[col] * getBlockMixCount(col)) : '-' }}
                     </td>
                     <td class="px-4 py-2 text-sm text-center font-semibold text-teal-700 border-l border-gray-200 bg-teal-50/30">
                       {{ getStockActualForBlock(row, colIndex, activeBlendColumns) }}
@@ -577,7 +592,7 @@
                   </template>
                 </tr>
               </tbody>
-              <tfoot class="bg-gray-50 border-t-2 border-gray-300 compact-summary-footer">
+              <tfoot class="bg-gray-50 border-t border-slate-200 compact-summary-footer">
                 <!-- Resumen Mezcla (Cantidad / Peso) -->
                 <tr class="summary-matrix-row summary-matrix-group-start">
                   <td colspan="5" class="px-4 py-2 text-sm font-bold text-right text-gray-700 border-b border-gray-300">TOTALES LOTES</td>
@@ -611,7 +626,7 @@
                   <td colspan="10" :rowspan="summaryMatrixRowspan" class="px-4 py-2 align-top border-r border-gray-300">
                     <div v-if="activeBlendVariablesForSummary.length" class="h-full border border-slate-300 rounded-md overflow-hidden bg-white">
                       <div class="px-3 py-2 bg-slate-50 border-b border-slate-300">
-                        <h3 class="text-sm font-bold text-slate-800">Resumen de lotes (promedios de variables activas)</h3>
+                        <h3 class="text-sm font-bold text-slate-800">{{ t('summary.title') }}</h3>
                       </div>
                       <table class="w-full compact-remanentes-table">
                         <thead class="bg-gray-50">
@@ -624,7 +639,7 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-100">
                           <tr>
-                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">Fecha inicial</td>
+                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">{{ t('summary.startDate') }}</td>
                             <td
                               v-for="column in summaryComparisonColumns"
                               :key="`res-inline-fecha-${column.key}`"
@@ -634,7 +649,7 @@
                             </td>
                           </tr>
                           <tr>
-                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">Kg usados</td>
+                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">{{ t('summary.kgUsed') }}</td>
                             <td
                               v-for="column in summaryComparisonColumns"
                               :key="`res-inline-kg-${column.key}`"
@@ -644,7 +659,7 @@
                             </td>
                           </tr>
                           <tr>
-                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">% Residuos / Prod Carda</td>
+                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">{{ t('summary.residuosPct') }}</td>
                             <td
                               v-for="column in summaryComparisonColumns"
                               :key="`res-inline-residuos-${column.key}`"
@@ -655,7 +670,7 @@
                             </td>
                           </tr>
                           <tr>
-                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">Clase ARG</td>
+                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">{{ t('summary.classArg') }}</td>
                             <td
                               v-for="column in summaryComparisonColumns"
                               :key="`res-inline-clase-${column.key}`"
@@ -703,14 +718,14 @@
                             <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
                               <path d="M20.52 3.48A11.91 11.91 0 0 0 12.04 0C5.5 0 .16 5.33.16 11.88c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.87 11.87 0 0 0 5.7 1.45h.01c6.54 0 11.88-5.33 11.88-11.88 0-3.18-1.24-6.17-3.4-8.43Zm-8.48 18.3h-.01a9.87 9.87 0 0 1-5.02-1.37l-.36-.22-3.76.99 1-3.67-.24-.38a9.85 9.85 0 0 1-1.5-5.25C2.15 6.45 6.58 2 12.04 2a9.84 9.84 0 0 1 7 2.9 9.84 9.84 0 0 1 2.88 6.99c0 5.45-4.44 9.89-9.88 9.89Zm5.42-7.42c-.3-.15-1.77-.87-2.04-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.16-.17.2-.34.23-.63.08-.3-.15-1.24-.46-2.37-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.5.15-.17.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5h-.56c-.2 0-.53.08-.8.38-.27.3-1.04 1.01-1.04 2.46s1.06 2.86 1.2 3.05c.15.2 2.08 3.17 5.03 4.45.7.3 1.25.49 1.68.63.7.22 1.34.19 1.84.12.56-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.18-1.42-.07-.12-.27-.2-.56-.35Z"/>
                             </svg>
-                            <span>Copiar mensaje</span>
+                            <span>{{ t('summary.copyMessage') }}</span>
                           </button>
                         </div>
                         <p class="text-[11px] text-slate-600 mb-1">{{ predictiveFiberAnalysis.subtitle }}</p>
                         <template v-if="predictiveFiberAnalysis.available">
                           <p class="font-semibold" :class="predictiveFiberAnalysis.verdictTextClass">{{ predictiveFiberAnalysis.conclusionHeading }}</p>
                           <p class="text-slate-700">{{ predictiveFiberAnalysis.conclusionBody }}</p>
-                          <p class="mt-1 font-semibold text-slate-800">📊 COMPARATIVA TÉCNICA (Promedios):</p>
+                          <p class="mt-1 font-semibold text-slate-800">{{ t('summary.comparativa') }}</p>
                           <div v-for="(section, sectionIndex) in predictiveFiberAnalysis.sections" :key="`pf-main-sec-${sectionIndex}`" class="mt-1 rounded border border-white/60 bg-white/70 px-2 py-1">
                             <p class="font-semibold text-slate-800">{{ section.title }}</p>
                             <p v-for="(bullet, bulletIndex) in section.bullets" :key="`pf-main-bul-${sectionIndex}-${bulletIndex}`" class="text-slate-700">• {{ bullet }}</p>
@@ -718,11 +733,11 @@
                           <p class="mt-1 font-semibold text-slate-800">{{ predictiveFiberAnalysis.efficiencyHeading }}</p>
                           <p class="font-semibold" :class="predictiveFiberAnalysis.verdictTextClass">{{ predictiveFiberAnalysis.efficiencyBody }}</p>
                         </template>
-                        <p v-else class="text-slate-500">No hay datos suficientes para emitir predicción técnica.</p>
+                        <p v-else class="text-slate-500">{{ t('summary.noData') }}</p>
                       </div>
                     </div>
                   </td>
-                  <td class="summary-matrix-cell px-4 py-2 text-sm font-semibold text-center text-gray-700">Bloques</td>
+                  <td class="summary-matrix-cell px-4 py-2 text-sm font-semibold text-center text-gray-700">{{ t('summary.blocks') }}</td>
                   <template v-for="col in activeBlendColumns" :key="'mix-bloques-'+col">
                     <td class="summary-matrix-cell summary-matrix-value px-4 py-2 text-sm text-center font-bold text-gray-900" :colspan="2">
                       {{ getBlockMixCount(col) }}
@@ -837,12 +852,12 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <tr v-if="loading">
              <td :colspan="visibleColumns.length + 1" class="px-6 py-4 text-center text-blue-500 font-medium">
-                Cargando inventario...
+                {{ t('inventory.loading') }}
              </td>
           </tr>
           <tr v-else-if="sortedFilteredData.length === 0">
             <td :colspan="visibleColumns.length + 1" class="px-6 py-4 text-center text-gray-500 italic">
-              No se encontraron resultados ({{ items.length > 0 ? 'ajusta los filtros' : 'Base de datos vacía o sin conexión' }}).
+              {{ t('inventory.noResults') }} ({{ items.length > 0 ? t('inventory.adjustFilters') : t('inventory.noConnection') }}).
             </td>
           </tr>
           <tr v-else v-for="(item, index) in sortedFilteredData" :key="index" class="hover:bg-gray-50 transition-colors">
@@ -879,7 +894,7 @@
               class="px-4 py-3 text-sm text-gray-800 whitespace-nowrap"
             >
               <!-- Lógica de visualización para cada columna en el footer -->
-              <span v-if="col.key === 'PRODUTOR'">Totales / Promedios</span>
+              <span v-if="col.key === 'PRODUTOR'">{{ t('inventory.totalsAvg') }}</span>
               <span v-else-if="col.key === 'PESO' || col.key === 'QTDE_ESTOQUE'">
                 {{ formatValue(summaryRow[col.key], col.key) }}
               </span>
@@ -895,7 +910,7 @@
     </div>
     
     <div class="mt-4 text-sm text-gray-500 text-right">
-      Mostrando {{ sortedFilteredData.length }} registros
+      {{ t('inventory.showingRecords', { n: sortedFilteredData.length }) }}
     </div>
   </div>
 
@@ -929,19 +944,19 @@
         <!-- Leyenda de zonas -->
         <div class="flex flex-wrap gap-3 px-5 py-2 border-b bg-white text-xs flex-shrink-0">
           <span class="flex items-center gap-1.5">
-            <span class="inline-block w-3 h-3 rounded-sm bg-emerald-200 border border-emerald-400"></span> Ideal
+            <span class="inline-block w-3 h-3 rounded-sm bg-emerald-200 border border-emerald-400"></span> {{ t('detail.legendIdeal') }}
           </span>
           <span class="flex items-center gap-1.5">
-            <span class="inline-block w-3 h-3 rounded-sm bg-sky-200 border border-sky-400"></span> Sub-ideal (libre)
+            <span class="inline-block w-3 h-3 rounded-sm bg-sky-200 border border-sky-400"></span> {{ t('detail.legendSubideal') }}
           </span>
           <span class="flex items-center gap-1.5">
-            <span class="inline-block w-3 h-3 rounded-sm bg-amber-200 border border-amber-400"></span> Tolerancia usada
+            <span class="inline-block w-3 h-3 rounded-sm bg-amber-200 border border-amber-400"></span> {{ t('detail.legendTolUsed') }}
           </span>
           <span class="flex items-center gap-1.5">
-            <span class="inline-block w-3 h-3 rounded-sm bg-orange-200 border border-orange-400"></span> Tolerancia sobrante
+            <span class="inline-block w-3 h-3 rounded-sm bg-orange-200 border border-orange-400"></span> {{ t('detail.legendTolRemaining') }}
           </span>
           <span class="flex items-center gap-1.5">
-            <span class="inline-block w-3 h-3 rounded-sm bg-gray-200 border border-gray-400"></span> Descartado / Sin dato
+            <span class="inline-block w-3 h-3 rounded-sm bg-gray-200 border border-gray-400"></span> {{ t('detail.legendDiscarded') }}
           </span>
         </div>
 
@@ -950,14 +965,14 @@
           <table class="min-w-full text-xs">
             <thead class="sticky top-0 bg-slate-100 border-b border-slate-300 z-10">
               <tr>
-                <th class="px-3 py-2 text-left font-semibold text-slate-700">#</th>
-                <th class="px-3 py-2 text-left font-semibold text-slate-700">Proveedor</th>
-                <th class="px-3 py-2 text-left font-semibold text-slate-700">Lote</th>
-                <th class="px-3 py-2 text-right font-semibold text-slate-700">Saldo Disp.</th>
-                <th class="px-3 py-2 text-right font-semibold text-emerald-800">Fardos Usados</th>
-                <th class="px-3 py-2 text-right font-semibold text-red-800">Fardos No Usados</th>
-                <th class="px-3 py-2 text-left font-semibold text-slate-700">Condición</th>
-                <th class="px-3 py-2 text-left font-semibold text-slate-700">Motivo (no usado)</th>
+                <th class="px-3 py-2 text-left font-semibold text-slate-700">{{ t('table.num') }}</th>
+                <th class="px-3 py-2 text-left font-semibold text-slate-700">{{ t('table.supplier') }}</th>
+                <th class="px-3 py-2 text-left font-semibold text-slate-700">{{ t('table.lot') }}</th>
+                <th class="px-3 py-2 text-right font-semibold text-slate-700">{{ t('table.availBalance') }}</th>
+                <th class="px-3 py-2 text-right font-semibold text-emerald-800">{{ t('table.usedBales') }}</th>
+                <th class="px-3 py-2 text-right font-semibold text-red-800">{{ t('table.unusedBales') }}</th>
+                <th class="px-3 py-2 text-left font-semibold text-slate-700">{{ t('table.condition') }}</th>
+                <th class="px-3 py-2 text-left font-semibold text-slate-700">{{ t('table.unusedReason') }}</th>
                 <th class="px-3 py-2 text-right font-semibold text-slate-700">{{ mixDetailVarItem?.label }}</th>
                 <th class="px-3 py-2 text-right font-semibold text-slate-700">Peso Medio</th>
                 <th class="px-3 py-2 text-right font-semibold text-emerald-800">Kg Usables</th>
@@ -1078,8 +1093,8 @@
         <!-- Header -->
         <div class="flex items-center justify-between px-6 py-4 bg-indigo-700 rounded-t-2xl shrink-0">
           <div>
-            <h2 class="text-lg font-bold text-white">Plan de Mezclas Simulado — Stock + Compra</h2>
-            <p class="text-xs text-indigo-200 mt-0.5">Sobrante disponible + camiones entrantes (asumidos zona ideal)</p>
+            <h2 class="text-lg font-bold text-white">{{ t('simulation.title') }}</h2>
+            <p class="text-xs text-indigo-200 mt-0.5">{{ t('simulation.subtitle') }}</p>
           </div>
           <button @click="mixPlanModal.visible = false" class="text-indigo-200 hover:text-white transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1093,50 +1108,50 @@
           <!-- Inputs -->
           <div class="flex flex-wrap items-end gap-4 p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
             <div>
-              <label class="block text-xs font-semibold text-indigo-700 mb-1">Camiones entrantes</label>
+              <label class="block text-xs font-semibold text-indigo-700 mb-1">{{ t('simulation.incomingTrucks') }}</label>
               <input v-model.number="mixPlanModal.trucks" type="number" min="0" max="99"
                      class="w-20 border border-indigo-300 rounded-md p-2 text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400" />
             </div>
             <div>
-              <label class="block text-xs font-semibold text-indigo-700 mb-1">Fardos por camión</label>
+              <label class="block text-xs font-semibold text-indigo-700 mb-1">{{ t('simulation.balesPerTruck') }}</label>
               <input v-model.number="mixPlanModal.balesPerTruck" type="number" min="1" max="999"
                      class="w-24 border border-indigo-300 rounded-md p-2 text-sm text-center font-bold focus:ring-2 focus:ring-indigo-400" />
             </div>
             <div class="bg-white border border-indigo-200 rounded-md px-4 py-2">
-              <p class="text-[10px] text-indigo-500 uppercase tracking-wide">Fardos entrantes</p>
+              <p class="text-[10px] text-indigo-500 uppercase tracking-wide">{{ t('simulation.incomingBales') }}</p>
               <p class="text-xl font-bold text-indigo-700">{{ formatThousandInteger((mixPlanModal.trucks||0)*(mixPlanModal.balesPerTruck||0)) }}</p>
             </div>
             <div class="bg-white border border-indigo-200 rounded-md px-4 py-2">
-              <p class="text-[10px] text-indigo-500 uppercase tracking-wide">Fardos por mezcla</p>
+              <p class="text-[10px] text-indigo-500 uppercase tracking-wide">{{ t('simulation.balesPerBlend') }}</p>
               <p class="text-xl font-bold text-indigo-700">{{ filters.fardos || '—' }}</p>
             </div>
             <template v-if="mixPlanSimulation">
             <div class="bg-amber-50 border border-amber-300 rounded-md px-4 py-2" title="Límite máximo teórico según HVI (Sin compras). Es un número ideal matemático que no considera lotes fraccionados">
-              <p class="text-[10px] text-amber-600 uppercase tracking-wide font-semibold">Max Teórico (Solo Stock)</p>
+              <p class="text-[10px] text-amber-600 uppercase tracking-wide font-semibold">{{ t('simulation.maxStockOnly') }}</p>
               <p class="text-xl font-bold text-amber-700">
                 {{ mixPlanSimulation.finalMixesCurrent }}
-                <span class="text-[11px] font-normal text-amber-500 ml-1 block" v-if="mixPlanSimulation.bindingVarCurrent">Límite por: {{ mixPlanSimulation.bindingVarCurrent }}</span>
+                <span class="text-[11px] font-normal text-amber-500 ml-1 block" v-if="mixPlanSimulation.bindingVarCurrent">{{ t('simulation.limitBy') }} {{ mixPlanSimulation.bindingVarCurrent }}</span>
               </p>
             </div>
             <div class="bg-emerald-50 border border-emerald-400 rounded-md px-4 py-2" title="Límite máximo teórico según HVI sumando las compras ideales. Sigue siendo un límite matemático sin considerar fracciones en la receta.">
-              <p class="text-[10px] text-emerald-600 uppercase tracking-wide font-semibold">Max Teórico (+ Compras)</p>
+              <p class="text-[10px] text-emerald-600 uppercase tracking-wide font-semibold">{{ t('simulation.maxWithBuy') }}</p>
               <p class="text-xl font-bold text-emerald-700">
                 {{ mixPlanSimulation.finalMixesWithBuy }}
-                <span class="text-[11px] font-normal text-emerald-500 ml-1 block" v-if="mixPlanSimulation.bindingVarWithBuy">Límite por: {{ mixPlanSimulation.bindingVarWithBuy }}</span>
+                <span class="text-[11px] font-normal text-emerald-500 ml-1 block" v-if="mixPlanSimulation.bindingVarWithBuy">{{ t('simulation.limitBy') }} {{ mixPlanSimulation.bindingVarWithBuy }}</span>
               </p>
             </div>
             <div class="bg-indigo-600 border border-indigo-700 rounded-md px-4 py-2 shadow-md" title="Límite físico real calculando recetas perfectas sin fracciones, utilizando la metodología Golden Batch sobre Lotes físicos y macro-lotes agrupados.">
-              <p class="text-[10px] text-indigo-200 uppercase tracking-wide font-bold">Bloque Logrado (Golden Batch)</p>
+              <p class="text-[10px] text-indigo-200 uppercase tracking-wide font-bold">{{ t('simulation.goldenBlock') }}</p>
               <p class="text-2xl font-black text-white flex items-baseline gap-2">
                 {{ mixPlanSimulation.N_identical }}
-                <span class="text-xs font-medium text-indigo-300">recetas idénticas y exactas</span>
+                <span class="text-xs font-medium text-indigo-300">{{ t('simulation.identicalRecipes') }}</span>
               </p>
             </div>
             </template>
           </div>
 
           <div v-if="!mixPlanSimulation" class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
-            Configura fardos por mezcla y activa al menos una Regla de Mezclas para ver la simulación.
+            {{ t('simulation.configureFirst') }}
           </div>
 
                     <template v-else>
@@ -1146,19 +1161,19 @@
                   <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                   </svg>
-                  Proyección de Consumo - {{ mixPlanSimulation.N_identical }} mezclas idénticas (Bloque Stock + Compra)
+                  Proyección de Consumo - {{ t('simulation.tableTitle', { n: mixPlanSimulation.N_identical }) }}
                 </h3>
               </div>
               <table class="min-w-full divide-y divide-gray-200 text-[11px] compact-plan-table">
                 <thead class="bg-gray-100">
                   <tr>
-                    <th class="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wider">Productor</th>
-                    <th class="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wider">Lote</th>
-                    <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">Estado</th>
-                    <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">Stock</th>
-                    <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">Usados</th>
-                    <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">Sobrante</th>
-                    <th class="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wider">Motivo Sobrante</th>
+                    <th class="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wider">{{ t('table.producer') }}</th>
+                    <th class="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wider">{{ t('table.lot') }}</th>
+                    <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">{{ t('table.status') }}</th>
+                    <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">{{ t('table.stock') }}</th>
+                    <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">{{ t('table.used') }}</th>
+                    <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">{{ t('table.remainder') }}</th>
+                    <th class="px-3 py-2 text-left font-bold text-gray-500 uppercase tracking-wider">{{ t('table.remainderReason') }}</th>
                     <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider border-l border-gray-300">MIC</th>
                     <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">STR</th>
                     <th class="px-3 py-2 text-center font-bold text-gray-500 uppercase tracking-wider">LEN</th>
@@ -1173,7 +1188,7 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                   <!-- Entrantes (Compras) -->
                   <tr v-for="(row, idx) in mixPlanSimulation.truckRows" :key="'tr-'+idx" class="hover:bg-gray-50 bg-emerald-50/20">
-                    <td class="px-3 py-1.5 font-medium text-emerald-800">COMPRA</td>
+                    <td class="px-3 py-1.5 font-medium text-emerald-800">{{ t('simulation.buyRow') }}</td>
                     <td class="px-3 py-1.5 text-slate-700">{{ row.LOTE }}</td>
                     <td class="px-3 py-1.5 text-center">
                       <span class="bg-green-100 text-green-800 px-1.5 py-0.5 rounded text-[10px] font-bold">USO</span>
@@ -1208,7 +1223,7 @@
                     <td class="px-3 py-1.5 text-center font-bold text-blue-700">{{ row.usados || '-' }}</td>
                     <td class="px-3 py-1.5 text-center font-bold text-amber-700">{{ row.sobrante }}</td>
                     <td class="px-3 py-1.5">
-                      <span v-if="row.isBottleneck" class="font-bold text-red-600 ml-1">* Solo se usa {{ row.recipe }} por mezcla (BOTTLENECK)</span>
+                      <span v-if="row.isBottleneck" class="font-bold text-red-600 ml-1">{{ t('simulation.bottleneck', { n: row.recipe }) }}</span>
                       <span v-else-if="row.sobrante === 0" class="font-semibold text-emerald-700">{{ row.motivo }}</span>
                       <span v-else class="font-medium text-slate-700">{{ row.motivo }}</span>
                     </td>
@@ -1224,7 +1239,7 @@
                   </tr>
                 </tbody>
 
-                <tfoot class="bg-gray-50 border-t-2 border-gray-300 compact-summary-footer">
+                <tfoot class="bg-gray-50 border-t border-slate-200 compact-summary-footer">
                   <tr class="summary-matrix-row">
                     <td colspan="3" class="px-3 py-1.5 font-bold text-right text-gray-700 border-b border-gray-300">TOTALES LOTES</td>
                     <td class="px-3 py-1.5 text-center font-bold text-slate-800 border-b border-gray-300">
@@ -1246,8 +1261,8 @@
                     <td colspan="7" rowspan="30" class="px-3 py-1.5 align-top border-r border-gray-300 bg-gray-50 p-4">
                        <div class="border border-slate-300 rounded-md overflow-hidden bg-white mb-2 shadow-sm w-[400px]">
                         <div class="px-3 py-2 bg-slate-50 border-b border-slate-300 flex items-center justify-between">
-                          <h3 class="text-[12px] font-bold text-slate-800">Resumen de lotes (promedios de variables activas)</h3>
-                          <span class="text-[10px] text-slate-500 font-mono ml-4">Calculado con recom. min compras</span>
+                          <h3 class="text-[12px] font-bold text-slate-800">{{ t('summary.title') }}</h3>
+                          <span class="text-[10px] text-slate-500 font-mono ml-4">{{ t('simulation.calcNote') }}</span>
                         </div>
                         <table class="w-full">
                           <thead class="bg-gray-100">
@@ -1269,7 +1284,7 @@
                                 <td class="px-3 py-1.5 border-l border-gray-200"></td>
                               </tr>
                               <tr>
-                                <td class="px-3 py-1.5 pl-6 font-semibold text-gray-700">Promedio Bloque</td>
+                                <td class="px-3 py-1.5 pl-6 font-semibold text-gray-700">{{ t('simulation.blockAvg') }}</td>
                                 <td class="px-3 py-1.5 text-center font-mono border-l border-gray-200 text-[12px]" 
                                   :class="v.promedioGeneral >= v.idealMin ? 'text-emerald-700 font-bold' : (v.promedioGeneral >= v.tolMin ? 'text-amber-600 font-bold' : 'text-red-600 font-bold')">
                                   {{ formatProjectionValue(v.promedioGeneral, 2) }}
@@ -1288,13 +1303,13 @@
                                 </td>
                               </tr>
                               <tr class="bg-gray-50 border-t border-gray-100">
-                                <td class="px-3 py-1.5 pl-6 font-semibold text-gray-700">Composición Real Ideal</td>
+                                <td class="px-3 py-1.5 pl-6 font-semibold text-gray-700">{{ t('simulation.realCompositionIdeal') }}</td>
                                 <td class="px-3 py-1.5 text-center font-mono border-l border-gray-200" :class="v.pctIdeal >= parseFloat(v.pctIdeal) ? 'text-emerald-600 font-bold' : 'text-red-500'">
                                   {{ v.pctIdeal.toFixed(1) }}%
                                 </td>
                               </tr>
                               <tr class="bg-gray-50 border-b-2 border-gray-200">
-                                <td class="px-3 py-1.5 pl-6 font-semibold text-gray-700">Composición Real Tol.</td>
+                                <td class="px-3 py-1.5 pl-6 font-semibold text-gray-700">{{ t('simulation.realCompositionTol') }}</td>
                                 <td class="px-3 py-1.5 text-center font-mono border-l border-gray-200" :class="v.pctTolerancia <= v.tolLimitPct ? 'text-emerald-600 font-bold' : 'text-red-500'">
                                   {{ v.pctTolerancia.toFixed(1) }}%
                                 </td>
@@ -1323,14 +1338,14 @@
                               <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
                                 <path d="M20.52 3.48A11.91 11.91 0 0 0 12.04 0C5.5 0 .16 5.33.16 11.88c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.87 11.87 0 0 0 5.7 1.45h.01c6.54 0 11.88-5.33 11.88-11.88 0-3.18-1.24-6.17-3.4-8.43Zm-8.48 18.3h-.01a9.87 9.87 0 0 1-5.02-1.37l-.36-.22-3.76.99 1-3.67-.24-.38a9.85 9.85 0 0 1-1.5-5.25C2.15 6.45 6.58 2 12.04 2a9.84 9.84 0 0 1 7 2.9 9.84 9.84 0 0 1 2.88 6.99c0 5.45-4.44 9.89-9.88 9.89Zm5.42-7.42c-.3-.15-1.77-.87-2.04-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.16-.17.2-.34.23-.63.08-.3-.15-1.24-.46-2.37-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.5.15-.17.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5h-.56c-.2 0-.53.08-.8.38-.27.3-1.04 1.01-1.04 2.46s1.06 2.86 1.2 3.05c.15.2 2.08 3.17 5.03 4.45.7.3 1.25.49 1.68.63.7.22 1.34.19 1.84.12.56-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.18-1.42-.07-.12-.27-.2-.56-.35Z"/>
                               </svg>
-                              <span>Copiar mensaje</span>
+                              <span>{{ t('summary.copyMessage') }}</span>
                             </button>
                           </div>
                           <p class="text-[10px] text-slate-600 mb-1">{{ predictiveFiberAnalysis.subtitle }}</p>
                           <template v-if="predictiveFiberAnalysis.available">
                             <p class="font-semibold" :class="predictiveFiberAnalysis.verdictTextClass">{{ predictiveFiberAnalysis.conclusionHeading }}</p>
                             <p class="text-slate-700">{{ predictiveFiberAnalysis.conclusionBody }}</p>
-                            <p class="mt-1 font-semibold text-slate-800">📊 COMPARATIVA TÉCNICA (Promedios):</p>
+                            <p class="mt-1 font-semibold text-slate-800">{{ t('summary.comparativa') }}</p>
                             <div v-for="(section, sectionIndex) in predictiveFiberAnalysis.sections" :key="`pf-sim-sec-${sectionIndex}`" class="mt-1 rounded border border-white/60 bg-white/70 px-2 py-1">
                               <p class="font-semibold text-slate-800">{{ section.title }}</p>
                               <p v-for="(bullet, bulletIndex) in section.bullets" :key="`pf-sim-bul-${sectionIndex}-${bulletIndex}`" class="text-slate-700">• {{ bullet }}</p>
@@ -1338,7 +1353,7 @@
                             <p class="mt-1 font-semibold text-slate-800">{{ predictiveFiberAnalysis.efficiencyHeading }}</p>
                             <p class="font-semibold" :class="predictiveFiberAnalysis.verdictTextClass">{{ predictiveFiberAnalysis.efficiencyBody }}</p>
                           </template>
-                          <p v-else class="text-slate-500">No hay datos suficientes para emitir predicción técnica.</p>
+                          <p v-else class="text-slate-500">{{ t('summary.noData') }}</p>
                         </div>
                       </div>
                     </td>
@@ -1381,7 +1396,7 @@
         <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end rounded-b-2xl shrink-0">
           <button @click="mixPlanModal.visible = false"
                   class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-300 transition-colors">
-            Cerrar
+            {{ t('simulation.close') }}
           </button>
         </div>
 
@@ -1393,11 +1408,14 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted, onBeforeUnmount, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 import { CottonBale } from '../models/CottonBale.js';
 import ExcelJS from 'exceljs';
 import Swal from 'sweetalert2';
 import { useStandardsStore } from '../stores/standards.js';
+
+const { t } = useI18n();
 
 const standardsStore = useStandardsStore();
 
@@ -1499,33 +1517,33 @@ const algorithmTooltipVisible = ref(false);
 const algorithmOptionTooltipVisible = ref(false);
 const algorithmOptionTooltipKey = ref(null);
 
-const algorithmTooltipByOption = {
+const algorithmTooltipByOption = computed(() => ({
   standard: {
-    title: 'Estándar (Round Robin)',
-    badge: 'Secuencial',
+    title: t('algo.standard') + ' (Round Robin)',
+    badge: t('algo.sequential'),
     badgeClass: 'bg-slate-100 text-slate-700',
-    description: 'Arma la mezcla en rondas entre lotes disponibles para completar rápido la receta y mantener consumo equilibrado.',
-    example: 'Si pides 20 fardos y tienes 4 lotes compatibles, reparte en turnos (1-1-1-1...) hasta completar 20.'
+    description: t('algo.standardDesc'),
+    example: t('algo.standardExample')
   },
   stability: {
-    title: 'Golden Batch',
-    badge: 'Máx. N',
+    title: t('algo.goldenBatch'),
+    badge: t('algo.maxN'),
     badgeClass: 'bg-blue-100 text-blue-700',
-    description: 'Prioriza repetir la misma receta por más corridas (N alto) para estabilizar proceso y reducir variación entre mezclas consecutivas.',
-    example: 'Si la mejor receta permite 12 corridas iguales, genera ese bloque primero y luego recalcula con el stock remanente.'
+    description: t('algo.goldenDesc'),
+    example: t('algo.goldenExample')
   },
   'stability-strict': {
-    title: 'GB + Norma',
-    badge: 'Norma activa',
+    title: t('algo.gbNorma'),
+    badge: t('algo.normaActive'),
     badgeClass: 'bg-indigo-100 text-indigo-700',
-    description: 'Mantiene la lógica Golden Batch pero obliga el cumplimiento de cupo de tolerancia de calidad en cada receta.',
-    example: 'Si la receta ideal supera el % permitido de lotes en tolerancia, recorta ese cupo y reduce N para cumplir norma.'
+    description: t('algo.gbNormaDesc'),
+    example: t('algo.gbNormaExample')
   }
-};
+}));
 
 const currentAlgorithmOptionTooltip = computed(() => {
   if (!algorithmOptionTooltipKey.value) return null;
-  return algorithmTooltipByOption[algorithmOptionTooltipKey.value] || null;
+  return algorithmTooltipByOption.value[algorithmOptionTooltipKey.value] || null;
 });
 
 const showAlgorithmOptionTooltip = (key) => {
@@ -2012,15 +2030,21 @@ const getPlanMotivoLogistico = (row, sobranteOverride = null) => {
   if (!row) return '';
   const hasOverride = sobranteOverride !== null && sobranteOverride !== undefined;
   const sobrante = hasOverride ? Number(sobranteOverride) : Number(row.Sobrante);
+  // Cuando hay override (visible blocks), derivar usados desde Stock-sobrante
+  // para ser consistente con getRowUsedForVisibleBlocks / getRowSobranteForVisibleBlocks
+  const usados = hasOverride
+    ? Math.max(0, (Number(row.Stock) || 0) - sobrante)
+    : (Number(row.Usados) || 0);
 
   if (!hasOverride && row.MotivoLogistico) return row.MotivoLogistico;
   if (row._excludedBySelection || row.Estado === 'EXCL.') {
     return 'Excluido por selección manual (checkbox) - visible para panorama general';
   }
+  if (row.Estado === 'RECH.') return 'Rechazado por límites absolutos';
   if (sobrante === 0) return 'Usado en plan (se usó todo)';
+  if (usados === 0) return 'Saldo no alcanzó para completar asignación en el bloque';
   if (row.Estado === 'TOLER.') return 'Usado en plan (tolerancia permitida)';
   if (row.Estado === 'NO USO') return 'No usado en ninguna mezcla';
-  if (row.Estado === 'RECH.') return 'Rechazado por límites absolutos';
   return 'Usado en plan (consumo parcial)';
 };
 
@@ -2298,6 +2322,18 @@ const buildProducerLotKey = (row) => {
 const normalizeTamValue = (value) => String(value ?? '').trim();
 const normalizeClassifValue = (value) => String(value ?? '').trim();
 
+const deriveEstadoFromCategoria = (row) => {
+  // EXCL. siempre se preserva
+  if (row.Estado === 'EXCL.') return 'EXCL.';
+  const cat = row.Categoria;
+  // Fuente de verdad: ¿el lote aparece en alguna mezcla real?
+  const hasAnyMezcla = row.mezclas && Object.values(row.mezclas).some(v => Number(v) > 0);
+  if (cat === 'C') return 'RECH.';
+  if (!hasAnyMezcla) return 'NO USO';
+  if (cat === 'B') return 'TOLER.';
+  return 'USO';
+};
+
 const enrichBlendResultWithTam = (result) => {
   if (!result || typeof result !== 'object') return result;
 
@@ -2327,16 +2363,18 @@ const enrichBlendResultWithTam = (result) => {
   const hydrateRows = (rows) => {
     if (!Array.isArray(rows)) return rows;
     return rows.map((row) => {
+      const estado = deriveEstadoFromCategoria(row);
       const currentTam = normalizeTamValue(row?.TAM);
       const currentClassif = normalizeClassifValue(row?.CLASSIF);
       const currentTp = normalizeSortText(row?.TP);
 
       const recovered = detailsByKey.get(buildProducerLotKey(row));
-      if (!recovered) return row;
-      if (currentTam && currentClassif && currentTp) return row;
+      const base = { ...row, Estado: estado };
+      if (!recovered) return base;
+      if (currentTam && currentClassif && currentTp) return base;
 
       return {
-        ...row,
+        ...base,
         TAM: currentTam || recovered.TAM || row?.TAM,
         CLASSIF: currentClassif || recovered.CLASSIF || row?.CLASSIF,
         TP: currentTp || recovered.TP || row?.TP
@@ -2482,9 +2520,16 @@ const getClasificacionArgLabel = (value) => {
 };
 
 const getSummaryComparisonClasificacion = (column) => {
-  if (!column || column.kind !== 'reference') return null;
-  const v = column?.data?.clasificacionProm;
-  return (v !== null && v !== undefined) ? Number(v) : null;
+  if (!column) return null;
+  if (column.kind === 'reference') {
+    const v = column?.data?.clasificacionProm;
+    return (v !== null && v !== undefined) ? Number(v) : null;
+  }
+  if (column.kind === 'block') {
+    const v = blendPlan.value?.estadisticas?.[column.blockId]?.clasificacionProm;
+    return (v !== null && v !== undefined) ? Number(v) : null;
+  }
+  return null;
 };
 
 const getSummaryComparisonUsedKg = (column) => {
@@ -4887,11 +4932,13 @@ const filteredData = computed(() => {
   // Usamos groupedItems en lugar de itemsWithStock
   return groupedItems.value.filter(item => {
     // Filtro Texto (Produtor, Lote, Destino)
+    if (!filters.searchText) return true;
     const searchLower = filters.searchText.toLowerCase();
-    return !filters.searchText || 
-      item.PRODUTOR.toLowerCase().includes(searchLower) ||
-      item.LOTE.toLowerCase().includes(searchLower) ||
-      item.DESTINO.toLowerCase().includes(searchLower);
+    return (
+      (item.PRODUTOR || '').toLowerCase().includes(searchLower) ||
+      (item.LOTE     || '').toLowerCase().includes(searchLower) ||
+      (item.DESTINO  || '').toLowerCase().includes(searchLower)
+    );
   });
 });
 
@@ -5453,7 +5500,8 @@ const exportToExcel = async () => {
     
     // Mezclas y Saldo
     columnasMezcla.forEach((mixCol, idx) => {
-      rowData.push(row.mezclas && row.mezclas[mixCol] ? row.mezclas[mixCol] : '');
+      const perBlend = row.mezclas && row.mezclas[mixCol] ? row.mezclas[mixCol] : null;
+      rowData.push(perBlend !== null ? perBlend * getBlockMixCount(mixCol) : '');
       const saldoValue = Number(getStockActualForBlock(row, idx));
       rowData.push(Number.isNaN(saldoValue) ? '' : saldoValue);
     });
@@ -5645,7 +5693,25 @@ const exportToExcel = async () => {
     };
   });
 
-  const statsRowsConfig = [mixSummarySection, ...variableStatsSections];
+  const clasifArgSection = {
+    label: 'Clasif. ARG',
+    typeMerges: [],
+    rows: [
+      {
+        type: '',
+        metric: 'Prom. Bloque',
+        valueGetter: (blockId) => {
+          const v = estadisticas?.[blockId]?.clasificacionProm;
+          if (v === null || v === undefined) return '—';
+          const label = getClasificacionArgLabel(Number(v));
+          return label ? `${label} (${Number(v).toFixed(2)})` : Number(v).toFixed(2);
+        },
+        numFmt: '@'
+      }
+    ]
+  };
+
+  const statsRowsConfig = [mixSummarySection, ...variableStatsSections, clasifArgSection];
 
   let currentStatsRow = totalesKgRowNumber + 1;
 
