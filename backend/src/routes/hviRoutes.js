@@ -294,6 +294,52 @@ router.get('/comparacion-muestra', async (req, res) => {
 });
 
 // =====================================================
+// GET /saved
+// Devuelve todos los ensayos guardados en la BD
+// =====================================================
+router.get('/saved', async (req, res) => {
+  try {
+    const tableCheck = await query(`SELECT to_regclass('public.tb_hvi_ensayos') as exists`);
+    if (!tableCheck.rows[0].exists) {
+      return res.json({ success: true, data: [] });
+    }
+    const result = await query(
+      `SELECT tipo, lote, proveedor, grado, fecha, muestra, cantidad, color, cort, obs, archivo_fuente
+       FROM tb_hvi_ensayos ORDER BY creado_at DESC`
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error('Error getting saved HVI:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =====================================================
+// POST /details
+// Devuelve las filas de detalle de un ensayo por fileName
+// =====================================================
+router.post('/details', async (req, res) => {
+  const { fileName } = req.body;
+  if (!fileName) {
+    return res.status(400).json({ success: false, error: 'fileName requerido' });
+  }
+  try {
+    const result = await query(
+      `SELECT d.fardo, d.sci, d.mst, d.mic, d.mat, d.uhml, d.ui, d.sf, d.str, d.elg, d.rd,
+              d.plus_b AS "plusB", d.tipo, d.tr_cnt AS "trCnt", d.tr_ar AS "trAr", d.trid
+       FROM tb_hvi_detalles d
+       JOIN tb_hvi_ensayos e ON d.ensayo_id = e.id
+       WHERE e.archivo_fuente = $1`,
+      [fileName]
+    );
+    res.json({ success: true, details: result.rows });
+  } catch (err) {
+    console.error('Error getting HVI details:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =====================================================
 // POST /predecir-hilatura
 // Proxy al modelo Gemini para análisis de IA
 // =====================================================

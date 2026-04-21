@@ -1141,8 +1141,21 @@ async function scanDirectory(dirHandle) {
       }
     }
 
-    parsedFiles.value = results;
-    filesList.value = results; // Para el contador de procesar
+    // Merge: enriquecer items ya cargados desde BD con el handle del folder,
+    // y agregar los archivos del folder que no estén en parsedFiles
+    const existingMap = new Map(parsedFiles.value.map(f => [f.fileName, f]));
+    results.forEach(r => {
+      if (existingMap.has(r.fileName)) {
+        // Enriquecer con handle y estado actualizado
+        const existing = existingMap.get(r.fileName);
+        existing.handle = r.handle;
+        existing.file = r.file;
+        if (r.estado === 'Procesado') existing.estado = 'Procesado';
+      } else {
+        parsedFiles.value.push(r);
+      }
+    });
+    filesList.value = parsedFiles.value.filter(f => f.handle || f.file);
   } catch (err) {
     console.error('Error scanning directory', err);
   }
@@ -1308,6 +1321,37 @@ const selectFile = async (item) => {
       // Para TIPO "Ent", autocompletar la cantidad con el número de fardos encontrados
       if (item.tipo === 'Ent' && hviDetails.value.length > 0) {
         item.cantidad = hviDetails.value.length;
+      }
+    } else {
+      // Sin archivo local: intentar cargar detalles desde la BD
+      try {
+        const resp = await fetch('/api/hvi/details', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: item.fileName })
+        });
+        const json = await resp.json();
+        if (json.success && json.details.length > 0) {
+          hviDetails.value = json.details.map(d => ({
+            ...d,
+            sci:  d.sci  !== null ? String(d.sci)  : '',
+            mst:  d.mst  !== null ? String(d.mst)  : '',
+            mic:  d.mic  !== null ? String(d.mic)  : '',
+            mat:  d.mat  !== null ? String(d.mat)  : '',
+            uhml: d.uhml !== null ? String(d.uhml) : '',
+            ui:   d.ui   !== null ? String(d.ui)   : '',
+            sf:   d.sf   !== null ? String(d.sf)   : '',
+            str:  d.str  !== null ? String(d.str)  : '',
+            elg:  d.elg  !== null ? String(d.elg)  : '',
+            rd:   d.rd   !== null ? String(d.rd)   : '',
+            plusB: d.plusB !== null ? String(d.plusB) : '',
+            trCnt: d.trCnt !== null ? String(d.trCnt) : '',
+            trAr:  d.trAr  !== null ? String(d.trAr)  : '',
+            trid:  d.trid  !== null ? String(d.trid)  : '',
+          }));
+        }
+      } catch (e) {
+        console.error('Error cargando detalles HVI desde BD:', e);
       }
     }
   } catch (err) {
@@ -1656,6 +1700,34 @@ const processFiles = async () => {
 };
 
 onMounted(async () => {
+  // 1. Cargar ensayos guardados en la BD
+  try {
+    const resp = await fetch('/api/hvi/saved');
+    const json = await resp.json();
+    if (json.success && json.data.length > 0) {
+      const savedItems = json.data.map(r => ({
+        fileName: r.archivo_fuente,
+        handle: null,
+        file: null,
+        tipo: r.tipo || '',
+        loteEntrada: r.lote || '',
+        proveedor: r.proveedor || '',
+        grado: r.grado || '',
+        fecha: r.fecha || '',
+        muestra: r.muestra || '',
+        cantidad: r.cantidad || '',
+        color: r.color || '',
+        cort: r.cort || '',
+        obs: r.obs || '',
+        estado: 'Procesado'
+      }));
+      parsedFiles.value = savedItems;
+    }
+  } catch (e) {
+    console.warn('No se pudieron cargar guardados desde BD:', e);
+  }
+
+  // 2. Restaurar carpeta persistida y escanear (enriquece con handles)
   try {
     const handle = await getDirHandle();
     if (handle) {
