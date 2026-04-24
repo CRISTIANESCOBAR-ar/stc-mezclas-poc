@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full h-screen p-4 bg-slate-50 overflow-hidden">
+  <div class="flex flex-col w-full min-h-screen p-4 bg-slate-50">
     <!-- Header / Selector -->
     <div class="mb-4 shrink-0 flex items-center justify-between gap-2">
       <div class="flex flex-col ml-8">
@@ -69,9 +69,9 @@
     </div>
 
     <!-- Table Container -->
-    <div class="flex flex-col flex-1 gap-4 overflow-hidden min-h-0">
+    <div class="flex flex-col gap-4">
       <!-- Top Table: TXT Files List -->
-      <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col h-[35%] shrink-0">
+      <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col">
         <!-- Radiobutton Filters -->
         <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-4 shrink-0">
           <span class="text-[10px] font-bold text-slate-500 uppercase">Mostrar:</span>
@@ -223,16 +223,36 @@
       </div>
 
       <!-- Bottom Table: HVI Detailed Data -->
-      <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col flex-1 min-w-0">
-        <div v-if="selectedFileName" class="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center shrink-0">
-          <div class="flex items-center gap-3 flex-1">
-            <span class="text-xs font-bold text-slate-700 truncate">Detalles: <span class="text-blue-600">{{ selectedFileName }}</span></span>
-            <span class="text-[10px] text-slate-500 flex items-center gap-1 ml-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Formato: <b>Tipo_Lote_Proveedor_Grado_Fecha.txt</b>
-            </span>
+      <div class="bg-white rounded-xl shadow-md border border-slate-200 flex flex-col min-w-0">
+        <div v-if="selectedFileName || hviDetails.length" class="sticky top-0 z-50 bg-white">
+          <div v-if="selectedFileName" class="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center shrink-0">
+          <div class="flex items-center gap-4 flex-1 flex-wrap">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tipo</span>
+              <span :class="['px-2 py-0.5 rounded-full text-xs font-bold', selectedFileItem?.tipo === 'Ent' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600']">
+                {{ selectedFileItem?.tipo ?? '—' }}
+              </span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lote</span>
+              <span class="text-xs font-mono font-bold text-slate-700">{{ selectedFileItem?.loteEntrada ?? '—' }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Prov.</span>
+              <span class="text-xs font-medium text-slate-700">{{ selectedFileItem?.proveedor ?? '—' }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Grado</span>
+              <span class="text-xs font-medium text-slate-700">{{ selectedFileItem?.grado ?? '—' }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Color</span>
+              <span class="text-xs font-medium text-slate-700">{{ selectedFileItem?.color ?? '—' }}</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Cort</span>
+              <span class="text-xs font-medium text-slate-700">{{ selectedFileItem?.cort ?? '—' }}</span>
+            </div>
           </div>
           <!-- Botones de Acción -->
           <div class="flex items-center gap-2">
@@ -299,28 +319,44 @@
         </div>
       </div>
 
-        <div class="overflow-auto flex-1 h-full">
-          <table class="w-full text-left border-collapse table-fixed min-w-300">
-            <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200">
-              <tr>
-                <th class="w-20 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">Fardo</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">SCI</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MST</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MIC</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MAT</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">UHML</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">UI</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">SF</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">STR</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">ELG</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">RD</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">+b</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TIPO</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TrCNT</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TrAR</th>
-                <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TRID</th>
-              </tr>
-            </thead>
+        <div v-if="hviDetails.length" class="bg-slate-100 border-b border-slate-300 shadow-sm">
+          <div
+            ref="detailsHeaderScroller"
+            class="overflow-x-auto overflow-y-hidden"
+            @scroll="syncDetailsHeaderScroll"
+          >
+            <table class="w-full text-left border-separate border-spacing-0 table-fixed min-w-300">
+              <thead>
+                <tr>
+                  <th class="w-20 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">Fardo</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">SCI</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MST</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MIC</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MAT</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">UHML</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">UI</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">SF</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">STR</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">ELG</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">RD</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">+b</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TIPO</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TrCNT</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TrAR</th>
+                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TRID</th>
+                </tr>
+              </thead>
+            </table>
+          </div>
+        </div>
+        </div>
+
+        <div
+          ref="detailsBodyScroller"
+          class="overflow-x-auto overflow-y-visible relative"
+          @scroll="syncDetailsBodyScroll"
+        >
+          <table class="details-table w-full text-left border-separate border-spacing-0 table-fixed min-w-300">
             <tbody class="divide-y divide-slate-100">
               <tr v-for="(row, idx) in hviDetails" :key="idx" 
                   :class="[
@@ -741,6 +777,28 @@ const selectedFileName = ref('');
 const selectedFileItem = ref(null);
 const hviDetails = ref([]);
 const filterStatus = ref('No guardados'); // Todos, No guardados, Guardados
+const detailsHeaderScroller = ref(null);
+const detailsBodyScroller = ref(null);
+
+let isSyncingDetailsScroll = false;
+
+const syncDetailsHeaderScroll = () => {
+  if (isSyncingDetailsScroll || !detailsHeaderScroller.value || !detailsBodyScroller.value) return;
+  isSyncingDetailsScroll = true;
+  detailsBodyScroller.value.scrollLeft = detailsHeaderScroller.value.scrollLeft;
+  requestAnimationFrame(() => {
+    isSyncingDetailsScroll = false;
+  });
+};
+
+const syncDetailsBodyScroll = () => {
+  if (isSyncingDetailsScroll || !detailsHeaderScroller.value || !detailsBodyScroller.value) return;
+  isSyncingDetailsScroll = true;
+  detailsHeaderScroller.value.scrollLeft = detailsBodyScroller.value.scrollLeft;
+  requestAnimationFrame(() => {
+    isSyncingDetailsScroll = false;
+  });
+};
 
 // Watch for data changes to auto-audit
 watch(hviDetails, (newVal) => {
@@ -1775,4 +1833,5 @@ onMounted(async () => {
 .overflow-auto::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
 </style>
