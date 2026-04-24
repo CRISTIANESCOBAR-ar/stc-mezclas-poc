@@ -3,15 +3,13 @@
 
     <!-- ── Tooltip flotante HVI (fixed, mismo estilo que proyecto base) ── -->
     <div
+      ref="tooltipRef"
       v-if="tooltipVisible"
       :style="{
         top: tooltipPosition.top,
-        left: tooltipPosition.left,
-        transform: tooltipPlacement === 'top'    ? 'translate(-50%, -100%)' :
-                   tooltipPlacement === 'bottom' ? 'translate(-50%, 0)'     :
-                   tooltipPlacement === 'left'   ? 'translate(-100%, 0)'    : 'translate(0, 0)'
+        left: tooltipPosition.left
       }"
-      class="fixed z-50 w-[320px] bg-white text-slate-700 rounded-lg shadow-2xl border border-slate-200 pointer-events-none"
+      class="fixed z-[9999] w-[320px] max-w-[calc(100vw-16px)] max-h-[calc(100vh-16px)] overflow-y-auto bg-white text-slate-700 rounded-lg shadow-2xl border border-slate-200 pointer-events-none"
     >
       <div v-html="hviTooltips[tooltipVisible]"></div>
       <div v-if="tooltipPlacement === 'top'"
@@ -266,7 +264,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue';
+import { ref, reactive, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
 
@@ -353,39 +351,66 @@ const ALGORITHMS = computed(() => [
 const tooltipVisible  = ref(null);
 const tooltipPosition = ref({ top: '0px', left: '0px' });
 const tooltipPlacement = ref('top');
+const tooltipRef = ref(null);
 
-const showTooltip = (event, paramId) => {
+const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
+
+const showTooltip = async (event, paramId) => {
   tooltipVisible.value = paramId;
-  const rect = event.target.getBoundingClientRect();
-  const tooltipW = 320;
-  const tooltipH = 270;
+  await nextTick();
+
+  const trigger = event.currentTarget || event.target;
+  const rect = trigger.getBoundingClientRect();
+  const tRect = tooltipRef.value?.getBoundingClientRect();
+
+  const tooltipW = tRect?.width || 320;
+  const tooltipH = tRect?.height || 280;
   const gap = 10;
+  const margin = 8;
 
-  // Posición horizontal: centrada sobre el botón pero siempre dentro de la pantalla
-  const rawLeft = rect.left + rect.width / 2;
-  const clampedLeft = Math.min(
-    Math.max(rawLeft, tooltipW / 2 + 8),
-    window.innerWidth - tooltipW / 2 - 8
-  );
+  const spaceRight = window.innerWidth - rect.right;
+  const spaceLeft = rect.left;
+  const spaceTop = rect.top;
+  const spaceBottom = window.innerHeight - rect.bottom;
 
-  if (rect.top > tooltipH + gap) {
-    // Cabe arriba
+  let top = 0;
+  let left = 0;
+
+  if (spaceRight >= tooltipW + gap) {
+    tooltipPlacement.value = 'right';
+    top = clamp(rect.top + rect.height / 2 - tooltipH / 2, margin, window.innerHeight - tooltipH - margin);
+    left = rect.right + gap;
+  } else if (spaceLeft >= tooltipW + gap) {
+    tooltipPlacement.value = 'left';
+    top = clamp(rect.top + rect.height / 2 - tooltipH / 2, margin, window.innerHeight - tooltipH - margin);
+    left = rect.left - tooltipW - gap;
+  } else if (spaceTop >= tooltipH + gap) {
     tooltipPlacement.value = 'top';
-    tooltipPosition.value = {
-      top:  `${rect.top - gap}px`,
-      left: `${clampedLeft}px`
-    };
+    top = rect.top - tooltipH - gap;
+    left = clamp(rect.left + rect.width / 2 - tooltipW / 2, margin, window.innerWidth - tooltipW - margin);
   } else {
-    // Siempre abajo como fallback (nunca a la izquierda fuera de pantalla)
     tooltipPlacement.value = 'bottom';
-    tooltipPosition.value = {
-      top:  `${rect.bottom + gap}px`,
-      left: `${clampedLeft}px`
-    };
+    top = clamp(rect.bottom + gap, margin, window.innerHeight - tooltipH - margin);
+    left = clamp(rect.left + rect.width / 2 - tooltipW / 2, margin, window.innerWidth - tooltipW - margin);
   }
+
+  tooltipPosition.value = {
+    top: `${Math.round(top)}px`,
+    left: `${Math.round(left)}px`
+  };
 };
 
 const hideTooltip = () => { tooltipVisible.value = null; };
+
+onMounted(() => {
+  window.addEventListener('resize', hideTooltip);
+  window.addEventListener('scroll', hideTooltip, true);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', hideTooltip);
+  window.removeEventListener('scroll', hideTooltip, true);
+});
 
 // ── Tooltips HTML (bilingüe ES / PT-BR) ─────────────────────────────────────
 const hviTooltips = computed(() => {

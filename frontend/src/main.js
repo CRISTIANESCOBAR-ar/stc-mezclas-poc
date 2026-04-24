@@ -19,7 +19,11 @@ app.use(VueTippy, {
   defaultProps: {
     placement: 'top',
     allowHTML: true,
-    theme: 'light'
+    theme: 'light',
+    appendTo: () => document.body,
+    popperOptions: {
+      strategy: 'fixed'
+    }
   }
 })
 

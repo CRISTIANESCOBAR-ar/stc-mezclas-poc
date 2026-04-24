@@ -351,21 +351,21 @@
               <thead>
                 <tr>
                   <th class="w-20 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.detailTable.bale') }}</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">SCI</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MST</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MIC</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MAT</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">UHML</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">UI</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">SF</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">STR</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">ELG</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">RD</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">+b</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TIPO</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TrCNT</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TrAR</th>
-                  <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">TRID</th>
+                  <th v-tippy="{ content: hviTooltips.SCI, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">SCI <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.MST, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">MST <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.MIC, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">MIC <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.MAT, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">MAT <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.UHML, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">UHML <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.UI, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">UI <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.SF, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">SF <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.STR, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">STR <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.ELG, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">ELG <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.RD, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">RD <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.PLUS_B, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">+b <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.TIPO, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">TIPO <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.TrCNT, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">TrCNT <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.TrAR, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">TrAR <span class="text-teal-400">ⓘ</span></th>
+                  <th v-tippy="{ content: hviTooltips.TRID, delay: 0, maxWidth: 420, placement: 'bottom-start', interactive: true }" class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider cursor-help">TRID <span class="text-teal-400">ⓘ</span></th>
                 </tr>
               </thead>
             </table>
@@ -662,6 +662,312 @@ import EnsayoHVICompare from './EnsayoHVICompare.vue';
 // (Moved watch/toAuditKey further down to fix initialization error)
 
 // =====================================================
+// TOOLTIPS INFORMATIVOS POR VARIABLE HVI
+// =====================================================
+const hviTooltipsES = {
+  SCI: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">SCI - Spinning Consistency Index</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Fórmula matemática ponderada. La "nota final" del lote.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Excelente: > 140 (Premium)</div></div>
+      <div style="background: #fef3c7; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #f59e0b;"><div style="font-size: 11px; color: #92400e; font-weight: 500;">● Estándar: 100-140</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Pobre: < 100 (Riesgoso)</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">📊 Ponderación:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Da más peso a STR (resistencia) y UHML (longitud). Resume todas las variables en un solo número.</div></div>
+      <div style="background: #f3f4f6; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #374151; font-weight: 600; margin-bottom: 6px;">📎 Clasificación Sugerida:</div><div style="font-size: 10px; color: #6b7280; line-height: 1.4; margin-bottom: 3px;">• <strong>SCI > 135:</strong> Lotes para hilos Flame</div><div style="font-size: 10px; color: #6b7280; line-height: 1.4; margin-bottom: 3px;">• <strong>SCI 110-134:</strong> Lotes para Denim estándar</div><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">• <strong>SCI < 110:</strong> Tramas baja exigencia o mezclas</div></div>
+    </div>
+  `,
+  MST: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">MST - Moisture (Humedad)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">El "termómetro de confianza" del análisis. Fibra higroscópica.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Rango estándar HVI: 6.5% - 8.0%</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ MST Bajo (&lt;6%):</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">Fibra muy seca. HVI reportará fibra más corta y débil de lo real. Medición poco confiable.</div></div>
+      <div style="background: #fff7ed; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #c2410c; font-weight: 600; margin-bottom: 4px;">⚠️ MST Alto (&gt;8%):</div><div style="font-size: 11px; color: #9a3412; line-height: 1.5;">Fibra húmeda. Parecerá más fuerte pero será difícil de limpiar en proceso.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 <strong>Regla:</strong> Por cada 1% de aumento en humedad, STR aumenta ~1 unidad. MST fuera de rango invalida la precisión del HVI.</div></div>
+    </div>
+  `,
+  MIC: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">MIC - Micronaire</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Medida de permeabilidad al aire. Combina finura y madurez.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: 3.7 - 4.2 (Ideal Denim)</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 3.4 (Inmadura) o &gt; 4.9 (Gruesa)</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ MIC Bajo (&lt;3.4):</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">Fibra inmadura que colapsa. Forma Neps (puntos blancos que no se tiñen con índigo).</div></div>
+      <div style="background: #fff7ed; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #c2410c; font-weight: 600; margin-bottom: 4px;">⚠️ MIC Alto (&gt;4.9):</div><div style="font-size: 11px; color: #9a3412; line-height: 1.5;">Fibras muy maduras pero gruesas. Menos fibras en sección transversal = hilo más débil.</div></div>
+    </div>
+  `,
+  MAT: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">MAT - Maturity Index</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Proporción de celulosa en la fibra. Mide desarrollo de pared celular.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: &gt; 0.85 (Fibra "llena")</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 0.75 (Inmadura)</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">👖 Impacto Denim:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">MAT bajo = Hilo moteado después del teñido índigo. Fibras inmaduras reflejan luz diferente.</div></div>
+    </div>
+  `,
+  UHML: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">UHML - Upper Half Mean Length</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Longitud promedio de la mitad más larga de las fibras.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: &gt; 29mm (1.15")</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 26mm (1.05")</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🔧 Aplicación Técnica:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Dicta el ajuste de distancias entre rodillos en la continua de hilar. Un UHML alto permite hilos más finos y resistentes.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 Variación alta entre pacas genera irregularidad de masa (hilo con partes gruesas y delgadas no deseadas).</div></div>
+    </div>
+  `,
+  UI: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">UI - Uniformity Index</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Mide qué tan cerca está la longitud media de las fibras más largas.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: &gt; 83%</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 79% (&lt; 78% = roturas en tejeduría)</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🔍 Diagnóstico:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Un UI bajo indica que el algodón fue maltratado en el desmote, rompiendo fibras.</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ Impacto Visual:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">UI &lt; 78% = Hilo "sucio" visualmente + Roturas frecuentes en telar.</div></div>
+    </div>
+  `,
+  SF: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">SF - Short Fiber Index</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Fibras menores a 12.7 mm. No se enganchan bien en el hilo.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: &lt; 6%</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &gt; 12%</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ Mayor Enemigo:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">Genera "fly" (pelusa volando) en la planta, reduce eficiencia y ensucia el ambiente.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 <strong>Hilos Flame:</strong> SF alto (&gt;10%) hace que el hilo se desintegre en los puntos de transición del efecto flammé.</div></div>
+    </div>
+  `,
+  STR: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">STR - Strength (Tenacidad)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Resistencia a la rotura medida rompiendo un mazo de fibras (bundle).</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: &gt; 30 g/tex</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 24 g/tex (&lt; 25 para Denim)</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">📊 Regla de Oro:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">La resistencia del hilo es aproximadamente el 50% de la resistencia de la fibra.</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">👖 Impacto Denim:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">El Denim se somete a lavados agresivos (stone wash, enzimas). STR &lt; 25 = prenda pode romper nas costuras.</div></div>
+    </div>
+  `,
+  ELG: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">ELG - Elongation (Elasticidad)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Capacidad de "resorte" de la fibra. Estiramiento antes de rotura.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: &gt; 7%</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 5%</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🎯 Ventaja Mecánica:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Absorbe mejor los impactos mecánicos en el telar. Reduce roturas.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 Entre dos algodones con mismo STR, el que tenga mayor ELG siempre trabajará mejor.</div></div>
+    </div>
+  `,
+  RD: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">Rd - Reflectance (Brillo)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Mide el brillo: blanco vs gris. Escala de Nickerson-Hunter.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: 75 - 80 (Bright)</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 70 (Grisáceo)</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🎨 Combinación con +b:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Rd y +b juntos definen el TIPO en carta Nickerson-Hunter. TIPO 41 = Estándar Denim.</div></div>
+    </div>
+  `,
+  PLUS_B: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">+b - Yellowness (Amarillamiento)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Mide degradación: blanco vs amarillo. Indica envejecimiento.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: 7 - 9</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &gt; 12 (Muy amarillento)</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ Causa:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">+b alto = Algodón expuesto a lluvia o calor excesivo en campo. Debilita paredes de fibra.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 <strong>Impacto Índigo:</strong> +b alto altera el tono final del azul, "ensuciando" el color deseado en Denim.</div></div>
+    </div>
+  `,
+  TIPO: `
+    <div style="padding: 12px; font-family: system-ui, -apple-system, sans-serif;">
+      <div style="font-weight: 600; font-size: 14px; color: #0f766e; margin-bottom: 8px; border-bottom: 2px solid #14b8a6; padding-bottom: 4px;">TIPO - Cotton Grade</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 8px; line-height: 1.5;">Clasificación comercial basada en color, basura y preparación.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: 11, 21</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 6px;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">● Estándar: 31, 41</div></div>
+      <div style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 8px;">Grupo: Color y Apariencia</div>
+    </div>
+  `,
+  TrCNT: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">TrCNT - Trash Count (Cantidad)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Número de partículas de basura detectadas en la muestra.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: &lt; 15 partículas</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &gt; 50 partículas</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🔌 Interpretación:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">TrCNT alto + TrAR bajo = Basura muy fragmentada (pimienta), MUY difícil de limpiar en apertura.</div></div>
+    </div>
+  `,
+  TrAR: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">TrAR - Trash Area (Área)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Área superficial cubierta por basura en la muestra (%).</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Óptimo: &lt; 0.20%</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &gt; 0.60%</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🔍 Análisis Combinado:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">TrCNT bajo + TrAR alto = Pocas partículas pero grandes (hojas). Más fácil de limpiar que pimienta.</div></div>
+    </div>
+  `,
+  TRID: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">TRID - Trash ID / Grade</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Clasificación visual del 1 al 7. Basado principalmente en TrAR.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ 1-2: Limpio (Ideal hilos finos)</div></div>
+      <div style="background: #fef3c7; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #f59e0b;"><div style="font-size: 11px; color: #92400e; font-weight: 500;">● 4-5: Manejable para Denim</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ 6-7: Muy sucio (Evitar)</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 <strong>Aplicación:</strong> TRID 4-5 es aceptable para Denim. Para hilos Flame o finos, buscar TRID 1-2.</div></div>
+    </div>
+  `
+};
+
+const hviTooltipsPT = {
+  SCI: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">SCI - Spinning Consistency Index</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Fórmula matemática ponderada. A "nota final" do lote.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Excelente: > 140 (Premium)</div></div>
+      <div style="background: #fef3c7; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #f59e0b;"><div style="font-size: 11px; color: #92400e; font-weight: 500;">● Padrão: 100-140</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Fraco: < 100 (Arriscado)</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">📊 Ponderação:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Dá mais peso a STR (resistência) e UHML (comprimento). Resume todas as variáveis em um único número.</div></div>
+      <div style="background: #f3f4f6; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #374151; font-weight: 600; margin-bottom: 6px;">📎 Classificação Sugerida:</div><div style="font-size: 10px; color: #6b7280; line-height: 1.4; margin-bottom: 3px;">• <strong>SCI > 135:</strong> Lotes para fios Flame</div><div style="font-size: 10px; color: #6b7280; line-height: 1.4; margin-bottom: 3px;">• <strong>SCI 110-134:</strong> Lotes para Denim padrão</div><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">• <strong>SCI < 110:</strong> Tramas de baixa exigência ou misturas</div></div>
+    </div>
+  `,
+  MST: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">MST - Moisture (Umidade)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">O "termômetro de confiança" da análise. Fibra higroscópica.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Faixa padrão HVI: 6,5% - 8,0%</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ MST Baixo (&lt;6%):</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">Fibra muito seca. O HVI reportará fibra mais curta e fraca do que o real. Medição pouco confiável.</div></div>
+      <div style="background: #fff7ed; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #c2410c; font-weight: 600; margin-bottom: 4px;">⚠️ MST Alto (&gt;8%):</div><div style="font-size: 11px; color: #9a3412; line-height: 1.5;">Fibra úmida. Parecerá mais forte mas será difícil de limpar no processo.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 <strong>Regra:</strong> A cada 1% de aumento na umidade, o STR aumenta ~1 unidade. MST fora da faixa invalida a precisão do HVI.</div></div>
+    </div>
+  `,
+  MIC: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">MIC - Micronaire</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Medida de permeabilidade ao ar. Combina finura e maturidade.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: 3,7 - 4,2 (Ótimo para Denim)</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 3,4 (Imatura) ou &gt; 4,9 (Grossa)</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ MIC Baixo (&lt;3,4):</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">Fibra imatura que colapsa. Forma Neps (pontos brancos que não fixam o índigo).</div></div>
+      <div style="background: #fff7ed; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #c2410c; font-weight: 600; margin-bottom: 4px;">⚠️ MIC Alto (&gt;4,9):</div><div style="font-size: 11px; color: #9a3412; line-height: 1.5;">Fibras muito maduras mas grossas. Menos fibras na seção transversal = fio mais fraco.</div></div>
+    </div>
+  `,
+  MAT: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">MAT - Maturity Index</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Proporção de celulose na fibra. Mede o desenvolvimento da parede celular.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: &gt; 0,85 (Fibra "cheia")</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 0,75 (Imatura)</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">👖 Impacto Denim:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">MAT baixo = Fio manchado após o tingimento índigo. Fibras imaturas refletem luz de forma diferente.</div></div>
+    </div>
+  `,
+  UHML: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">UHML - Upper Half Mean Length</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Comprimento médio da metade mais longa das fibras.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: &gt; 29mm (1,15")</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 26mm (1,05")</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🔧 Aplicação Técnica:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Define o ajuste das distâncias entre rolos na filatória. Um UHML alto permite fios mais finos e resistentes.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 Alta variação entre fardos gera irregularidade de massa (fio com partes grossas e finas indesejadas).</div></div>
+    </div>
+  `,
+  UI: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">UI - Uniformity Index</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Mede quão próximo está o comprimento médio das fibras mais longas.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: &gt; 83%</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 79% (&lt; 78% = quebras na tecelagem)</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🔍 Diagnóstico:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">UI baixo indica que o algodão foi danificado no descaroçamento, quebrando fibras.</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ Impacto Visual:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">UI &lt; 78% = Fio "sujo" visualmente + Quebras frequentes no tear.</div></div>
+    </div>
+  `,
+  SF: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">SF - Short Fiber Index</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Fibras menores que 12,7 mm. Não se prendem bem ao fio.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: &lt; 6%</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &gt; 12%</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ Maior Inimigo:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">Gera "fly" (penugem voando) na planta, reduz eficiência e suja o ambiente.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 <strong>Fios Flame:</strong> SF alto (&gt;10%) faz o fio se desfazer nos pontos de transição do efeito flamê.</div></div>
+    </div>
+  `,
+  STR: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">STR - Strength (Tenacidade)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Resistência à ruptura medida rompendo um feixe de fibras (bundle).</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: &gt; 30 g/tex</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 24 g/tex (&lt; 25 para Denim)</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">📊 Regra de Ouro:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">A resistência do fio é aproximadamente 50% da resistência da fibra.</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">👖 Impacto Denim:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">O Denim é submetido a lavagens agressivas (stone wash, enzimas). STR &lt; 25 = peça pode rasgar nas costuras.</div></div>
+    </div>
+  `,
+  ELG: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">ELG - Elongation (Elasticidade)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Capacidade de "mola" da fibra. Alongamento antes da ruptura.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: &gt; 7%</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 5%</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🎯 Vantagem Mecânica:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Absorve melhor os impactos mecânicos no tear. Reduz quebras.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 Entre dois algodões com mesmo STR, o de maior ELG sempre trabalhará melhor.</div></div>
+    </div>
+  `,
+  RD: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">Rd - Reflectance (Brilho)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Mede o brilho: branco vs cinza. Escala de Nickerson-Hunter.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: 75 - 80 (Bright)</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &lt; 70 (Acinzentado)</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🎨 Combinação com +b:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">Rd e +b juntos definem o TIPO na carta Nickerson-Hunter. TIPO 41 = Padrão Denim.</div></div>
+    </div>
+  `,
+  PLUS_B: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">+b - Yellowness (Amarelamento)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Mede degradação: branco vs amarelo. Indica envelhecimento.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: 7 - 9</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &gt; 12 (Muito amarelado)</div></div>
+      <div style="background: #fef3c7; padding: 10px; border-radius: 6px; margin-bottom: 8px;"><div style="font-size: 11px; color: #92400e; font-weight: 600; margin-bottom: 4px;">⚠️ Causa:</div><div style="font-size: 11px; color: #78350f; line-height: 1.5;">+b alto = Algodão exposto à chuva ou calor excessivo no campo. Enfraquece as paredes da fibra.</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 <strong>Impacto Índigo:</strong> +b alto altera o tom final do azul, "sujando" a cor desejada no Denim.</div></div>
+    </div>
+  `,
+  TIPO: `
+    <div style="padding: 12px; font-family: system-ui, -apple-system, sans-serif;">
+      <div style="font-weight: 600; font-size: 14px; color: #0f766e; margin-bottom: 8px; border-bottom: 2px solid #14b8a6; padding-bottom: 4px;">TIPO - Cotton Grade</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 8px; line-height: 1.5;">Classificação comercial baseada em cor, impurezas e preparação.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: 11, 21</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 6px;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">● Padrão: 31, 41</div></div>
+      <div style="font-size: 10px; color: #64748b; font-style: italic; margin-top: 8px;">Grupo: Cor e Aparência</div>
+    </div>
+  `,
+  TrCNT: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">TrCNT - Trash Count (Quantidade)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Número de partículas de impureza detectadas na amostra.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: &lt; 15 partículas</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &gt; 50 partículas</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🔌 Interpretação:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">TrCNT alto + TrAR baixo = Impureza muito fragmentada (pimenta), MUITO difícil de limpar na abertura.</div></div>
+    </div>
+  `,
+  TrAR: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">TrAR - Trash Area (Área)</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Área superficial coberta por impurezas na amostra (%).</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ Ideal: &lt; 0,20%</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ Crítico: &gt; 0,60%</div></div>
+      <div style="background: #eff6ff; padding: 10px; border-radius: 6px;"><div style="font-size: 11px; color: #1e40af; font-weight: 600; margin-bottom: 4px;">🔍 Análise Combinada:</div><div style="font-size: 11px; color: #475569; line-height: 1.5;">TrCNT baixo + TrAR alto = Poucas partículas mas grandes (folhas). Mais fácil de limpar do que pimenta.</div></div>
+    </div>
+  `,
+  TRID: `
+    <div style="padding: 14px; font-family: system-ui, -apple-system, sans-serif; max-width: 520px;">
+      <div style="font-weight: 700; font-size: 15px; color: #0f766e; margin-bottom: 10px; border-bottom: 2px solid #14b8a6; padding-bottom: 6px;">TRID - Trash ID / Grade</div>
+      <div style="font-size: 12px; color: #334155; margin-bottom: 10px; line-height: 1.6; font-weight: 600;">Classificação visual de 1 a 7. Baseada principalmente no TrAR.</div>
+      <div style="background: #f0fdfa; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #14b8a6;"><div style="font-size: 11px; color: #059669; font-weight: 500;">✓ 1-2: Limpo (Ideal para fios finos)</div></div>
+      <div style="background: #fef3c7; padding: 8px; border-radius: 6px; margin-bottom: 6px; border-left: 3px solid #f59e0b;"><div style="font-size: 11px; color: #92400e; font-weight: 500;">● 4-5: Aceitável para Denim</div></div>
+      <div style="background: #fef2f2; padding: 8px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #ef4444;"><div style="font-size: 11px; color: #dc2626; font-weight: 500;">✗ 6-7: Muito sujo (Evitar)</div></div>
+      <div style="background: #f3f4f6; padding: 8px; border-radius: 6px;"><div style="font-size: 10px; color: #6b7280; line-height: 1.4;">💡 <strong>Aplicação:</strong> TRID 4-5 é aceitável para Denim. Para fios Flame ou finos, buscar TRID 1-2.</div></div>
+    </div>
+  `
+};
+
+const hviTooltips = computed(() =>
+  locale.value === 'pt-BR' ? hviTooltipsPT : hviTooltipsES
+);
+
+// =====================================================
+// =====================================================
 // PARÁMETROS HVI INTERNACIONALES PARA CLASIFICACIÓN
 // =====================================================
 const PARAMETROS_HVI_INTERNACIONAL = {
@@ -812,7 +1118,7 @@ const toAuditKey = (k) => {
 };
 
 // State
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
 const folderPath = ref(localStorage.getItem('hvi_last_folder_path') || '');
 const mostrarAnalizador = ref(false);
