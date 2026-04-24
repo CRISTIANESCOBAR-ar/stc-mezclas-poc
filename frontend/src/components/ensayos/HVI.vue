@@ -5,7 +5,7 @@
       <div class="flex flex-col ml-8">
         <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
           <span class="p-1.5 bg-blue-100 text-blue-600 rounded-lg">🧬</span>
-          Carga de Archivos HVI (Mistura)
+          {{ t('hvi.title') }}
         </h2>
       </div>
       
@@ -13,17 +13,17 @@
         <!-- Acción: Comparación Muestra -->
         <button 
           @click="mostrarComparativa = true"
-          title="Ver Comparativa Muestra vs Entrega"
+          v-tippy="{ content: t('hvi.actions.compareTitle'), theme: 'light', placement: 'bottom' }"
           class="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-lg transition-all shadow-lg shadow-indigo-200 active:scale-95"
         >
-          <span>⚖️ Comparar Muestras</span>
+          <span>{{ t('hvi.actions.compareSamples') }}</span>
         </button>
 
         <div class="relative flex-1 group max-w-md">
           <input 
             v-model="folderPath"
             type="text" 
-            placeholder="Ruta de la carpeta..."
+            :placeholder="t('hvi.folder.placeholder')"
             class="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-slate-50 group-hover:bg-white"
             @change="saveFolderPath"
           />
@@ -36,7 +36,7 @@
 
         <button 
           @click="triggerFolderSelector"
-          title="Seleccionar Carpeta"
+          v-tippy="{ content: t('hvi.folder.selectTitle'), theme: 'light', placement: 'bottom' }"
           class="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all shadow-lg shadow-blue-200 shrink-0 active:scale-95"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -47,7 +47,7 @@
         <button 
           v-if="hasPersistedHandle"
           @click="refreshFolder"
-          title="Actualizar lista"
+          v-tippy="{ content: t('hvi.folder.refreshTitle'), theme: 'light', placement: 'bottom' }"
           class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg border border-slate-300 transition-all shrink-0 active:scale-95"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -58,7 +58,7 @@
         <button 
           @click="processFiles"
           :disabled="!filesList.length"
-          :title="filesList.length ? `Procesar (${filesList.length} archivos)` : 'Sin archivos'"
+          v-tippy="{ content: filesList.length ? t('hvi.actions.processWithCount', { n: filesList.length }) : t('hvi.actions.noFiles'), theme: 'light', placement: 'bottom' }"
           class="p-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-300 text-white rounded-lg transition-all shadow-lg shadow-green-200 shrink-0 active:scale-95"
         >
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -74,16 +74,16 @@
       <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col">
         <!-- Radiobutton Filters -->
         <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-4 shrink-0">
-          <span class="text-[10px] font-bold text-slate-500 uppercase">Mostrar:</span>
+          <span class="text-[10px] font-bold text-slate-500 uppercase">{{ t('hvi.filters.show') }}</span>
           <div class="flex items-center gap-3">
-            <label v-for="opt in ['Todos', 'No guardados', 'Guardados']" :key="opt" class="flex items-center gap-1.5 cursor-pointer group">
+            <label v-for="opt in filterStatusOptions" :key="opt.value" class="flex items-center gap-1.5 cursor-pointer group">
               <input 
                 type="radio" 
                 v-model="filterStatus" 
-                :value="opt" 
+                :value="opt.value" 
                 class="w-3 h-3 text-blue-600 focus:ring-blue-500 border-slate-300"
               />
-              <span class="text-[11px] font-medium text-slate-600 group-hover:text-blue-600 transition-colors">{{ opt }}</span>
+              <span class="text-[11px] font-medium text-slate-600 group-hover:text-blue-600 transition-colors">{{ opt.label }}</span>
             </label>
           </div>
         </div>
@@ -92,17 +92,17 @@
           <table class="w-full text-left border-collapse table-fixed">
             <thead class="sticky top-0 z-10 bg-slate-100 border-b border-slate-200 shadow-sm">
               <tr>
-                <th class="w-8 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">Tipo</th>
-                <th class="w-10 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">Lote</th>
-                <th class="w-30 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">Prov.</th>
-                <th class="w-10 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">Grado</th>
-                <th class="w-10 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">Muestra</th>
-                <th class="w-8 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider text-center">Cant.</th>
-                <th class="w-11 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">Color</th>
-                <th class="w-8 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider text-center">Cort</th>
-                <th class="w-120 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">Obs</th>
-                <th class="w-14 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider text-center">Acción</th>
-                <th class="w-10 px-1 py-2 text-xs font-bold text-slate-700 tracking-wider text-center">Estado</th>
+                <th class="w-8 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.table.type') }}</th>
+                <th class="w-10 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.table.lot') }}</th>
+                <th class="w-30 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.table.provider') }}</th>
+                <th class="w-10 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.table.grade') }}</th>
+                <th class="w-10 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.table.sample') }}</th>
+                <th class="w-8 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider text-center">{{ t('hvi.table.qty') }}</th>
+                <th class="w-11 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.table.color') }}</th>
+                <th class="w-8 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider text-center">{{ t('hvi.table.cut') }}</th>
+                <th class="w-120 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.table.obs') }}</th>
+                <th class="w-14 px-1 py-3 text-xs font-bold text-slate-700 tracking-wider text-center">{{ t('hvi.table.action') }}</th>
+                <th class="w-10 px-1 py-2 text-xs font-bold text-slate-700 tracking-wider text-center">{{ t('hvi.table.status') }}</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
@@ -122,7 +122,7 @@
                   </span>
                 </td>
                 <td class="px-1 py-2 text-xs font-mono text-slate-700">{{ item.loteEntrada }}</td>
-                <td class="px-1 py-2 text-xs text-slate-600 truncate" :title="item.proveedor">{{ item.proveedor }}</td>
+                <td class="px-1 py-2 text-xs text-slate-600 truncate" v-tippy="{ content: item.proveedor, theme: 'light', placement: 'top' }">{{ item.proveedor }}</td>
                 <td class="px-1 py-2 text-xs text-slate-600 truncate">{{ item.grado }}</td>
                 <td class="px-1 py-1 text-xs" @click.stop>
                   <input
@@ -169,21 +169,32 @@
                 </td>
                 <td class="px-1 py-1 text-xs text-center" @click.stop>
                   <div class="flex items-center justify-center gap-1.5">
+                    <!-- Guardar (solo si no procesado) -->
                     <button 
+                      v-if="item.estado !== 'Procesado'"
                       @click="handleSaveFromRow(item)"
-                      :disabled="item.estado === 'Procesado'"
-                      v-tippy="{ content: 'Guardar ensayo' }"
-                      class="p-1.5 rounded-md transition-all sm:p-1"
-                      :class="item.estado === 'Procesado' ? 'text-slate-300 cursor-not-allowed' : 'text-green-600 hover:bg-green-50 active:scale-95 border border-transparent hover:border-green-200'"
+                      v-tippy="{ content: t('hvi.tooltips.saveTest') }"
+                      class="p-1.5 rounded-md transition-all sm:p-1 text-green-600 hover:bg-green-50 active:scale-95 border border-transparent hover:border-green-200"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                       </svg>
                     </button>
+                    <!-- Re-guardar (solo si ya procesado) -->
+                    <button 
+                      v-else
+                      @click="handleSaveFromRow(item)"
+                      v-tippy="{ content: t('hvi.tooltips.resaveTest') }"
+                      class="p-1.5 rounded-md transition-all sm:p-1 text-amber-500 hover:bg-amber-50 active:scale-95 border border-transparent hover:border-amber-300"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    </button>
                     <button 
                       @click="handleEditFromRow(item)"
                       :disabled="item.estado !== 'Procesado'"
-                      v-tippy="{ content: 'Editar metadatos' }"
+                      v-tippy="{ content: t('hvi.tooltips.editMetadata') }"
                       class="p-1.5 rounded-md transition-all sm:p-1"
                       :class="item.estado !== 'Procesado' ? 'text-slate-200 cursor-not-allowed' : 'text-blue-600 hover:bg-blue-50 active:scale-95 border border-transparent hover:border-blue-200'"
                     >
@@ -194,12 +205,12 @@
                   </div>
                 </td>
                 <td class="px-1 py-2 text-xs text-center">
-                  <div v-if="item.estado === 'Procesado'" title="Guardado" class="flex justify-center">
+                  <div v-if="item.estado === 'Procesado'" v-tippy="{ content: t('hvi.status.saved'), theme: 'light', placement: 'left' }" class="flex justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                     </svg>
                   </div>
-                  <div v-else title="Pendiente de guardar" class="flex justify-center">
+                  <div v-else v-tippy="{ content: t('hvi.status.pendingSave'), theme: 'light', placement: 'left' }" class="flex justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -209,7 +220,7 @@
               
               <tr v-if="parsedFiles.length === 0">
                 <td colspan="10" class="px-4 py-16 text-center">
-                  <p class="text-xs text-slate-400">No hay archivos</p>
+                  <p class="text-xs text-slate-400">{{ t('hvi.messages.noFiles') }}</p>
                 </td>
               </tr>
             </tbody>
@@ -218,7 +229,7 @@
         
         <!-- Small Footer for Left Table -->
         <div class="bg-slate-50 border-t border-slate-200 px-3 py-2 shrink-0 flex justify-between items-center text-[10px]">
-          <span class="text-slate-500">{{ parsedFiles.length }} archivos</span>
+          <span class="text-slate-500">{{ t('hvi.messages.filesCount', { n: parsedFiles.length }) }}</span>
         </div>
       </div>
 
@@ -228,30 +239,44 @@
           <div v-if="selectedFileName" class="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center shrink-0">
           <div class="flex items-center gap-4 flex-1 flex-wrap">
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tipo</span>
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{{ t('hvi.table.type') }}</span>
               <span :class="['px-2 py-0.5 rounded-full text-xs font-bold', selectedFileItem?.tipo === 'Ent' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600']">
                 {{ selectedFileItem?.tipo ?? '—' }}
               </span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lote</span>
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{{ t('hvi.table.lot') }}</span>
               <span class="text-xs font-mono font-bold text-slate-700">{{ selectedFileItem?.loteEntrada ?? '—' }}</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Prov.</span>
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{{ t('hvi.table.provider') }}</span>
               <span class="text-xs font-medium text-slate-700">{{ selectedFileItem?.proveedor ?? '—' }}</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Grado</span>
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{{ t('hvi.table.grade') }}</span>
               <span class="text-xs font-medium text-slate-700">{{ selectedFileItem?.grado ?? '—' }}</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Color</span>
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{{ t('hvi.table.color') }}</span>
               <span class="text-xs font-medium text-slate-700">{{ selectedFileItem?.color ?? '—' }}</span>
             </div>
             <div class="flex items-center gap-1.5">
-              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Cort</span>
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{{ t('hvi.table.cut') }}</span>
               <span class="text-xs font-medium text-slate-700">{{ selectedFileItem?.cort ?? '—' }}</span>
+            </div>
+            <div v-if="parseRiskState.level !== 'normal'" class="flex items-center gap-1.5">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{{ t('hvi.parseWarnings.riskLabel') }}</span>
+              <span
+                :class="[
+                  'px-2 py-0.5 rounded-full text-[10px] font-bold',
+                  parseRiskState.level === 'critical'
+                    ? 'bg-red-100 text-red-700 border border-red-200'
+                    : 'bg-amber-100 text-amber-700 border border-amber-200'
+                ]"
+                v-tippy="{ content: parseRiskState.title, theme: 'light', placement: 'top' }"
+              >
+                {{ parseRiskState.badgeText }}
+              </span>
             </div>
           </div>
           <!-- Botones de Acción -->
@@ -261,7 +286,7 @@
             <button 
               v-if="hviDetails.length > 0"
               @click="exportarExcel"
-              title="Exportar a Excel"
+              v-tippy="{ content: t('hvi.actions.exportExcel'), theme: 'light', placement: 'bottom' }"
               class="flex items-center justify-center p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-all shadow-md active:scale-95"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -272,10 +297,7 @@
             <!-- Selector Modelo -->
             <div v-if="hviDetails.length > 0" class="relative group">
               <select v-model="selectedModel" class="appearance-none pl-2 pr-5 py-1.5 text-[10px] uppercase font-bold bg-white border border-indigo-200 rounded-lg text-indigo-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer hover:border-indigo-400 transition-colors">
-                <option value="gemini-3-pro-preview">Gemini 3 Pro</option>
-                <option value="gemini-3-flash-preview">Gemini 3 Flash</option>
-                <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-                <option value="gemini-2.0-flash-exp">Gemini 2.0 Exp</option>
+                <option v-for="m in modelOptions" :key="m.value" :value="m.value">{{ m.label }}</option>
               </select>
               <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-indigo-400 group-hover:text-indigo-600">
                 <svg class="fill-current h-3 w-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
@@ -290,7 +312,7 @@
               class="flex items-center gap-1.5 px-3 py-1.5 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
             >
               <span v-if="cargandoAI" class="animate-spin text-[10px]">🌀</span>
-              <span v-else>✨ Análisis IA</span>
+              <span v-else>{{ t('hvi.actions.aiAnalysis') }}</span>
             </button>
 
              <!-- NUEVO: Botón Auditoría Contrato -->
@@ -299,10 +321,10 @@
               @click="mostrarVerificarContrato = true"
               :disabled="loadingAudit"
               class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded-lg transition-all shadow-md active:scale-95 disabled:opacity-50"
-              title="Verificar contra Contrato y Tolerancias"
+              v-tippy="{ content: t('hvi.actions.verifyContractTitle'), theme: 'light', placement: 'bottom' }"
             >
               <span v-if="loadingAudit" class="animate-spin text-[10px]">⏳</span>
-              <span v-else>📋 Verificar Contrato</span>
+              <span v-else>{{ t('hvi.actions.verifyContract') }}</span>
             </button>
 
             <!-- Botón Analizar -->
@@ -314,7 +336,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
-            Análisis Técnico
+            {{ t('hvi.actions.techAnalysis') }}
           </button>
         </div>
       </div>
@@ -328,7 +350,7 @@
             <table class="w-full text-left border-separate border-spacing-0 table-fixed min-w-300">
               <thead>
                 <tr>
-                  <th class="w-20 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">Fardo</th>
+                  <th class="w-20 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">{{ t('hvi.detailTable.bale') }}</th>
                   <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">SCI</th>
                   <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MST</th>
                   <th class="w-16 px-4 py-3 text-xs font-bold text-slate-700 tracking-wider">MIC</th>
@@ -359,16 +381,25 @@
           <table class="details-table w-full text-left border-separate border-spacing-0 table-fixed min-w-300">
             <tbody class="divide-y divide-slate-100">
               <tr v-for="(row, idx) in hviDetails" :key="idx" 
+                  :id="`hvi-detail-row-${idx + 1}`"
                   :class="[
                     'hover:bg-slate-50 transition-colors',
-                    clasificarFila(row).alertas.some(a => a.tipo === 'bandera-roja') ? 'ring-2 ring-red-400 ring-inset' : ''
+                    clasificarFila(row).alertas.some(a => a.tipo === 'bandera-roja') ? 'ring-2 ring-red-400 ring-inset' : '',
+                    row._parseIssues?.length ? 'bg-amber-50/70 ring-1 ring-amber-300 ring-inset' : ''
                   ]">
                 <td class="px-4 py-2 text-xs font-mono text-slate-700 relative">
                   {{ row.fardo }}
+                  <span
+                    v-if="row._parseIssues?.length"
+                    class="ml-1 inline-flex items-center rounded-full border border-amber-300 bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-700"
+                    v-tippy="{ content: t('hvi.parseWarnings.rowIssueTooltip', { line: row._sourceLine, fields: row._parseIssues.join(', ') }), theme: 'light', placement: 'top' }"
+                  >
+                    {{ t('hvi.parseWarnings.rowIssueTag') }}
+                  </span>
                   <!-- Indicadores de alerta -->
                   <div v-if="clasificarFila(row).alertas.length" class="absolute -right-1 top-0 flex flex-col gap-0.5">
                     <span v-for="(alerta, ai) in clasificarFila(row).alertas" :key="ai"
-                          :title="alerta.mensaje"
+                          v-tippy="{ content: alerta.mensaje, theme: 'light', placement: 'left' }"
                           :class="[
                             'w-2.5 h-2.5 rounded-full cursor-help',
                             alerta.tipo === 'bandera-roja' ? 'bg-red-500' : '',
@@ -399,7 +430,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mb-2 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
                     </svg>
-                    <p class="text-sm">Seleccione un archivo de la izquierda para ver el detalle</p>
+                    <p class="text-sm">{{ t('hvi.messages.selectFileForDetail') }}</p>
                   </div>
                 </td>
               </tr>
@@ -407,48 +438,48 @@
             <!-- Footer fijo con promedios -->
             <tfoot v-if="hviDetails.length" class="sticky bottom-0 z-10 bg-blue-50 border-t-2 border-blue-200">
               <tr class="font-bold text-blue-900 shadow-[0_-2px_4px_rgba(0,0,0,0.05)]">
-                <td class="px-4 py-3 text-xs bg-blue-100/50">n = {{ hviDetails.length }} (Prom)</td>
-                <td :title="getAuditTooltip(toAuditKey('sci'))" 
+                <td class="px-4 py-3 text-xs bg-blue-100/50">{{ t('hvi.messages.avgRow', { n: hviDetails.length }) }}</td>
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('sci')), theme: 'light', placement: 'top' }" 
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('sci'), getClaseColor(clasificarMayorMejor(hviAverages.sci, PARAMETROS_HVI_INTERNACIONAL.SCI)))]">
                     {{ hviAverages.sci }}
                 </td>
                 <td class="px-4 py-3 text-xs">{{ hviAverages.mst }}</td>
-                <td :title="getAuditTooltip(toAuditKey('mic'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('mic')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('mic'), getClaseColor(clasificarMIC(hviAverages.mic)))]">
                     {{ hviAverages.mic }}
                 </td>
                 <td class="px-4 py-3 text-xs">{{ hviAverages.mat }}</td>
-                <td :title="getAuditTooltip(toAuditKey('uhml'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('uhml')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('uhml'), getClaseColor(clasificarMayorMejor(hviAverages.uhml, PARAMETROS_HVI_INTERNACIONAL.UHML)))]">
                     {{ hviAverages.uhml }}
                 </td>
-                <td :title="getAuditTooltip(toAuditKey('ui'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('ui')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('ui'), getClaseColor(clasificarMayorMejor(hviAverages.ui, PARAMETROS_HVI_INTERNACIONAL.UI)))]">
                     {{ hviAverages.ui }}
                 </td>
-                <td :title="getAuditTooltip(toAuditKey('sf'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('sf')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('sf'), getClaseColor(clasificarMenorMejor(hviAverages.sf, PARAMETROS_HVI_INTERNACIONAL.SF)))]">
                     {{ hviAverages.sf }}
                 </td>
-                <td :title="getAuditTooltip(toAuditKey('str'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('str')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('str'), getClaseColor(clasificarMayorMejor(hviAverages.str, PARAMETROS_HVI_INTERNACIONAL.STR)))]">
                     {{ hviAverages.str }}
                 </td>
                 <td class="px-4 py-3 text-xs">{{ hviAverages.elg }}</td>
-                <td :title="getAuditTooltip(toAuditKey('rd'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('rd')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('rd'), getClaseColor(clasificarMayorMejor(hviAverages.rd, PARAMETROS_HVI_INTERNACIONAL.RD)))]">
                     {{ hviAverages.rd }}
                 </td>
-                <td :title="getAuditTooltip(toAuditKey('plusB'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('plusB')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('plusB'), getClaseColor(clasificarMenorMejor(hviAverages.plusB, PARAMETROS_HVI_INTERNACIONAL.PLUS_B)))]">
                     {{ hviAverages.plusB }}
                 </td>
                 <td class="px-4 py-3 text-xs">{{ hviAverages.tipo }}</td>
-                <td :title="getAuditTooltip(toAuditKey('trCnt'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('trCnt')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('trCnt'), '')]">
                     {{ hviAverages.trCnt }}
                 </td>
-                <td :title="getAuditTooltip(toAuditKey('trAr'))"
+                <td v-tippy="{ content: getAuditTooltip(toAuditKey('trAr')), theme: 'light', placement: 'top' }"
                     :class="['px-4 py-3 text-xs', getAuditClass(toAuditKey('trAr'), getClaseColor(clasificarMenorMejor(hviAverages.trAr, PARAMETROS_HVI_INTERNACIONAL.TRAR)))]">
                     {{ hviAverages.trAr }}
                 </td>
@@ -461,15 +492,15 @@
         <!-- Leyenda de clasificación HVI -->
         <div v-if="hviDetails.length" class="mt-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200">
           <div class="flex flex-wrap items-center gap-4 text-xs">
-            <span class="font-semibold text-slate-600">Clasificación:</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-100 border border-green-300"></span> Excelente</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-50 border border-yellow-300"></span> Aceptable</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-orange-100 border border-orange-300"></span> Crítico</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-100 border border-red-300"></span> Fuera de rango</span>
-            <span class="border-l border-slate-300 pl-4 font-semibold text-slate-600">Alertas:</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Bandera Roja (STR/SF)</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500"></span> Riesgo Teñido (MIC)</span>
-            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Fibra Opaca (RD)</span>
+            <span class="font-semibold text-slate-600">{{ t('hvi.legend.classification') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-100 border border-green-300"></span> {{ t('hvi.legend.excellent') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-50 border border-yellow-300"></span> {{ t('hvi.legend.acceptable') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-orange-100 border border-orange-300"></span> {{ t('hvi.legend.critical') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-red-100 border border-red-300"></span> {{ t('hvi.legend.outOfRange') }}</span>
+            <span class="border-l border-slate-300 pl-4 font-semibold text-slate-600">{{ t('hvi.legend.alerts') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> {{ t('hvi.legend.redFlag') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-purple-500"></span> {{ t('hvi.legend.dyeRisk') }}</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-amber-500"></span> {{ t('hvi.legend.opaqueFiber') }}</span>
           </div>
           <!-- Resumen de alertas -->
           <div v-if="resumenAlertas.total > 0" class="mt-2 pt-2 border-t border-slate-200 flex flex-wrap gap-3 text-xs">
@@ -482,6 +513,22 @@
             <span v-if="resumenAlertas.fibraOpaca" class="px-2 py-1 bg-amber-100 text-amber-700 rounded font-medium">
               {{ resumenAlertas.fibraOpaca }} pacas con Fibra Opaca
             </span>
+          </div>
+
+          <div v-if="detailParseIssueRows.length" class="mt-2 pt-2 border-t border-slate-200">
+            <p class="text-xs font-semibold text-amber-800 mb-1">{{ t('hvi.parseWarnings.detailRowsTitle') }}</p>
+            <div class="flex flex-wrap gap-2 text-xs">
+              <button
+                v-for="issue in detailParseIssueRows"
+                :key="`issue-${issue.detailRow}`"
+                type="button"
+                @click="scrollToDetailRow(issue.detailRow)"
+                class="px-2 py-1 rounded-lg border border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 transition-colors"
+                v-tippy="{ content: t('hvi.parseWarnings.rowIssueTooltip', { line: issue.sourceLine, fields: issue.fields.join(', ') }), theme: 'light', placement: 'top' }"
+              >
+                {{ t('hvi.parseWarnings.detailRowItem', { row: issue.detailRow, fardo: issue.fardo }) }}
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -577,8 +624,8 @@
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh]">
           <div class="px-6 py-4 bg-linear-to-br from-purple-700 via-indigo-800 to-blue-900 text-white flex justify-between items-center">
             <div>
-              <h3 class="font-bold text-base">Gemini 3: Predicción Técnica</h3>
-              <p class="text-[10px] opacity-80 uppercase tracking-widest font-bold">Inteligencia Artificial aplicada a Fibras</p>
+              <h3 class="font-bold text-base">{{ t('hvi.ai.modalTitle') }}</h3>
+              <p class="text-[10px] opacity-80 uppercase tracking-widest font-bold">{{ t('hvi.ai.modalSubtitle') }}</p>
             </div>
             <button @click="mostrarModalAI = false" class="p-1.5 hover:bg-white/10 rounded-full transition-colors">
                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -587,15 +634,15 @@
           <div class="p-8 overflow-auto bg-slate-50 min-h-75">
             <div v-if="cargandoAI" class="flex flex-col items-center justify-center py-20">
               <div class="w-12 h-12 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin mb-4"></div>
-              <p class="text-sm text-slate-500 font-medium text-center">Analizando fardo por fardo para predecir neps y resistencia...</p>
+              <p class="text-sm text-slate-500 font-medium text-center">{{ t('hvi.ai.loading') }}</p>
             </div>
             <div v-else class="text-sm text-slate-700 leading-relaxed whitespace-pre-line font-medium italic">
               {{ aiInsight }}
             </div>
           </div>
           <div class="px-6 py-3 bg-white border-t flex justify-between items-center text-[10px] text-slate-400 font-mono">
-            <span>MODEL: {{ selectedModel.toUpperCase() }}</span>
-            <span>DATA: FULL BALE FEEDBACK</span>
+            <span>{{ t('hvi.ai.modelTag') }}: {{ selectedModel.toUpperCase() }}</span>
+            <span>{{ t('hvi.ai.dataTag') }}</span>
           </div>
         </div>
       </div>
@@ -605,6 +652,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 import Swal from 'sweetalert2';
 import ExcelJS from 'exceljs';
 import AnalizadorHVI from './AnalizadorHVI.vue'; 
@@ -764,6 +812,8 @@ const toAuditKey = (k) => {
 };
 
 // State
+const { t } = useI18n();
+
 const folderPath = ref(localStorage.getItem('hvi_last_folder_path') || '');
 const mostrarAnalizador = ref(false);
 const mostrarVerificarContrato = ref(false);
@@ -776,9 +826,60 @@ const hasPersistedHandle = ref(false);
 const selectedFileName = ref('');
 const selectedFileItem = ref(null);
 const hviDetails = ref([]);
+const latestParseReport = ref(null);
 const filterStatus = ref('No guardados'); // Todos, No guardados, Guardados
+const filterStatusOptions = computed(() => [
+  { value: 'Todos', label: t('hvi.filters.all') },
+  { value: 'No guardados', label: t('hvi.filters.unsaved') },
+  { value: 'Guardados', label: t('hvi.filters.saved') },
+]);
 const detailsHeaderScroller = ref(null);
 const detailsBodyScroller = ref(null);
+
+const parseRiskState = computed(() => {
+  const report = latestParseReport.value;
+  if (!report) {
+    return { level: 'normal', badgeText: '', title: '' };
+  }
+
+  if (report.skippedRows.length > 0) {
+    return {
+      level: 'critical',
+      badgeText: t('hvi.parseWarnings.badges.critical'),
+      title: t('hvi.parseWarnings.badges.criticalTitle', { n: report.skippedRows.length })
+    };
+  }
+
+  if (report.correctedGradeTokens > 0 || report.fieldWarnings.length > 0) {
+    return {
+      level: 'warning',
+      badgeText: t('hvi.parseWarnings.badges.warning'),
+      title: t('hvi.parseWarnings.badges.warningTitle', {
+        correctedGrade: report.correctedGradeTokens,
+        fieldIssues: report.fieldWarnings.length
+      })
+    };
+  }
+
+  return { level: 'normal', badgeText: '', title: '' };
+});
+
+const detailParseIssueRows = computed(() => {
+  return hviDetails.value
+    .map((row, idx) => ({
+      detailRow: idx + 1,
+      fardo: row.fardo,
+      sourceLine: row._sourceLine,
+      fields: row._parseIssues || []
+    }))
+    .filter((row) => row.fields.length > 0);
+});
+
+const scrollToDetailRow = (rowNumber) => {
+  const el = document.getElementById(`hvi-detail-row-${rowNumber}`);
+  if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+};
 
 let isSyncingDetailsScroll = false;
 
@@ -814,12 +915,12 @@ watch(hviDetails, (newVal) => {
 // =====================================================
 const aiInsight = ref('');
 const selectedModel = ref('gemini-2.0-flash'); // Default rápido y estable
-const modelosDisponibles = [
-  { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro (Preview) - Potente' },
-  { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview) - Veloz' },
-  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash - Producción' },
-  { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Exp)' }
-];
+const modelOptions = computed(() => [
+  { value: 'gemini-3-pro-preview', label: t('hvi.ai.models.g3pro') },
+  { value: 'gemini-3-flash-preview', label: t('hvi.ai.models.g3flash') },
+  { value: 'gemini-2.0-flash', label: t('hvi.ai.models.g2flash') },
+  { value: 'gemini-2.0-flash-exp', label: t('hvi.ai.models.g2exp') }
+]);
 const cargandoAI = ref(false);
 const mostrarModalAI = ref(false);
 const auditResult = ref(null);
@@ -848,30 +949,30 @@ const verificarContrato = async (isManual = false) => {
       // Feedback visual inmediato si hay rechazo
       if (json.data.overallStatus === 'RECHAZO') {
         const hasDistribFailure = json.data.details.some(d => d.includes('Dispersión Alta'));
-        let mensaje = "El lote no cumple con los estándares de mezcla configurados.";
+        let mensaje = t('hvi.audit.notCompliant');
         
         if (hasDistribFailure) {
-           mensaje = "ALERTA DE MEZCLA: Lote rechazado por exceso de fardos en zona de tolerancia (> 20%).";
-           aiInsight.value = mensaje + " Revise celdas rojas de MIC/SCI."; 
+            mensaje = t('hvi.audit.mixAlert');
+            aiInsight.value = `${mensaje} ${t('hvi.audit.reviewCells')}`;
         } else {
-           mensaje = "Violaciones de límites absolutos (Hard Cap) o promedios detectadas.";
+            mensaje = t('hvi.audit.hardCapViolations');
            aiInsight.value = json.data.details.join('\n');
         }
 
         // Mostrar Swal solo si fue clic manual
         if (isManual === true) { 
              Swal.fire({
-                title: 'Lote Rechazado por Auditoría',
+               title: t('hvi.audit.rejectedTitle'),
                 html: `<div class="text-left text-sm">${json.data.details.map(d => `• ${d}`).join('<br>')}</div>`,
                 icon: 'error',
-                confirmButtonText: 'Entendido'
+               confirmButtonText: t('hvi.common.understood')
             });
         }
       } else if (json.data.overallStatus === 'ADVERTENCIA') {
           if (isManual === true) {
             Swal.fire({
-                title: 'Advertencia de Calidad',
-                text: 'El lote presenta desviaciones menores en la distribución.',
+              title: t('hvi.audit.warningTitle'),
+              text: t('hvi.audit.warningText'),
                 icon: 'warning'
             });
           }
@@ -879,8 +980,8 @@ const verificarContrato = async (isManual = false) => {
          // Éxito
          if (isManual === true) { 
              Swal.fire({
-                title: 'Lote Aprobado',
-                text: 'Cumple con Estándar 2026 (Promedios, Hard Caps y Distribución)',
+               title: t('hvi.audit.approvedTitle'),
+               text: t('hvi.audit.approvedText'),
                 icon: 'success',
                 timer: 2000,
                 showConfirmButton: false
@@ -890,7 +991,7 @@ const verificarContrato = async (isManual = false) => {
     }
   } catch (e) {
     console.error("Audit error", e);
-    Swal.fire('Error', 'No se pudo conectar con el servicio de auditoría', 'error');
+    Swal.fire(t('hvi.common.error'), t('hvi.audit.connectionError'), 'error');
   } finally {
     loadingAudit.value = false;
   }
@@ -899,10 +1000,10 @@ const verificarContrato = async (isManual = false) => {
 const getAuditTooltip = (param) => {
   if (!auditResult.value || !auditResult.value.parameterResults[param]) return null;
   const res = auditResult.value.parameterResults[param];
-  let text = `Promedio: ${res.avg} (${res.status})`;
-  if (res.hardCapViolations > 0) text += ` | HARD CAP: ${res.hardCapViolations} pacas`;
+  let text = `${t('hvi.audit.avgLabel')}: ${res.avg} (${res.status})`;
+  if (res.hardCapViolations > 0) text += ` | HARD CAP: ${res.hardCapViolations} ${t('hvi.audit.bales')}`;
   if (res.distribution && res.distribution.outliersPct > 0) {
-    text += ` | Fuera Rango: ${res.distribution.outliersPct}%`;
+    text += ` | ${t('hvi.audit.outOfRange')}: ${res.distribution.outliersPct}%`;
   }
   return text;
 };
@@ -928,8 +1029,8 @@ const solicitarAnalisisAI = async () => {
   if (!selectedFileItem.value || !hviDetails.value.length) {
     Swal.fire({
       icon: 'warning',
-      title: 'Seleccione un archivo',
-      text: 'Debe seleccionar un archivo con datos para realizar el análisis de IA.'
+      title: t('hvi.ai.selectFileTitle'),
+      text: t('hvi.ai.selectFileText')
     });
     return;
   }
@@ -1361,6 +1462,7 @@ const selectFile = async (item) => {
   selectedFileName.value = item.fileName;
   selectedFileItem.value = item;
   hviDetails.value = [];
+  latestParseReport.value = null;
 
   try {
     let content = '';
@@ -1374,13 +1476,65 @@ const selectFile = async (item) => {
     }
     
     if (content) {
-      parseHviDetails(content);
+      const parseReport = parseHviDetails(content);
+      latestParseReport.value = parseReport;
+
+      if (parseReport.hasCriticalWarnings) {
+        const buildListItems = (arr, formatter) => arr.map(formatter).join('');
+        const escapeHtml = (value) => String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+
+        const skippedHtml = parseReport.skippedRows.length
+          ? `
+            <div style="margin-top:8px;text-align:left;">
+              <div style="font-weight:600;margin-bottom:4px;">${t('hvi.parseWarnings.skippedRowsLabel')}</div>
+              <ul style="margin:0;padding-left:18px;max-height:180px;overflow:auto;">
+                ${buildListItems(parseReport.skippedRows, (row) => `<li>L${row.line}: ${escapeHtml(row.reason)}</li>`) }
+              </ul>
+            </div>
+          `
+          : '';
+
+        const fieldHtml = parseReport.fieldWarnings.length
+          ? `
+            <div style="margin-top:8px;text-align:left;">
+              <div style="font-weight:600;margin-bottom:4px;">${t('hvi.parseWarnings.invalidFieldsLabel')}</div>
+              <ul style="margin:0;padding-left:18px;max-height:180px;overflow:auto;">
+                ${buildListItems(parseReport.fieldWarnings, (row) => `<li>L${row.line} · ${escapeHtml(row.fardo || '-')}: ${escapeHtml(row.fields.join(', '))}</li>`) }
+              </ul>
+            </div>
+          `
+          : '';
+
+        Swal.fire({
+          icon: 'warning',
+          title: t('hvi.parseWarnings.title'),
+          html: `
+            <div style="text-align:left;line-height:1.45;">
+              <p style="margin:0 0 6px 0;">${t('hvi.parseWarnings.summary', {
+                parsed: parseReport.parsedRows,
+                skipped: parseReport.skippedRows.length,
+                correctedGrade: parseReport.correctedGradeTokens,
+                fieldIssues: parseReport.fieldWarnings.length
+              })}</p>
+              ${skippedHtml}
+              ${fieldHtml}
+            </div>
+          `,
+          confirmButtonText: t('hvi.common.understood')
+        });
+      }
       
       // Para TIPO "Ent", autocompletar la cantidad con el número de fardos encontrados
       if (item.tipo === 'Ent' && hviDetails.value.length > 0) {
         item.cantidad = hviDetails.value.length;
       }
     } else {
+      latestParseReport.value = null;
       // Sin archivo local: intentar cargar detalles desde la BD
       try {
         const resp = await fetch('/api/hvi/details', {
@@ -1413,6 +1567,7 @@ const selectFile = async (item) => {
       }
     }
   } catch (err) {
+    latestParseReport.value = null;
     console.error('Error reading HVI file', err);
   }
 };
@@ -1434,14 +1589,47 @@ const handleEditFromRow = (item) => {
 const parseHviDetails = (content) => {
   const lines = content.split('\n');
   const detailRows = [];
+  const isStrictNumber = (v) => /^-?\d+(\.\d+)?$/.test(String(v ?? '').trim());
+  const isLikelyBaleId = (v) => /^\d+$/.test(String(v ?? '').trim());
+  const report = {
+    parsedRows: 0,
+    correctedGradeTokens: 0,
+    skippedRows: [],
+    fieldWarnings: [],
+    hasCriticalWarnings: false,
+    hasWarnings: false
+  };
+
+  const addSkippedRow = (line, reason) => {
+    report.skippedRows.push({ line, reason });
+  };
+
+  const numericFieldMap = [
+    { idx: 1, key: 'SCI' },
+    { idx: 2, key: 'MST' },
+    { idx: 3, key: 'MIC' },
+    { idx: 4, key: 'MAT' },
+    { idx: 5, key: 'UHML' },
+    { idx: 6, key: 'UI' },
+    { idx: 7, key: 'SF' },
+    { idx: 8, key: 'STR' },
+    { idx: 9, key: 'ELG' },
+    { idx: 10, key: 'RD' },
+    { idx: 11, key: '+b' },
+    { idx: 13, key: 'TrCNT' },
+    { idx: 14, key: 'TrAR' },
+    { idx: 15, key: 'TRID' }
+  ];
   
   // Las informaciones empiezan en la fila 14 (index 13)
   for (let i = 13; i < lines.length; i++) {
+    const lineNumber = i + 1;
     const line = lines[i].trim();
     if (!line) continue;
     
     // Separado por Espacio (múltiples espacios tratados como uno)
-    const columns = line.split(/\s+/);
+    const rawColumns = line.split(/\s+/);
+    const columns = [...rawColumns];
     
     // Criterio de validación: Ignorar filas de resumen tipo "Average" o "Q99%"
     // Y detenerse si encontramos 'n' en la primera columna (columna 1 según el usuario)
@@ -1457,13 +1645,48 @@ const parseHviDetails = (content) => {
       continue;
     }
 
-    // Criterio de limpieza profunda: La segunda columna (ID/SCI) debe ser un número válido
-    const secondColVal = columns[1];
-    if (!secondColVal || isNaN(parseFloat(secondColVal))) {
+    // Solo validar errores en filas que realmente parecen datos HVI (fardo numérico).
+    // Evita falsos positivos en líneas de formato/encabezados del TXT.
+    if (!isLikelyBaleId(columns[0])) {
       continue;
     }
 
-    if (columns.length < 16) continue;
+    // USTER HVI puede traer un valor "intruso" en Grade (entre SCI y Mst), por ejemplo ".".
+    // Si el token después de SCI no es numérico y el siguiente sí lo es, lo descartamos.
+    if (columns.length >= 4 && !isStrictNumber(columns[2]) && isStrictNumber(columns[3])) {
+      report.correctedGradeTokens += 1;
+      columns.splice(2, 1);
+    }
+
+    // Criterio de limpieza profunda: La segunda columna (ID/SCI) debe ser un número válido
+    const secondColVal = columns[1];
+    if (!secondColVal || isNaN(parseFloat(secondColVal))) {
+      addSkippedRow(lineNumber, t('hvi.parseWarnings.reasons.invalidSCI'));
+      continue;
+    }
+
+    // Validación mínima de alineación tras saneamiento (Mst debe ser numérico)
+    if (!isStrictNumber(columns[2])) {
+      addSkippedRow(lineNumber, t('hvi.parseWarnings.reasons.invalidMSTAfterGrade'));
+      continue;
+    }
+
+    if (columns.length < 16) {
+      addSkippedRow(lineNumber, t('hvi.parseWarnings.reasons.notEnoughColumns', { n: columns.length }));
+      continue;
+    }
+
+    const invalidFields = numericFieldMap
+      .filter(({ idx }) => !isStrictNumber(columns[idx]))
+      .map(({ key }) => key);
+
+    if (invalidFields.length > 0) {
+      report.fieldWarnings.push({
+        line: lineNumber,
+        fardo: columns[0],
+        fields: invalidFields
+      });
+    }
     
     // El usuario solicita que en la columna TIPO (grado de color) se cambie el "-" por "."
     // internamente para cálculos, aunque se muestre con coma en la tabla.
@@ -1485,10 +1708,17 @@ const parseHviDetails = (content) => {
       tipo: tipoFormateado,
       trCnt: columns[13],
       trAr: columns[14],
-      trid: columns[15]
+      trid: columns[15],
+      _sourceLine: lineNumber,
+      _parseIssues: invalidFields
     });
   }
+
+  report.parsedRows = detailRows.length;
+  report.hasCriticalWarnings = report.skippedRows.length > 0 || report.fieldWarnings.length > 0;
+  report.hasWarnings = report.correctedGradeTokens > 0 || report.skippedRows.length > 0 || report.fieldWarnings.length > 0;
   hviDetails.value = detailRows;
+  return report;
 };
 
 // -----------------------------------------------------
@@ -1498,8 +1728,8 @@ const exportarExcel = async () => {
   if (hviDetails.value.length === 0) {
     Swal.fire({
       icon: 'info',
-      title: 'Sin datos',
-      text: 'No hay datos HVI para exportar'
+      title: t('hvi.export.noDataTitle'),
+      text: t('hvi.export.noDataText')
     });
     return;
   }
@@ -1610,7 +1840,7 @@ const exportarExcel = async () => {
       toast: true,
       position: 'top-end',
       icon: 'success',
-      title: 'Excel exportado correctamente',
+      title: t('hvi.export.success'),
       showConfirmButton: false,
       timer: 2000
     });
@@ -1619,8 +1849,8 @@ const exportarExcel = async () => {
     console.error('Error exportando Excel:', error);
     Swal.fire({
       icon: 'error',
-      title: 'Error',
-      text: 'No se pudo exportar el archivo Excel'
+      title: t('hvi.common.error'),
+      text: t('hvi.export.error')
     });
   }
 };
@@ -1631,7 +1861,7 @@ const processFiles = async () => {
       toast: true,
       position: 'top-end',
       icon: 'warning',
-      title: 'Seleccione un archivo con datos',
+      title: t('hvi.validation.selectFileWithData'),
       showConfirmButton: false,
       timer: 3000
     });
@@ -1644,7 +1874,7 @@ const processFiles = async () => {
       toast: true,
       position: 'top-end',
       icon: 'warning',
-      title: 'Debe seleccionar un Color',
+      title: t('hvi.validation.selectColor'),
       showConfirmButton: false,
       timer: 3000
     });
@@ -1657,7 +1887,7 @@ const processFiles = async () => {
       toast: true,
       position: 'top-end',
       icon: 'warning',
-      title: 'Debe seleccionar un valor para Cort',
+      title: t('hvi.validation.selectCut'),
       showConfirmButton: false,
       timer: 3000
     });
@@ -1670,17 +1900,60 @@ const processFiles = async () => {
       toast: true,
       position: 'top-end',
       icon: 'warning',
-      title: 'Debe ingresar la cantidad para muestras',
+      title: t('hvi.validation.enterSampleQty'),
       showConfirmButton: false,
       timer: 3000
     });
     return;
   }
 
+  // Guardia de seguridad: evitar guardar cuando el parseo descartó filas.
+  // Este escenario es crítico porque puede dejar el ensayo incompleto en BD.
+  if (latestParseReport.value && latestParseReport.value.skippedRows.length > 0) {
+    Swal.fire({
+      icon: 'error',
+      title: t('hvi.save.parseCriticalTitle'),
+      html: `<div style="text-align:left;line-height:1.45;">
+        <p>${t('hvi.save.parseCriticalText', {
+          skipped: latestParseReport.value.skippedRows.length,
+          parsed: latestParseReport.value.parsedRows
+        })}</p>
+      </div>`,
+      confirmButtonText: t('hvi.common.understood')
+    });
+    return;
+  }
+
+  // Advertencia de riesgo: permitir continuar solo con confirmación explícita.
+  // Aplica cuando hubo correcciones automáticas en Grade o campos no numéricos detectados.
+  if (
+    latestParseReport.value &&
+    (latestParseReport.value.correctedGradeTokens > 0 || latestParseReport.value.fieldWarnings.length > 0)
+  ) {
+    const riskConfirm = await Swal.fire({
+      icon: 'warning',
+      title: t('hvi.save.parseRiskTitle'),
+      html: `<div style="text-align:left;line-height:1.45;">
+        <p>${t('hvi.save.parseRiskText', {
+          correctedGrade: latestParseReport.value.correctedGradeTokens,
+          fieldIssues: latestParseReport.value.fieldWarnings.length
+        })}</p>
+      </div>`,
+      showCancelButton: true,
+      confirmButtonText: t('hvi.save.parseRiskConfirm'),
+      cancelButtonText: t('hvi.save.parseRiskCancel'),
+      confirmButtonColor: '#b45309'
+    });
+
+    if (!riskConfirm.isConfirmed) {
+      return;
+    }
+  }
+
   // Toast de "Guardando..."
   const loadingToast = Swal.fire({
-    title: 'Guardando datos...',
-    html: 'Por favor, espere',
+    title: t('hvi.save.savingTitle'),
+    html: t('hvi.save.pleaseWait'),
     allowOutsideClick: false,
     didOpen: () => {
       Swal.showLoading();
@@ -1725,7 +1998,7 @@ const processFiles = async () => {
         toast: true,
         position: 'top-end',
         icon: 'success',
-        title: 'Datos guardados correctamente',
+        title: t('hvi.save.success'),
         showConfirmButton: false,
         timer: 3000
       });
@@ -1738,11 +2011,12 @@ const processFiles = async () => {
         selectedFileName.value = '';
         selectedFileItem.value = null;
         hviDetails.value = [];
+        latestParseReport.value = null;
       }
     } else {
       Swal.fire({
         icon: 'error',
-        title: 'Error al guardar',
+        title: t('hvi.save.errorTitle'),
         text: result.error
       });
     }
@@ -1751,8 +2025,8 @@ const processFiles = async () => {
     console.error("Error en processFiles:", err);
     Swal.fire({
       icon: 'error',
-      title: 'Error de conexión',
-      text: 'No se pudo contactar con el servidor'
+      title: t('hvi.save.connectionErrorTitle'),
+      text: t('hvi.save.connectionErrorText')
     });
   }
 };

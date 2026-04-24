@@ -199,5 +199,161 @@
     "toleranceAllowed": "Usado en plan (tolerancia permitida)",
     "notUsed": "No usado en ninguna mezcla",
     "partialConsumption": "Usado en plan (consumo parcial)"
+  },
+  "hvi": {
+    "title": "Carga de Archivos HVI (Mistura)",
+    "lang": {
+      "auto": "Auto (PC)",
+      "es": "Español",
+      "ptBR": "Português (BR)"
+    },
+    "actions": {
+      "compareTitle": "Ver comparativa Muestra vs Entrega",
+      "compareSamples": "⚖️ Comparar Muestras",
+      "processWithCount": "Procesar ({n} archivos)",
+      "noFiles": "Sin archivos",
+      "aiAnalysis": "✨ Análisis IA",
+      "verifyContract": "📋 Verificar Contrato",
+      "techAnalysis": "Análisis Técnico",
+      "exportExcel": "Exportar a Excel",
+      "verifyContractTitle": "Verificar contra Contrato y Tolerancias"
+    },
+    "folder": {
+      "placeholder": "Ruta de la carpeta...",
+      "selectTitle": "Seleccionar carpeta",
+      "refreshTitle": "Actualizar lista"
+    },
+    "filters": {
+      "show": "Mostrar:",
+      "all": "Todos",
+      "unsaved": "No guardados",
+      "saved": "Guardados"
+    },
+    "table": {
+      "type": "Tipo",
+      "lot": "Lote",
+      "provider": "Prov.",
+      "grade": "Grado",
+      "sample": "Muestra",
+      "qty": "Cant.",
+      "color": "Color",
+      "cut": "Cort",
+      "obs": "Obs",
+      "action": "Acción",
+      "status": "Estado"
+    },
+    "messages": {
+      "noFiles": "No hay archivos",
+      "filesCount": "{n} archivos",
+      "selectFileForDetail": "Seleccione un archivo de la izquierda para ver el detalle",
+      "avgRow": "n = {n} (Prom)"
+    },
+    "tooltips": {
+      "saveTest": "Guardar ensayo",
+      "resaveTest": "Re-guardar (reemplaza datos existentes)",
+      "editMetadata": "Editar metadatos"
+    },
+    "status": {
+      "saved": "Guardado",
+      "pendingSave": "Pendiente de guardar"
+    },
+    "detailTable": {
+      "bale": "Fardo"
+    },
+    "legend": {
+      "classification": "Clasificación:",
+      "excellent": "Excelente",
+      "acceptable": "Aceptable",
+      "critical": "Crítico",
+      "outOfRange": "Fuera de rango",
+      "alerts": "Alertas:",
+      "redFlag": "Bandera Roja (STR/SF)",
+      "dyeRisk": "Riesgo Teñido (MIC)",
+      "opaqueFiber": "Fibra Opaca (RD)"
+    },
+    "common": {
+      "error": "Error",
+      "understood": "Entendido"
+    },
+    "ai": {
+      "modalTitle": "Gemini 3: Predicción Técnica",
+      "modalSubtitle": "Inteligencia Artificial aplicada a Fibras",
+      "loading": "Analizando fardo por fardo para predecir neps y resistencia...",
+      "modelTag": "MODELO",
+      "dataTag": "DATA: FULL BALE FEEDBACK",
+      "selectFileTitle": "Seleccione un archivo",
+      "selectFileText": "Debe seleccionar un archivo con datos para realizar el análisis de IA.",
+      "models": {
+        "g3pro": "Gemini 3 Pro (Preview) - Potente",
+        "g3flash": "Gemini 3 Flash (Preview) - Veloz",
+        "g2flash": "Gemini 2.0 Flash - Producción",
+        "g2exp": "Gemini 2.0 Flash (Exp)"
+      }
+    },
+    "audit": {
+      "notCompliant": "El lote no cumple con los estándares de mezcla configurados.",
+      "mixAlert": "ALERTA DE MEZCLA: Lote rechazado por exceso de fardos en zona de tolerancia (> 20%).",
+      "reviewCells": "Revise celdas rojas de MIC/SCI.",
+      "hardCapViolations": "Violaciones de límites absolutos (Hard Cap) o promedios detectadas.",
+      "rejectedTitle": "Lote Rechazado por Auditoría",
+      "warningTitle": "Advertencia de Calidad",
+      "warningText": "El lote presenta desviaciones menores en la distribución.",
+      "approvedTitle": "Lote Aprobado",
+      "approvedText": "Cumple con Estándar 2026 (Promedios, Hard Caps y Distribución)",
+      "connectionError": "No se pudo conectar con el servicio de auditoría",
+      "avgLabel": "Promedio",
+      "bales": "pacas",
+      "outOfRange": "Fuera Rango"
+    },
+    "export": {
+      "noDataTitle": "Sin datos",
+      "noDataText": "No hay datos HVI para exportar",
+      "success": "Excel exportado correctamente",
+      "error": "No se pudo exportar el archivo Excel"
+    },
+    "validation": {
+      "selectFileWithData": "Seleccione un archivo con datos",
+      "selectColor": "Debe seleccionar un Color",
+      "selectCut": "Debe seleccionar un valor para Cort",
+      "enterSampleQty": "Debe ingresar la cantidad para muestras"
+    },
+    "parseWarnings": {
+      "title": "Se detectaron datos no aptos en el TXT",
+      "summary": "Filas válidas: {parsed}. Filas descartadas: {skipped}. Correcciones automáticas en Grade: {correctedGrade}. Filas con campos no numéricos: {fieldIssues}.",
+      "riskLabel": "Riesgo",
+      "detailRowsTitle": "Filas con error detectado en DETALLE:",
+      "detailRowItem": "Fila {row} · Fardo {fardo}",
+      "rowIssueTag": "Err",
+      "rowIssueTooltip": "Error de parseo en línea TXT {line}. Campos: {fields}",
+      "skippedRowsLabel": "Filas descartadas (muestra):",
+      "invalidFieldsLabel": "Filas con columnas sospechosas (muestra):",
+      "moreSkipped": "Y {n} filas descartadas adicionales...",
+      "moreInvalidFields": "Y {n} filas con columnas inválidas adicionales...",
+      "badges": {
+        "critical": "CRITICO",
+        "criticalTitle": "Se descartaron {n} filas. Guardado bloqueado hasta corregir TXT.",
+        "warning": "REVISION",
+        "warningTitle": "Correcciones Grade: {correctedGrade} | Campos sospechosos: {fieldIssues}."
+      },
+      "reasons": {
+        "invalidSCI": "SCI inválido o ausente",
+        "invalidMSTAfterGrade": "MST inválido luego de corregir Grade",
+        "notEnoughColumns": "Columnas insuficientes ({n}/16)"
+      }
+    },
+    "save": {
+      "savingTitle": "Guardando datos...",
+      "pleaseWait": "Por favor, espere",
+      "success": "Datos guardados correctamente",
+      "errorTitle": "Error al guardar",
+      "connectionErrorTitle": "Error de conexión",
+      "connectionErrorText": "No se pudo contactar con el servidor",
+      "parseCriticalTitle": "Guardado bloqueado por datos críticos",
+      "parseCriticalText": "Se descartaron {skipped} filas durante el parseo y solo quedaron {parsed} filas válidas. Guardar ahora puede generar un ensayo incompleto o con datos anómalos. Corrija el TXT y vuelva a cargarlo.",
+      "parseRiskTitle": "Riesgo de datos anómalos",
+      "parseRiskText": "Se detectaron {correctedGrade} correcciones automáticas en Grade y {fieldIssues} filas con campos no numéricos. Si continúa, podría guardar datos anómalos en la base.",
+      "parseRiskConfirm": "Guardar de todos modos",
+      "parseRiskCancel": "Cancelar"
+    }
   }
 }

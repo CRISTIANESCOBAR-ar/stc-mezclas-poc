@@ -11,8 +11,8 @@
           </div>
           <div>
             <h2 class="text-2xl font-black text-slate-900 tracking-tight">
-              Análisis Técnico HVI
-              <span class="text-blue-600 block text-sm font-bold uppercase tracking-widest mt-1">Matriz de Aptitud Denim Real</span>
+              {{ tr('Análisis Técnico HVI', 'Análise Técnica HVI') }}
+              <span class="text-blue-600 block text-sm font-bold uppercase tracking-widest mt-1">{{ tr('Matriz de Aptitud Denim Real', 'Matriz de Aptidão Denim Real') }}</span>
             </h2>
           </div>
         </div>
@@ -26,11 +26,11 @@
           >
             <span v-if="!exportando" class="text-xl">📸</span>
             <span v-else class="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></span>
-            {{ exportando ? 'Generando...' : 'Exportar Informe' }}
+            {{ exportando ? tr('Generando...', 'Gerando...') : tr('Exportar Informe', 'Exportar Relatorio') }}
           </button>
 
           <div class="text-right px-6 py-3 bg-slate-50 rounded-xl border border-slate-100 shadow-sm hidden md:block">
-            <span class="text-[10px] text-slate-400 uppercase font-black tracking-widest">Muestreo del Lote</span>
+            <span class="text-[10px] text-slate-400 uppercase font-black tracking-widest">{{ tr('Muestreo del Lote', 'Amostragem do Lote') }}</span>
             <p class="text-3xl font-black text-slate-800 font-mono">{{ pacasValidas.length }} <span class="text-sm text-slate-400 font-medium">/ {{ pacas.length }} fardos</span></p>
           </div>
         </div>
@@ -44,31 +44,31 @@
           </svg>
         </div>
         <div class="space-y-1">
-          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">Lote Entrada:</span>
+          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">{{ tr('Lote Entrada:', 'Lote de Entrada:') }}</span>
           <p class="text-blue-700 font-mono text-sm font-black">{{ metadata.loteEntrada }}</p>
         </div>
         <div class="space-y-1">
-          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">Proveedor:</span>
-          <p class="text-slate-700 font-bold truncate" :title="metadata.proveedor">{{ metadata.proveedor || 'N/A' }}</p>
+          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">{{ tr('Proveedor:', 'Fornecedor:') }}</span>
+          <p class="text-slate-700 font-bold truncate" :title="metadata.proveedor">{{ metadata.proveedor || tr('N/A', 'N/D') }}</p>
         </div>
         <div class="space-y-1">
-          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">Grado/Tipificación:</span>
-          <p class="text-slate-700 font-bold">{{ metadata.grado || 'Standard' }}</p>
+          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">{{ tr('Grado/Tipificación:', 'Grau/Tipificação:') }}</span>
+          <p class="text-slate-700 font-bold">{{ metadata.grado || tr('Standard', 'Padrao') }}</p>
         </div>
         <div class="space-y-1 text-right">
-          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">Fecha Análisis:</span>
+          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">{{ tr('Fecha Análisis:', 'Data da Análise:') }}</span>
           <p class="text-slate-700 font-bold">{{ metadata.fecha || '---' }}</p>
         </div>
         <div class="space-y-1">
-          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">Colorimetría:</span>
+          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">{{ tr('Colorimetría:', 'Colorimetria:') }}</span>
           <div class="flex items-center gap-2">
-            <span :class="['px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase border', metadata.color ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-200 text-slate-500 border-slate-300']">{{ metadata.color || 'Sin color' }}</span>
+            <span :class="['px-2 py-0.5 rounded text-[10px] font-black tracking-widest uppercase border', metadata.color ? 'bg-amber-100 text-amber-700 border-amber-200' : 'bg-slate-200 text-slate-500 border-slate-300']">{{ metadata.color || tr('Sin color', 'Sem cor') }}</span>
             <span v-if="metadata.cort" class="px-2 py-0.5 bg-blue-100 text-blue-700 border border-blue-200 rounded text-[10px] font-black uppercase tracking-widest">CORT {{ metadata.cort }}</span>
           </div>
         </div>
         <div class="space-y-1 md:col-span-3">
-          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">Observaciones del Consultor:</span>
-          <p class="text-slate-600 italic font-medium border-l-2 border-slate-200 pl-3 leading-relaxed" :title="metadata.obs">{{ metadata.obs || 'No hay observaciones técnicas registradas para este lote.' }}</p>
+          <span class="text-slate-400 uppercase font-black tracking-tighter text-[9px]">{{ tr('Observaciones del Consultor:', 'Observações do Consultor:') }}</span>
+          <p class="text-slate-600 italic font-medium border-l-2 border-slate-200 pl-3 leading-relaxed" :title="metadata.obs">{{ metadata.obs || tr('No hay observaciones técnicas registradas para este lote.', 'Nao ha observações técnicas registradas para este lote.') }}</p>
         </div>
       </div>
       
@@ -79,10 +79,10 @@
         <div class="flex items-start gap-4">
           <span class="text-3xl">🚫</span>
           <div>
-            <h3 class="font-black text-red-700 uppercase tracking-tight">ALERTA CRÍTICA: Fibra Fuera de Estándar</h3>
+            <h3 class="font-black text-red-700 uppercase tracking-tight">{{ tr('ALERTA CRÍTICA: Fibra Fuera de Estándar', 'ALERTA CRÍTICO: Fibra Fora do Padrão') }}</h3>
             <p class="text-sm text-red-600 mt-1 font-medium leading-relaxed">
-              El índice SCI promedio ({{ promedios.sci.toFixed(1) }}) es insuficiente para procesos de hilatura industriales. 
-              <strong>Riesgo inminente de ineficiencia operativa y rechazo de calidad.</strong>
+              {{ tr('El índice SCI promedio', 'O índice SCI médio') }} ({{ promedios.sci.toFixed(1) }}) {{ tr('es insuficiente para procesos de hilatura industriales.', 'é insuficiente para processos industriais de fiação.') }}
+              <strong>{{ tr('Riesgo inminente de ineficiencia operativa y rechazo de calidad.', 'Risco iminente de ineficiência operacional e rejeição de qualidade.') }}</strong>
             </p>
           </div>
         </div>
@@ -93,7 +93,7 @@
     <section class="mb-10">
       <div class="flex items-center gap-3 mb-5">
         <div class="w-2 h-6 bg-blue-600 rounded-full"></div>
-        <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Resumen Ejecutivo de Fibra</h3>
+        <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">{{ tr('Resumen Ejecutivo de Fibra', 'Resumo Executivo da Fibra') }}</h3>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div v-for="(valor, key) in promediosDisplay" :key="key"
@@ -109,7 +109,7 @@
         <!-- Card de Estabilidad de Mezcla -->
         <div class="p-5 rounded-2xl border bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1"
              :class="estabilidadMezcla.stdDev > 12 ? 'border-red-200 bg-red-50/50' : 'border-slate-100 bg-slate-50/10'">
-          <span class="text-[10px] text-slate-400 uppercase font-black tracking-tighter">Estabilidad (SCI)</span>
+          <span class="text-[10px] text-slate-400 uppercase font-black tracking-tighter">{{ tr('Estabilidad (SCI)', 'Estabilidade (SCI)') }}</span>
           <div class="flex items-baseline gap-1 mt-1">
             <span class="text-xs font-black text-slate-400">Δ</span>
             <p class="text-3xl font-black leading-none tracking-tighter text-slate-800">{{ estabilidadMezcla.delta.toFixed(0) }}</p>
@@ -125,7 +125,7 @@
         <!-- Bloque de Colorimetría (Riesgos de Teñido) -->
         <div class="p-5 rounded-2xl border transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1"
              :class="colorimetriaRiesgo.esOpaca || colorimetriaRiesgo.riesgoShading ? 'border-amber-200 bg-amber-50/30 font-black' : 'border-slate-100 bg-slate-50/10'">
-          <span class="text-[10px] text-slate-400 uppercase font-black tracking-tighter">Análisis de Color (Rd/+b)</span>
+          <span class="text-[10px] text-slate-400 uppercase font-black tracking-tighter">{{ tr('Análisis de Color (Rd/+b)', 'Análise de Cor (Rd/+b)') }}</span>
           
           <div class="flex items-center gap-4 mt-2">
             <div v-if="colorimetriaRiesgo.esOpaca" class="flex flex-col">
@@ -158,7 +158,7 @@
     <section class="mb-10">
       <div class="flex items-center gap-3 mb-5">
         <div class="w-2 h-6 bg-purple-600 rounded-full"></div>
-        <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Matriz de Aptitud y Régimen de Hilatura</h3>
+        <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">{{ tr('Matriz de Aptitud y Régimen de Hilatura', 'Matriz de Aptidão e Regime de Fiação') }}</h3>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
         <div v-for="(diagnostico, idx) in diagnosticoTitulos" :key="idx"
@@ -203,7 +203,7 @@
       <div class="flex items-center justify-between mb-6">
         <div class="flex items-center gap-3">
           <div class="w-2 h-6 bg-red-600 rounded-full"></div>
-          <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Control Individual de Pacas</h3>
+          <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">{{ tr('Control Individual de Pacas', 'Controle Individual de Fardos') }}</h3>
         </div>
         <div class="flex items-center gap-3">
           <button 
@@ -211,13 +211,13 @@
             v-if="mostrarAnalisisPorFardo"
             class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-200 transition-all shadow-sm active:scale-95"
           >
-            {{ verTodasLasPacas ? "Solo Banderas Rojas" : "Ver Todas" }}
+            {{ verTodasLasPacas ? tr('Solo Banderas Rojas', 'Somente Bandeiras Vermelhas') : tr('Ver Todas', 'Ver Todas') }}
           </button>
           <button 
             @click="mostrarAnalisisPorFardo = !mostrarAnalisisPorFardo"
             class="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-black uppercase tracking-widest rounded-xl border border-slate-700 transition-all shadow-lg active:scale-95 flex items-center gap-2"
           >
-            <span>{{ mostrarAnalisisPorFardo ? 'Colapsar Detalle' : `Ver Detalle (${pacasFiltradas.length})` }}</span>
+            <span>{{ mostrarAnalisisPorFardo ? tr('Colapsar Detalle', 'Recolher Detalhe') : `${tr('Ver Detalle', 'Ver Detalhe')} (${pacasFiltradas.length})` }}</span>
             <span class="text-sm leading-none">{{ mostrarAnalisisPorFardo ? '➖' : '➕' }}</span>
           </button>
         </div>
@@ -235,18 +235,18 @@
                 <th class="px-4 py-5 w-16 text-center border-b border-slate-100">SF</th>
                 <th class="px-4 py-5 w-16 text-center border-b border-slate-100">STR</th>
                 <th class="px-4 py-5 w-16 text-center border-b border-slate-100">RD</th>
-                <th class="px-6 py-5 border-b border-slate-100">Evaluación Diagnóstica</th>
+                <th class="px-6 py-5 border-b border-slate-100">{{ tr('Evaluación Diagnóstica', 'Avaliação Diagnóstica') }}</th>
               </tr>
               <!-- Fila de Referencia -->
               <tr class="bg-blue-50/50 text-blue-600 font-black uppercase tracking-widest text-[9px] border-y border-blue-100 shadow-inner">
-                <td class="px-6 py-3 italic">OBJETIVO URDIMBRE</td>
+                <td class="px-6 py-3 italic">{{ tr('OBJETIVO URDIMBRE', 'OBJETIVO URDUME') }}</td>
                 <td class="px-4 py-3 text-center">&gt; 112</td>
                 <td class="px-4 py-3 text-center">3.8-4.5</td>
                 <td class="px-4 py-3 text-center">&gt; 0.85</td>
                 <td class="px-4 py-3 text-center">&lt; 9.0</td>
                 <td class="px-4 py-3 text-center">&gt; 28.5</td>
                 <td class="px-4 py-3 text-center">&gt; 72.0</td>
-                <td class="px-6 py-3 font-bold">Referencia para Lotes Premium 12/1 a 16/1</td>
+                <td class="px-6 py-3 font-bold">{{ tr('Referencia para Lotes Premium 12/1 a 16/1', 'Referência para Lotes Premium 12/1 a 16/1') }}</td>
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-50">
@@ -274,13 +274,13 @@
                                   desv.critica ? 'bg-red-50 text-red-700 border-red-100' : 'bg-amber-50 text-amber-700 border-amber-100']">
                       {{ desv.texto }}
                     </span>
-                    <span v-if="paca.desviaciones.length === 0" class="text-green-600 italic text-[10px] font-black uppercase tracking-widest bg-green-50 px-3 py-1 rounded-lg border border-green-100">✓ Norma Técnica OK</span>
+                    <span v-if="paca.desviaciones.length === 0" class="text-green-600 italic text-[10px] font-black uppercase tracking-widest bg-green-50 px-3 py-1 rounded-lg border border-green-100">{{ tr('✓ Norma Técnica OK', '✓ Norma Técnica OK') }}</span>
                   </div>
                 </td>
               </tr>
               <tr v-if="pacasFiltradas.length === 0">
                 <td colspan="8" class="px-6 py-16 text-center text-slate-400 font-bold italic">
-                  {{ verTodasLasPacas ? "No hay datos válidos para procesar." : "No se detectan desviaciones críticas en este lote." }}
+                  {{ verTodasLasPacas ? tr('No hay datos válidos para procesar.', 'Nao ha dados válidos para processar.') : tr('No se detectan desviaciones críticas en este lote.', 'Nao foram detectados desvios críticos neste lote.') }}
                 </td>
               </tr>
             </tbody>
@@ -293,13 +293,13 @@
     <section v-if="necesitaMitigacion" class="mb-10">
       <div class="flex items-center gap-3 mb-5">
         <div class="w-2 h-6 bg-cyan-600 rounded-full"></div>
-        <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Protocolo de Mitigación Operativa</h3>
+        <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">{{ tr('Protocolo de Mitigación Operativa', 'Protocolo de Mitigação Operacional') }}</h3>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="bg-cyan-50/50 border-2 border-cyan-100 rounded-2xl p-8 shadow-sm">
           <div class="flex items-center gap-2 mb-4">
             <span class="p-2 bg-cyan-600 rounded-lg text-white">⚙️</span>
-            <p class="text-xs font-black text-cyan-800 uppercase tracking-widest leading-none">Ajustes de Maquina <br /><span class="text-[9px] text-cyan-600">(Hilatura)</span></p>
+            <p class="text-xs font-black text-cyan-800 uppercase tracking-widest leading-none">{{ tr('Ajustes de Maquina', 'Ajustes de Máquina') }} <br /><span class="text-[9px] text-cyan-600">{{ tr('(Hilatura)', '(Fiação)') }}</span></p>
           </div>
           <ul class="space-y-3">
             <li v-for="(rec, idx) in recomendacionesMitigacion.maquina" :key="idx"
@@ -311,7 +311,7 @@
         <div class="bg-indigo-50/50 border-2 border-indigo-100 rounded-2xl p-8 shadow-sm">
           <div class="flex items-center gap-2 mb-4">
             <span class="p-2 bg-indigo-600 rounded-lg text-white">🏢</span>
-            <p class="text-xs font-black text-indigo-800 uppercase tracking-widest leading-none">Planta y Ambiente <br /><span class="text-[9px] text-indigo-600">(Preparación)</span></p>
+            <p class="text-xs font-black text-indigo-800 uppercase tracking-widest leading-none">{{ tr('Planta y Ambiente', 'Planta e Ambiente') }} <br /><span class="text-[9px] text-indigo-600">{{ tr('(Preparación)', '(Preparação)') }}</span></p>
           </div>
           <ul class="space-y-3">
             <li v-for="(rec, idx) in recomendacionesMitigacion.planta" :key="idx"
@@ -327,7 +327,7 @@
     <section class="mb-6">
       <div class="flex items-center gap-3 mb-5">
         <div class="w-2 h-6 bg-green-600 rounded-full"></div>
-        <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">Diagnóstico Final del Consultor</h3>
+        <h3 class="text-sm font-black text-slate-900 uppercase tracking-widest">{{ tr('Diagnóstico Final del Consultor', 'Diagnóstico Final do Consultor') }}</h3>
       </div>
       <div class="bg-white border border-slate-100 rounded-2xl p-10 shadow-2xl shadow-slate-200 relative overflow-hidden group">
         <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-blue-50/30 rounded-full blur-3xl pointer-events-none group-hover:bg-blue-100/40 transition-all duration-1000"></div>
@@ -336,21 +336,21 @@
           <div>
             <h4 class="text-blue-600 font-black text-[10px] uppercase tracking-[0.25em] mb-4 flex items-center gap-2">
               <span class="w-2 h-2 bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.4)]"></span>
-              Performance en Hilandería
+              {{ tr('Performance en Hilandería', 'Performance na Fiação') }}
             </h4>
             <p class="text-sm text-slate-600 leading-loose font-medium whitespace-pre-line tracking-tight border-l-2 border-slate-100 pl-6">{{ diagnosticoFinal.hilanderia }}</p>
           </div>
           <div>
             <h4 class="text-purple-600 font-black text-[10px] uppercase tracking-[0.25em] mb-4 flex items-center gap-2">
               <span class="w-2 h-2 bg-purple-600 rounded-full shadow-[0_0_8px_rgba(147,51,234,0.4)]"></span>
-              Aptitud en Tintorería
+              {{ tr('Aptitud en Tintorería', 'Aptidão na Tinturaria') }}
             </h4>
             <p class="text-sm text-slate-600 leading-loose font-medium whitespace-pre-line tracking-tight border-l-2 border-slate-100 pl-6">{{ diagnosticoFinal.calidad }}</p>
           </div>
         </div>
         
         <div class="mt-12 pt-8 border-t border-slate-50 flex flex-col items-center">
-          <span class="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em] mb-3">Conclusión Ejecutiva</span>
+          <span class="text-[9px] text-slate-400 font-black uppercase tracking-[0.3em] mb-3">{{ tr('Conclusión Ejecutiva', 'Conclusão Executiva') }}</span>
           <div class="px-10 py-4 bg-slate-900 rounded-2xl shadow-xl shadow-slate-200 transform group-hover:scale-105 transition-transform duration-500">
             <p class="text-sm font-black text-white uppercase tracking-widest text-center">{{ diagnosticoFinal.conclusion }}</p>
           </div>
@@ -363,7 +363,7 @@
       <div class="flex items-center gap-4">
         <span>STC-PRODUCCIÓN V2.0</span>
         <span class="text-slate-200">|</span>
-        <span>Módulo HVI Consultor</span>
+        <span>{{ tr('Módulo HVI Consultor', 'Módulo HVI Consultor') }}</span>
       </div>
       <div class="flex items-center gap-2 bg-slate-50 px-4 py-1 rounded-full border border-slate-100 shadow-inner">
         <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
@@ -375,8 +375,13 @@
 
 <script setup>
 import { ref, computed } from "vue";
+import { useI18n } from 'vue-i18n';
 import { toPng } from 'html-to-image';
 import Swal from 'sweetalert2';
+
+const { locale } = useI18n();
+const isPt = computed(() => locale.value === 'pt-BR');
+const tr = (es, pt) => (isPt.value ? pt : es);
 
 const props = defineProps({
   pacas: {
@@ -419,14 +424,14 @@ const exportarImagen = async () => {
     const dataUrl = await toPng(analizadorRef.value, exportOptions);
 
     const link = document.createElement('a');
-    link.download = `HVI_Análisis_${props.metadata?.loteEntrada || 'SinLote'}_${new Date().toISOString().split('T')[0]}.png`;
+    link.download = `HVI_${tr('Analisis', 'Analise')}_${props.metadata?.loteEntrada || tr('SinLote', 'SemLote')}_${new Date().toISOString().split('T')[0]}.png`;
     link.href = dataUrl;
     link.click();
 
     Swal.fire({
       icon: 'success',
-      title: 'Reporte Exportado',
-      text: 'La imagen del análisis se ha descargado correctamente.',
+      title: tr('Reporte Exportado', 'Relatorio Exportado'),
+      text: tr('La imagen del análisis se ha descargado correctamente.', 'A imagem da analise foi baixada com sucesso.'),
       toast: true,
       position: 'top-end',
       showConfirmButton: false,
@@ -437,8 +442,8 @@ const exportarImagen = async () => {
     console.error('Error al exportar imagen:', error);
     Swal.fire({
       icon: 'error',
-      title: 'Error de Exportación',
-      text: 'No se pudo generar la imagen del reporte. Intente nuevamente.'
+      title: tr('Error de Exportación', 'Erro de Exportacao'),
+      text: tr('No se pudo generar la imagen del reporte. Intente nuevamente.', 'Nao foi possivel gerar a imagem do relatorio. Tente novamente.')
     });
   } finally {
     exportando.value = false;
@@ -454,32 +459,32 @@ const PLAN_HILATURA_MES = {
   "7":        { rpm: 80000, alfa: 5.3, vel_mts: 144.91, criticidad: "BAJA" }
 };
 
-const DICCIONARIO_TEXTIL = {
+const DICCIONARIO_TEXTIL = computed(() => ({
   TITULOS: {
-    FINOS_URDIMBRE: { key: "12.5", limite_sci: 112, limite_str: 28.5, rango: "12.5 Urdimbre", apto: "Apto para alta velocidad.", marginal: "Marginal para Urdimbre." },
-    FLAME: { key: "10Flame", limite_sci: 102, limite_str: 26, rango: "10 Flame", apto: "Apto para efecto Slub.", marginal: "Marginal para Flame." },
-    GRUESOS: { key: "7", limite_sci: 85, limite_str: 22, rango: "7 Gruesos", apto: "Ideal para Trama.", marginal: "Mínimo para OE." }
+    FINOS_URDIMBRE: { key: "12.5", limite_sci: 112, limite_str: 28.5, rango: tr("12.5 Urdimbre", "12.5 Urdume"), apto: tr("Apto para alta velocidad.", "Apto para alta velocidade."), marginal: tr("Marginal para Urdimbre.", "Marginal para Urdume.") },
+    FLAME: { key: "10Flame", limite_sci: 102, limite_str: 26, rango: "10 Flame", apto: tr("Apto para efecto Slub.", "Apto para efeito Slub."), marginal: tr("Marginal para Flame.", "Marginal para Flame.") },
+    GRUESOS: { key: "7", limite_sci: 85, limite_str: 22, rango: tr("7 Gruesos", "7 Grossos"), apto: tr("Ideal para Trama.", "Ideal para Trama."), marginal: tr("Mínimo para OE.", "Mínimo para OE.") }
   },
   MITIGACION: {
     MAQUINA: [
-      "No exceder las RPM indicas en el plan si el SCI es < 100.",
-      "Ajustar el Alfa de torsión a 5.3-5.4 para compensar fibras con STR < 25.",
-      "Revisar tensiones de bobinado para evitar roturas prematuras."
+      tr("No exceder las RPM indicas en el plan si el SCI es < 100.", "Não exceder as RPM indicadas no plano se o SCI for < 100."),
+      tr("Ajustar el Alfa de torsión a 5.3-5.4 para compensar fibras con STR < 25.", "Ajustar o Alfa de torção para 5.3-5.4 para compensar fibras com STR < 25."),
+      tr("Revisar tensiones de bobinado para evitar roturas prematuras.", "Revisar tensões de bobinagem para evitar rupturas prematuras.")
     ],
     PLANTA: [
-      "Mantener Humedad Relativa estable entre 55-65%.",
-      "Limpieza exhaustiva de órganos de estiraje y rotores cada 8 horas.",
-      "Ajustar presión de rodillos en cardas para mejorar la apertura de fibras cortas.",
-      "Revisar filtros de aspiración."
+      tr("Mantener Humedad Relativa estable entre 55-65%.", "Manter Umidade Relativa estável entre 55-65%."),
+      tr("Limpieza exhaustiva de órganos de estiraje y rotores cada 8 horas.", "Limpeza profunda dos órgãos de estiragem e rotores a cada 8 horas."),
+      tr("Ajustar presión de rodillos en cardas para mejorar la apertura de fibras cortas.", "Ajustar pressão dos rolos nas cardas para melhorar a abertura de fibras curtas."),
+      tr("Revisar filtros de aspiración.", "Revisar filtros de aspiração.")
     ]
   },
   CONCLUSIONES: {
-    URDIMBRE: "Lote Premium: Destinar preferencialmente a Urdimbre 12.5.",
-    STANDARD: "Lote Estándar: Apto para Flame y Tramas.",
-    RIESGO: "Lote de Riesgo: Solo para Gruesos con vigilancia estrecha.",
-    RECHAZO: "Crítico: Consultar con Gerencia antes de cargar al Mix."
+    URDIMBRE: tr("Lote Premium: Destinar preferencialmente a Urdimbre 12.5.", "Lote Premium: Destinar preferencialmente para Urdume 12.5."),
+    STANDARD: tr("Lote Estándar: Apto para Flame y Tramas.", "Lote Padrão: Apto para Flame e Tramas."),
+    RIESGO: tr("Lote de Riesgo: Solo para Gruesos con vigilancia estrecha.", "Lote de Risco: Somente para Grossos com vigilância estreita."),
+    RECHAZO: tr("Crítico: Consultar con Gerencia antes de cargar al Mix.", "Crítico: Consultar a Gerência antes de carregar no Mix.")
   }
-};
+}));
 
 const LIMITES_FISICOS = {
   sci: { min: 20, max: 200, nombre: "SCI" },
@@ -529,11 +534,11 @@ const promedios = computed(() => {
 const promediosDisplay = computed(() => {
   const p = promedios.value;
   return {
-    sci: { label: "SCI", value: p.sci, display: p.sci.toFixed(1), estado: p.sci >= 112 ? "Excelente" : p.sci >= 102 ? "Apto Flame" : p.sci >= 85 ? "Apto Gruesos" : "Riesgo" },
-    str: { label: "STR", value: p.str, display: p.str.toFixed(1), estado: p.str >= 28.5 ? "Urdimbre" : p.str >= 26 ? "Flame" : p.str >= 22 ? "Gruesos" : "Crítico" },
-    mic: { label: "MIC", value: p.mic, display: p.mic.toFixed(2), estado: p.mic >= 3.8 && p.mic <= 4.2 ? "Ideal" : p.mic >= 3.5 && p.mic <= 4.9 ? "Aceptable" : "Riesgo" },
-    sf: { label: "SF (%)", value: p.sf, display: p.sf.toFixed(1), estado: p.sf <= 9 ? "Ideal" : p.sf <= 11 ? "Aceptable" : "Alto" },
-    rd: { label: "Rd", value: p.rd, display: p.rd.toFixed(1), estado: p.rd >= 74 ? "Premium" : p.rd >= 70 ? "Normal" : "Opaca" }
+    sci: { label: "SCI", value: p.sci, display: p.sci.toFixed(1), estado: p.sci >= 112 ? tr("Excelente", "Excelente") : p.sci >= 102 ? tr("Apto Flame", "Apto Flame") : p.sci >= 85 ? tr("Apto Gruesos", "Apto Grossos") : tr("Riesgo", "Risco") },
+    str: { label: "STR", value: p.str, display: p.str.toFixed(1), estado: p.str >= 28.5 ? tr("Urdimbre", "Urdume") : p.str >= 26 ? "Flame" : p.str >= 22 ? tr("Gruesos", "Grossos") : tr("Crítico", "Crítico") },
+    mic: { label: "MIC", value: p.mic, display: p.mic.toFixed(2), estado: p.mic >= 3.8 && p.mic <= 4.2 ? tr("Ideal", "Ideal") : p.mic >= 3.5 && p.mic <= 4.9 ? tr("Aceptable", "Aceitável") : tr("Riesgo", "Risco") },
+    sf: { label: "SF (%)", value: p.sf, display: p.sf.toFixed(1), estado: p.sf <= 9 ? tr("Ideal", "Ideal") : p.sf <= 11 ? tr("Aceptable", "Aceitável") : tr("Alto", "Alto") },
+    rd: { label: "Rd", value: p.rd, display: p.rd.toFixed(1), estado: p.rd >= 74 ? "Premium" : p.rd >= 70 ? tr("Normal", "Normal") : tr("Opaca", "Opaca") }
   };
 });
 
@@ -565,13 +570,13 @@ const estabilidadMezcla = computed(() => {
   const varianza = scis.reduce((a, b) => a + Math.pow(b - media, 2), 0) / scis.length;
   const stdDev = Math.sqrt(varianza);
   
-  const estado = stdDev > 12 ? 'Inestable' : 'Estable';
+  const estado = stdDev > 12 ? tr('Inestable', 'Instável') : tr('Estable', 'Estável');
   let alerta = '';
   
   if (delta > 50) {
-    alerta = 'ALERTA CRÍTICA DE MEZCLA: La brecha de calidad entre fardos es extrema. Obligatorio mezclar con un lote de alta uniformidad para evitar franjas de distinto tono o textura en el Denim (barrados).';
+    alerta = tr('ALERTA CRÍTICA DE MEZCLA: La brecha de calidad entre fardos es extrema. Obligatorio mezclar con un lote de alta uniformidad para evitar franjas de distinto tono o textura en el Denim (barrados).', 'ALERTA CRÍTICO DE MISTURA: A diferença de qualidade entre fardos é extrema. É obrigatório misturar com um lote de alta uniformidade para evitar listras de tom ou textura no Denim.');
   } else if (delta >= 30) {
-    alerta = 'Dispersión Moderada: Se recomienda alimentación alternada en la línea de apertura (fardos buenos vs fardos malos).';
+    alerta = tr('Dispersión Moderada: Se recomienda alimentación alternada en la línea de apertura (fardos buenos vs fardos malos).', 'Dispersão Moderada: Recomenda-se alimentação alternada na linha de abertura (fardos bons vs fardos ruins).');
   }
   
   return { delta, stdDev, estado, alerta };
@@ -594,43 +599,43 @@ const pacasAnalizadas = computed(() => {
     const LIMITES_URDIMBRE = { sci: 112, str: 28.5, sf: 9.0, mic_min: 3.8, mic_max: 4.5, rd: 72.0 };
 
     if (sci < LIMITES_URDIMBRE.sci) {
-      desviaciones.push({ texto: `SCI Insuficiente (${sci.toFixed(0)}) < ${LIMITES_URDIMBRE.sci}`, critica: true });
+      desviaciones.push({ texto: `${tr('SCI Insuficiente', 'SCI Insuficiente')} (${sci.toFixed(0)}) < ${LIMITES_URDIMBRE.sci}`, critica: true });
       redFlag = true;
     }
 
     if (str < LIMITES_URDIMBRE.str) {
-      desviaciones.push({ texto: `STR Débil (${str.toFixed(1)}) < ${LIMITES_URDIMBRE.str}`, critica: true });
+      desviaciones.push({ texto: `${tr('STR Débil', 'STR Fraco')} (${str.toFixed(1)}) < ${LIMITES_URDIMBRE.str}`, critica: true });
       redFlag = true;
     }
 
     if (sf > LIMITES_URDIMBRE.sf) {
-      desviaciones.push({ texto: `Fibra Corta ALTA (${sf.toFixed(1)}) > ${LIMITES_URDIMBRE.sf}`, critica: true });
+      desviaciones.push({ texto: `${tr('Fibra Corta ALTA', 'Fibra Curta ALTA')} (${sf.toFixed(1)}) > ${LIMITES_URDIMBRE.sf}`, critica: true });
       redFlag = true;
     }
 
     if (mic < LIMITES_URDIMBRE.mic_min || mic > LIMITES_URDIMBRE.mic_max) {
-      desviaciones.push({ texto: `MIC Fuera de Rango (${mic.toFixed(2)})`, critica: true });
+      desviaciones.push({ texto: `${tr('MIC Fuera de Rango', 'MIC Fora da Faixa')} (${mic.toFixed(2)})`, critica: true });
       redFlag = true;
     }
 
     if (rd < LIMITES_URDIMBRE.rd) {
-      desviaciones.push({ texto: `Rd Baja (Opacidad) (${rd.toFixed(1)}) < ${LIMITES_URDIMBRE.rd}`, critica: false });
+      desviaciones.push({ texto: `${tr('Rd Baja (Opacidad)', 'Rd Baixa (Opacidade)')} (${rd.toFixed(1)}) < ${LIMITES_URDIMBRE.rd}`, critica: false });
       redFlag = true;
     }
 
     if (plusB > 11) {
-       desviaciones.push({ texto: `Riesgo Shading (+b ${plusB.toFixed(1)})`, critica: false });
+      desviaciones.push({ texto: `${tr('Riesgo Shading', 'Risco de Shading')} (+b ${plusB.toFixed(1)})`, critica: false });
        redFlag = true;
     }
 
     let machineAptitude = "";
     if (!redFlag) {
-      machineAptitude = "Apto para Urdimbre (12.5 Ne).";
+      machineAptitude = tr("Apto para Urdimbre (12.5 Ne).", "Apto para Urdume (12.5 Ne).");
     } else if (sci >= 102 && str >= 26) {
       const plan = PLAN_HILATURA_MES["10Flame"];
-      machineAptitude = `Apto para Flame. Vel. moderada (${(plan.rpm/1000).toFixed(0)}k RPM).`;
+      machineAptitude = `${tr('Apto para Flame. Vel. moderada', 'Apto para Flame. Vel. moderada')} (${(plan.rpm/1000).toFixed(0)}k RPM).`;
     } else {
-      machineAptitude = "Apto solo para Gruesos (5/1-10/1).";
+      machineAptitude = tr("Apto solo para Gruesos (5/1-10/1).", "Apto somente para Grossos (5/1-10/1).");
     }
 
     return {
@@ -693,7 +698,7 @@ function getColorTexto(key, valor) {
 
 const diagnosticoTitulos = computed(() => {
   const p = promedios.value;
-  const tit = DICCIONARIO_TEXTIL.TITULOS;
+  const tit = DICCIONARIO_TEXTIL.value.TITULOS;
   const resultado = [];
   
   Object.keys(tit).forEach(k => {
@@ -701,7 +706,7 @@ const diagnosticoTitulos = computed(() => {
     const plan = PLAN_HILATURA_MES[t.key];
     let clase = "border-red-200 shadow-red-50/50 hover:border-red-300";
     let icono = "❌";
-    let impactoTexto = "Riesgo de Paro Crítico";
+    let impactoTexto = tr("Riesgo de Paro Crítico", "Risco de Parada Crítica");
     let impactoClase = "bg-red-50 text-red-700 border-red-200";
 
     let explicacionTecnica = "";
@@ -709,23 +714,23 @@ const diagnosticoTitulos = computed(() => {
     if (p.sci >= t.limite_sci && p.str >= (t.limite_str || 0)) {
         clase = "border-green-200 shadow-green-50/50 hover:border-green-300";
         icono = "✅";
-        impactoTexto = "Eficiencia Proyectada > 94%";
+        impactoTexto = tr("Eficiencia Proyectada > 94%", "Eficiência Projetada > 94%");
         impactoClase = "bg-green-50 text-green-700 border-green-200";
     } else if (p.sci >= t.limite_sci - 5) {
         clase = "border-yellow-200 shadow-yellow-50/50 hover:border-yellow-300";
         icono = "⚠️";
-        impactoTexto = "Vigilancia en Salida de Rotor";
+        impactoTexto = tr("Vigilancia en Salida de Rotor", "Vigilância na Saída do Rotor");
         impactoClase = "bg-yellow-50 text-yellow-700 border-yellow-200";
     }
 
     // Análisis de Aptitud por Título (El 'Por qué')
     if (t.key === "7" || t.key === "10Flame" || t.key === "9") {
-       explicacionTecnica = "Apto por Cohesión de Masa: En estos títulos gruesos, el alto número de fibras en el núcleo del hilo compensa la baja resistencia individual (STR) detectada.";
+       explicacionTecnica = tr("Apto por Cohesión de Masa: En estos títulos gruesos, el alto número de fibras en el núcleo del hilo compensa la baja resistencia individual (STR) detectada.", "Apto por Coesão de Massa: Nestes títulos grossos, o alto número de fibras no núcleo do fio compensa a baixa resistência individual (STR) detectada.");
     } else if (t.key === "12.5") {
        if (p.sf > 13) {
-         explicacionTecnica = "Peligro de Puntos Delgados: Con un SF > 13%, el hilo de urdimbre presentará irregularidades de masa que causarán cortes por tensión en el telar.";
+         explicacionTecnica = tr("Peligro de Puntos Delgados: Con un SF > 13%, el hilo de urdimbre presentará irregularidades de masa que causarán cortes por tensión en el telar.", "Perigo de Pontos Finos: Com SF > 13%, o fio de urdume apresentará irregularidades de massa que causarão cortes por tensão no tear.");
        } else {
-         explicacionTecnica = "Estabilidad en Urdimbre: La longitud y resistencia de la fibra aseguran un proceso fluido en el engomado y tejido.";
+         explicacionTecnica = tr("Estabilidad en Urdimbre: La longitud y resistencia de la fibra aseguran un proceso fluido en el engomado y tejido.", "Estabilidade no Urdume: O comprimento e resistência da fibra garantem um processo fluido no engomado e tecelagem.");
        }
     }
 
@@ -746,31 +751,39 @@ const diagnosticoTitulos = computed(() => {
 
 const necesitaMitigacion = computed(() => (promedios.value.str < 24 || promedios.value.sf > 11 || promedios.value.mic < 3.5));
 const recomendacionesMitigacion = computed(() => ({
-  maquina: DICCIONARIO_TEXTIL.MITIGACION.MAQUINA,
-  planta: DICCIONARIO_TEXTIL.MITIGACION.PLANTA
+  maquina: DICCIONARIO_TEXTIL.value.MITIGACION.MAQUINA,
+  planta: DICCIONARIO_TEXTIL.value.MITIGACION.PLANTA
 }));
 
 const diagnosticoFinal = computed(() => {
-  if (pacasValidas.value.length === 0) return { hilanderia: "Sin datos.", calidad: "Sin datos.", conclusion: "DESCONOCIDA" };
+  if (pacasValidas.value.length === 0) return { hilanderia: tr("Sin datos.", "Sem dados."), calidad: tr("Sin datos.", "Sem dados."), conclusion: tr("DESCONOCIDA", "DESCONHECIDA") };
   const p = promedios.value;
-  const concl = DICCIONARIO_TEXTIL.CONCLUSIONES;
+  const concl = DICCIONARIO_TEXTIL.value.CONCLUSIONES;
   
-  const stabilityAlerta = estabilidadMezcla.value.alerta ? `\n\nALERTA DE MEZCLA:\n${estabilidadMezcla.value.alerta}` : "";
+  const stabilityAlerta = estabilidadMezcla.value.alerta ? `\n\n${tr('ALERTA DE MEZCLA', 'ALERTA DE MISTURA')}:\n${estabilidadMezcla.value.alerta}` : "";
 
   const hilanderia = (p.sci < 100 
-    ? "SCI promedio insuficiente para régimen de 90k RPM. Se prevé saturación de rotores y baja eficiencia operativa. Recomendación: Reducción de carga mecánica a 72k RPM."
-    : "Fibra con SCI y STR equilibrados para el plan mensual. Capacidad de respuesta óptima ante regímenes de 80k-90k RPM sin comprometer la continuidad operativa.") + stabilityAlerta;
+    ? tr("SCI promedio insuficiente para régimen de 90k RPM. Se prevé saturación de rotores y baja eficiencia operativa. Recomendación: Reducción de carga mecánica a 72k RPM.", "SCI médio insuficiente para regime de 90k RPM. Prevê-se saturação de rotores e baixa eficiência operacional. Recomendação: Redução de carga mecânica para 72k RPM.")
+    : tr("Fibra con SCI y STR equilibrados para el plan mensual. Capacidad de respuesta óptima ante regímenes de 80k-90k RPM sin comprometer la continuidad operativa.", "Fibra com SCI e STR equilibrados para o plano mensal. Capacidade de resposta ótima em regimes de 80k-90k RPM sem comprometer a continuidade operacional.")) + stabilityAlerta;
     
   const calidad = p.mic < 3.4 || p.rd < 65
-    ? `RIESGO DE CALIDAD EN DENIM: Micronaire bajo (${p.mic.toFixed(2)}) indica inmadurez celular avanzada; alto riesgo de 'puntos blancos' y neps durante la absorción del colorante índigo. El RD de ${p.rd.toFixed(1)} confirma degradación por factores climáticos que afectará la solidez.`
-    : "Parámetros de madurez y reflectancia óptimos. Capacidad de absorción de índigo superior, garantizando tonalidades profundas y tacto premium en el acabado final del tejido.";
+    ? tr(`RIESGO DE CALIDAD EN DENIM: Micronaire bajo (${p.mic.toFixed(2)}) indica inmadurez celular avanzada; alto riesgo de 'puntos blancos' y neps durante la absorción del colorante índigo. El RD de ${p.rd.toFixed(1)} confirma degradación por factores climáticos que afectará la solidez.`, `RISCO DE QUALIDADE NO DENIM: Micronaire baixo (${p.mic.toFixed(2)}) indica imaturidade celular avançada; alto risco de 'pontos brancos' e neps durante a absorção do corante índigo. O RD de ${p.rd.toFixed(1)} confirma degradação por fatores climáticos que afetará a solidez.`)
+    : tr("Parámetros de madurez y reflectancia óptimos. Capacidad de absorción de índigo superior, garantizando tonalidades profundas y tacto premium en el acabado final del tejido.", "Parâmetros de maturidade e refletância ótimos. Capacidade superior de absorção de índigo, garantindo tonalidades profundas e toque premium no acabamento final do tecido.");
 
   const conclusion = p.sci >= 112 && p.mic >= 3.8 ? concl.URDIMBRE : p.sci >= 102 ? concl.STANDARD : concl.RIESGO;
 
   return { hilanderia, calidad, conclusion };
 });
 
-const fechaAnalisis = computed(() => new Date().toLocaleString("es-ES", { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }));
+const fechaAnalisis = computed(() =>
+  new Date().toLocaleString(isPt.value ? 'pt-BR' : 'es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+);
 </script>
 
 <style scoped>

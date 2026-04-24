@@ -108,6 +108,7 @@
         <!-- 3. Reglas de Mezclas + Ver Columnas -->
         <div class="flex flex-col items-start gap-1.5 pr-2">
           <button
+            ref="ruleToggleButtonRef"
             @click="showRuleSelector = !showRuleSelector"
             v-tippy="{ content: t('inventory.blendRulesTooltip'), theme: 'light', placement: 'bottom' }"
             class="flex items-center space-x-1.5 text-indigo-600 text-xs font-semibold hover:text-indigo-800 transition-colors focus:outline-none"
@@ -217,7 +218,7 @@
       </div>
 
       <!-- Expandible: Supervisión -->
-      <div v-if="showRuleSelector" class="mt-4 bg-gray-50 p-3 rounded border">
+      <div v-if="showRuleSelector" ref="ruleSelectorPanelRef" class="mt-4 bg-gray-50 p-3 rounded border">
         <p class="text-xs text-gray-500 mb-2 italic">{{ t('rules.hint') }}</p>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div 
@@ -1456,6 +1457,8 @@ const selectedColumnKeys = ref(new Set(
 
 const showColumnSelector = ref(false);
 const showRuleSelector = ref(false);
+const ruleToggleButtonRef = ref(null);
+const ruleSelectorPanelRef = ref(null);
 
 const { versionActual: activeVersionName, tolerancias: activeRules } = storeToRefs(standardsStore);
 
@@ -1496,6 +1499,18 @@ const filters = reactive({
   searchText: '',
   fardos: null
 });
+
+const handleOutsideRuleSelectorClick = (event) => {
+  if (!showRuleSelector.value) return;
+
+  const target = event.target;
+  const clickedToggle = ruleToggleButtonRef.value?.contains(target);
+  const clickedPanel = ruleSelectorPanelRef.value?.contains(target);
+
+  if (!clickedToggle && !clickedPanel) {
+    showRuleSelector.value = false;
+  }
+};
 
 const selectedStockRowKeys = ref(new Set());
 const stockSelectAllRef = ref(null);
@@ -1923,6 +1938,7 @@ const fetchData = async () => {
 
 onMounted(() => {
   loadUserPreferences();
+  document.addEventListener('mousedown', handleOutsideRuleSelectorClick);
 
   fetchStandards().then(() => {
     fetchData(); 
@@ -1980,6 +1996,8 @@ watch(() => purchaseProjection.targetMixes, (value) => {
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener('mousedown', handleOutsideRuleSelectorClick);
+
   if (autoBlendRecalcTimeout) {
     clearTimeout(autoBlendRecalcTimeout);
     autoBlendRecalcTimeout = null;

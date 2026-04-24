@@ -2,7 +2,7 @@
   <div class="h-screen flex flex-row bg-gray-100 overflow-hidden font-sans">
 
     <!-- Sidebar izquierdo -->
-    <aside class="flex-none w-12 flex flex-col items-center bg-gray-100 border-r border-gray-200 py-3 z-50 shadow-sm select-none">
+    <aside class="relative z-[120] flex-none w-12 flex flex-col items-center bg-gray-100 border-r border-gray-200 py-3 shadow-sm select-none">
 
       <!-- Separador -->
       <div class="w-5 h-px bg-gray-300 mb-2"></div>
@@ -79,7 +79,7 @@
         <!-- Dropdown idiomas -->
         <div
           v-if="langOpen"
-          class="absolute left-full bottom-0 ml-3 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-50 min-w-[150px]"
+          class="absolute left-full bottom-0 ml-3 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-[130] min-w-[150px]"
         >
           <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
             {{ t('lang.select') }}

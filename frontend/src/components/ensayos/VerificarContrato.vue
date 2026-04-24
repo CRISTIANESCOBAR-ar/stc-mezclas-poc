@@ -4,7 +4,7 @@
     <!-- Loading State -->
     <div v-if="cargando" class="flex flex-col items-center justify-center py-20">
       <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-indigo-600 mb-4"></div>
-      <p class="text-slate-500 font-bold animate-pulse">Auditando Lote contra Estándares...</p>
+      <p class="text-slate-500 font-bold animate-pulse">{{ tr('Auditando Lote contra Estándares...', 'Auditando Lote contra Padrões...') }}</p>
     </div>
 
     <div v-else>
@@ -19,8 +19,8 @@
             </div>
             <div>
               <h2 class="text-2xl font-black text-slate-900 tracking-tight">
-                Auditoría de Cumplimiento Contractual
-                <span class="text-indigo-600 block text-sm font-bold uppercase tracking-widest mt-1">Análisis de Penalización y Rechazo</span>
+                {{ tr('Auditoría de Cumplimiento Contractual', 'Auditoria de Conformidade Contratual') }}
+                <span class="text-indigo-600 block text-sm font-bold uppercase tracking-widest mt-1">{{ tr('Análisis de Penalización y Rechazo', 'Análise de Penalização e Rejeição') }}</span>
               </h2>
             </div>
           </div>
@@ -31,7 +31,7 @@
             <div v-if="argentineGrade" class="relative group cursor-help">
                 <div class="px-5 py-3 bg-white border-2 border-slate-200 rounded-xl shadow-sm flex items-center gap-3 hover:border-indigo-300 transition-colors">
                     <div class="flex flex-col items-start">
-                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Grado Sugerido (S.A.)</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">{{ tr('Grado Sugerido (S.A.)', 'Grau Sugerido (S.A.)') }}</span>
                         <div class="flex items-center gap-2">
                             <span class="text-xl font-black text-slate-800">{{ argentineGrade.finalGrade }}</span>
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -43,24 +43,24 @@
 
                 <!-- Tooltip Desglose -->
                 <div class="absolute top-full right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 transform translate-y-2 group-hover:translate-y-0">
-                    <h4 class="text-sm font-bold text-slate-800 mb-2 border-b pb-2">Desglose Técnico</h4>
+                    <h4 class="text-sm font-bold text-slate-800 mb-2 border-b pb-2">{{ tr('Desglose Técnico', 'Detalhamento Técnico') }}</h4>
                     
                     <div class="space-y-2 text-sm">
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-500">Color (Rd, +b):</span>
+                            <span class="text-slate-500">{{ tr('Color (Rd, +b):', 'Cor (Rd, +b):') }}</span>
                             <!-- Color Grade is min(Rd, +b) -->
                             <span class="font-mono font-bold" :class="getGradeColorClass(technicalGradeColor)">
                                 {{ technicalGradeColor }}
                             </span>
                         </div>
                         <div class="flex justify-between items-center">
-                            <span class="text-slate-500">Basura (Tr):</span>
+                            <span class="text-slate-500">{{ tr('Basura (Tr):', 'Impureza (Tr):') }}</span>
                             <span class="font-mono font-bold" :class="getGradeColorClass(argentineGrade.components.trash.grade)">
                                 {{ argentineGrade.components.trash.grade }}
                             </span>
                         </div>
                         <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center">
-                            <span class="font-bold text-slate-700">Veredicto Final:</span>
+                            <span class="font-bold text-slate-700">{{ tr('Veredicto Final:', 'Veredito Final:') }}</span>
                             <span class="font-black text-indigo-600">{{ argentineGrade.finalGrade }}</span>
                         </div>
                     </div>
@@ -84,21 +84,21 @@
         <!-- Metadata Resumida -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-6 p-4 bg-slate-50 rounded-xl border border-slate-100 text-xs">
            <div>
-             <span class="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Lote / Fardos</span>
-             <span class="text-slate-800 font-black font-mono text-base">{{ metadata.loteEntrada || 'N/A' }} ({{ pacas.length }})</span>
+             <span class="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">{{ tr('Lote / Fardos', 'Lote / Fardos') }}</span>
+             <span class="text-slate-800 font-black font-mono text-base">{{ metadata.loteEntrada || tr('N/A', 'N/D') }} ({{ pacas.length }})</span>
            </div>
            <div>
-             <span class="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Configuración</span>
-             <span class="text-indigo-600 font-bold">{{ activeVersion || 'Estándar 2026' }}</span>
+             <span class="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">{{ tr('Configuración', 'Configuração') }}</span>
+             <span class="text-indigo-600 font-bold">{{ activeVersion || tr('Estándar 2026', 'Padrão 2026') }}</span>
            </div>
            <div class="col-span-2">
-             <span class="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">Estado Preeliminar</span>
+             <span class="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">{{ tr('Estado Preeliminar', 'Estado Preliminar') }}</span>
              <div class="flex gap-4 mt-1">
                 <span class="text-[11px] font-bold" :class="esHomogeneo ? 'text-green-600' : 'text-red-600'">
-                  {{ esHomogeneo ? '✅ Mezcla Homogénea (Apta para Producción)' : '❌ Mezcla Irregular (Riesgo Operativo)' }}
+                  {{ esHomogeneo ? tr('✅ Mezcla Homogénea (Apta para Producción)', '✅ Mistura Homogênea (Apta para Produção)') : tr('❌ Mezcla Irregular (Riesgo Operativo)', '❌ Mistura Irregular (Risco Operacional)') }}
                 </span>
                 <span class="text-[11px] font-bold" :class="cumpleComercial ? 'text-green-600' : 'text-red-600'">
-                  {{ cumpleComercial ? '✅ Cumplimiento Comercial' : '❌ Incumplimiento Contractual' }}
+                  {{ cumpleComercial ? tr('✅ Cumplimiento Comercial', '✅ Cumprimento Comercial') : tr('❌ Incumplimiento Contractual', '❌ Descumprimento Contratual') }}
                 </span>
              </div>
            </div>
@@ -111,7 +111,7 @@
         <div class="lg:col-span-1 space-y-6">
           <div class="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
             <div class="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">Promedio Contrato vs Real</h3>
+              <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">{{ tr('Promedio Contrato vs Real', 'Média Contrato vs Real') }}</h3>
               <span class="text-[10px] text-slate-400 font-bold">AVG CHECK</span>
             </div>
             <div class="p-4 space-y-5">
@@ -131,7 +131,7 @@
                         :class="getPromedioStatusColor(res)"></div>
 
                    <div class="flex flex-col items-start z-10">
-                      <span class="text-[9px] text-slate-400 font-bold uppercase">Objetivo</span>
+                       <span class="text-[9px] text-slate-400 font-bold uppercase">{{ tr('Objetivo', 'Objetivo') }}</span>
                       <span class="text-xs font-medium text-slate-600 font-mono">
                         {{ formatTarget(res.targets) }}
                       </span>
@@ -140,7 +140,7 @@
                    <div class="text-xl text-slate-300 font-light">vs</div>
 
                    <div class="flex flex-col items-end z-10">
-                      <span class="text-[9px] text-slate-400 font-bold uppercase">Real</span>
+                      <span class="text-[9px] text-slate-400 font-bold uppercase">{{ tr('Real', 'Real') }}</span>
                       <span class="text-xl font-black font-mono" :class="getPromedioStatusColorText(res)">
                         {{ res.avg }}
                       </span>
@@ -148,7 +148,7 @@
                 </div>
                 
                 <p v-if="res.status === 'RECHAZO' && !isDistributionOnlyFail(res)" class="text-[10px] text-red-500 mt-1 font-medium pl-1">
-                   🚨 Desviación de promedio significativa. Aplica penalización comercial.
+                   {{ tr('🚨 Desviación de promedio significativa. Aplica penalización comercial.', '🚨 Desvio de média significativo. Aplica penalização comercial.') }}
                 </p>
               </div>
             </div>
@@ -161,7 +161,7 @@
           <!-- Card de Distribución (Exclusión por Penalización) -->
           <div class="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
              <div class="px-5 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
-              <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">Zona de Penalización (Distribución)</h3>
+              <h3 class="font-bold text-slate-700 text-sm uppercase tracking-wide">{{ tr('Zona de Penalización (Distribución)', 'Zona de Penalização (Distribuição)') }}</h3>
               <span class="text-[10px] text-slate-400 font-bold">TOLERANCIA {{ activeVersion }}</span>
             </div>
             
@@ -174,7 +174,7 @@
                      <span class="font-black text-slate-700">{{ param }}</span>
                      <span class="text-[10px] font-bold px-2 py-1 rounded bg-white border"
                            :class="(res.distribution && res.distribution.outliersPct > (100 - (res.targets.minIdealPct || 80))) ? 'text-red-600 border-red-200' : 'text-slate-500 border-slate-200'">
-                        {{ res.distribution ? res.distribution.outliersPct : 0 }}% Fuera
+                        {{ res.distribution ? res.distribution.outliersPct : 0 }}% {{ tr('Fuera', 'Fora') }}
                      </span>
                   </div>
 
@@ -190,11 +190,11 @@
                      </div>
                   </div>
                   <div v-else class="relative pt-2">
-                     <span class="text-[9px] text-slate-400 italic">Sin datos de distribución</span>
+                     <span class="text-[9px] text-slate-400 italic">{{ tr('Sin datos de distribución', 'Sem dados de distribuição') }}</span>
                   </div>
 
                   <p v-if="res.distribution && res.distribution.outliersPct > (100 - (res.targets.minIdealPct || 80))" class="text-[10px] text-red-600 font-bold mt-2">
-                    ⛔ Exceso de fardos en zona de penalización. Lote Heterogéneo.
+                    {{ tr('⛔ Exceso de fardos en zona de penalización. Lote Heterogéneo.', '⛔ Excesso de fardos na zona de penalização. Lote Heterogêneo.') }}
                   </p>
                </div>
             </div>
@@ -203,7 +203,7 @@
           <!-- Tabla de Violaciones Hard Cap -->
           <div class="bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
              <div class="px-5 py-3 bg-red-50 border-b border-red-100 flex items-center justify-between">
-              <h3 class="font-bold text-red-800 text-sm uppercase tracking-wide">Fardos Rechazados (Hard Cap / Tolerancia)</h3>
+              <h3 class="font-bold text-red-800 text-sm uppercase tracking-wide">{{ tr('Fardos Rechazados (Hard Cap / Tolerancia)', 'Fardos Rejeitados (Hard Cap / Tolerância)') }}</h3>
               <span class="text-[10px] text-red-400 font-bold">EXCLUSIÓN INDIVIDUAL</span>
             </div>
             
@@ -212,9 +212,9 @@
                  <thead class="bg-slate-50 sticky top-0 text-slate-500 font-bold uppercase">
                    <tr>
                      <th class="px-4 py-2">Fardo</th>
-                     <th class="px-4 py-2">Parámetro</th>
+                     <th class="px-4 py-2">{{ tr('Parámetro', 'Parâmetro') }}</th>
                      <th class="px-4 py-2 text-right">Valor</th>
-                     <th class="px-4 py-2">Motivo</th>
+                     <th class="px-4 py-2">{{ tr('Motivo', 'Motivo') }}</th>
                    </tr>
                  </thead>
                  <tbody class="divide-y divide-slate-100">
@@ -232,7 +232,7 @@
                  </tbody>
                </table>
                <div v-else class="p-8 text-center text-slate-400 font-medium italic">
-                 ✨ Ningún fardo ha violado los límites absolutos ni de tolerancia.
+                 {{ tr('✨ Ningún fardo ha violado los límites absolutos ni de tolerancia.', '✨ Nenhum fardo violou os limites absolutos nem de tolerância.') }}
                </div>
             </div>
           </div>
@@ -245,6 +245,11 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
+import { useI18n } from 'vue-i18n';
+
+const { locale } = useI18n();
+const isPt = computed(() => locale.value === 'pt-BR');
+const tr = (es, pt) => (isPt.value ? pt : es);
 
 const props = defineProps({
   pacas: {
@@ -307,7 +312,9 @@ const cumpleComercial = computed(() => {
 
 const veredictoGlobalTexto = computed(() => {
   if (!auditData.value) return '---';
-  return auditData.value.overallStatus === 'IDEAL' ? 'APROBADO' : auditData.value.overallStatus;
+  if (auditData.value.overallStatus === 'IDEAL') return tr('APROBADO', 'APROVADO');
+  if (auditData.value.overallStatus === 'RECHAZO') return tr('RECHAZO', 'REJEIÇÃO');
+  return auditData.value.overallStatus;
 });
 
 const veredictoGlobalClass = computed(() => {
@@ -371,7 +378,7 @@ function getPromedioStatusText(res) {
 }
 
 function formatTarget(t) {
-  if (!t) return 'N/A';
+  if (!t) return tr('N/A', 'N/D');
   if (t.minAvg) return `> ${t.minAvg}`;
   if (t.maxAvg) return `< ${t.maxAvg}`;
   return '---';
