@@ -352,7 +352,7 @@ router.post('/predecir-hilatura', async (req, res) => {
       return res.status(500).json({ success: false, error: 'GOOGLE_API_KEY no configurada' });
     }
 
-    const modelName = req.body.model || 'gemini-2.0-flash';
+    const modelName = req.body.model || 'gemini-2.5-pro';
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: modelName });
@@ -441,6 +441,51 @@ NOTA: Si solo recibes 'lote_recibido' sin 'referencia_muestra', realiza la evalu
     res.json({ success: true, insight: text });
   } catch (error) {
     console.error('Error Gemini:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =====================================================
+// POST /analizar-mezcla
+// Análisis IA de la mezcla calculada por el optimizer
+// =====================================================
+router.post('/analizar-mezcla', async (req, res) => {
+  try {
+    const { payload, model: modelName = 'gemini-2.5-pro' } = req.body;
+    const apiKey = process.env.GOOGLE_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ success: false, error: 'GOOGLE_API_KEY no configurada' });
+    }
+    if (!payload) {
+      return res.status(400).json({ success: false, error: 'Falta el payload de la mezcla' });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    const prompt = `Actúa como Ingeniero Senior de Planta de Denim con experiencia en hilatura OE (rotor), telar de aire y tintura índigo.
+
+Recibirás el análisis técnico de una mezcla de algodón calculada por un optimizador de blendomat, junto con los datos de lotes históricos y bloques del plan.
+
+Tu tarea: enriquecer el análisis predictivo con recomendaciones operativas adicionales, riesgos no detectados y sugerencias de ajuste.
+
+DATOS DE LA MEZCLA (JSON):
+${JSON.stringify(payload, null, 2)}
+
+RESPONDE EN ESTE FORMATO EJECUTIVO (máximo 300 palabras):
+
+1. ✅ VALIDACIÓN: ¿El análisis predictivo es correcto? ¿Algo que agregar o corregir?
+2. ⚠️ RIESGOS ADICIONALES: Variables de proceso con impacto potencial no mencionado.
+3. 🔧 SETEO RECOMENDADO: Ajustes concretos de máquina para el próximo turno (rotor, telar, tintura).
+4. 🚦 SEMÁFORO FINAL: 🟢 Aprobar / 🟡 Aprobar con advertencias / 🔴 Revisar antes de arrancar.
+
+Sé conciso y técnico. No repitas datos ya presentes en el análisis.`;
+
+    const result = await model.generateContent(prompt);
+    res.json({ success: true, insight: result.response.text() });
+  } catch (error) {
+    console.error('Error Gemini blend:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

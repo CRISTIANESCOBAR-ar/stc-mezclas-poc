@@ -706,21 +706,38 @@
                               {{ predictiveFiberAnalysis.badgeLabel }}
                             </span>
                           </div>
-                          <button
-                            type="button"
-                            @click="copyPredictiveWhatsappMessage"
-                            class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap"
-                            :class="predictiveCopyState === 'success'
-                              ? 'border-emerald-400 bg-emerald-100 text-emerald-700'
-                              : (predictiveCopyState === 'error'
-                                ? 'border-rose-300 bg-rose-50 text-rose-700'
-                                : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100')"
-                          >
-                            <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
-                              <path d="M20.52 3.48A11.91 11.91 0 0 0 12.04 0C5.5 0 .16 5.33.16 11.88c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.87 11.87 0 0 0 5.7 1.45h.01c6.54 0 11.88-5.33 11.88-11.88 0-3.18-1.24-6.17-3.4-8.43Zm-8.48 18.3h-.01a9.87 9.87 0 0 1-5.02-1.37l-.36-.22-3.76.99 1-3.67-.24-.38a9.85 9.85 0 0 1-1.5-5.25C2.15 6.45 6.58 2 12.04 2a9.84 9.84 0 0 1 7 2.9 9.84 9.84 0 0 1 2.88 6.99c0 5.45-4.44 9.89-9.88 9.89Zm5.42-7.42c-.3-.15-1.77-.87-2.04-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.16-.17.2-.34.23-.63.08-.3-.15-1.24-.46-2.37-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.5.15-.17.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5h-.56c-.2 0-.53.08-.8.38-.27.3-1.04 1.01-1.04 2.46s1.06 2.86 1.2 3.05c.15.2 2.08 3.17 5.03 4.45.7.3 1.25.49 1.68.63.7.22 1.34.19 1.84.12.56-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.18-1.42-.07-.12-.27-.2-.56-.35Z"/>
-                            </svg>
-                            <span>{{ t('summary.copyMessage') }}</span>
-                          </button>
+                          <div class="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+                            <!-- 📋 Proyección -->
+                            <button type="button" @click="copyPredictiveWhatsappMessage"
+                              class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap"
+                              :class="predictiveCopyState === 'success' ? 'border-emerald-400 bg-emerald-100 text-emerald-700' : predictiveCopyState === 'error' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'">
+                              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
+                              <span>Proyección</span>
+                            </button>
+                            <!-- 🤖 IA Gemini -->
+                            <button type="button" @click="solicitarAnalisisBlend"
+                              :disabled="aiBlendLoading || !predictiveFiberAnalysis.available"
+                              class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap disabled:opacity-50"
+                              :class="aiBlendLoading ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'">
+                              <svg v-if="aiBlendLoading" class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                              <svg v-else class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+                              <span>{{ aiBlendLoading ? 'Consultando…' : 'IA Gemini' }}</span>
+                            </button>
+                            <!-- { } JSON -->
+                            <button type="button" @click="copyGeminiJsonPayload"
+                              class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap"
+                              :class="jsonBlendCopyState === 'success' ? 'border-violet-400 bg-violet-100 text-violet-700' : jsonBlendCopyState === 'error' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100'">
+                              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
+                              <span>{{ jsonBlendCopyState === 'success' ? '¡Copiado!' : 'JSON' }}</span>
+                            </button>
+                            <!-- WhatsApp original -->
+                            <button type="button" @click="copyPredictiveWhatsappMessage"
+                              class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[11px] font-semibold transition-colors whitespace-nowrap"
+                              :class="predictiveCopyState === 'success' ? 'border-emerald-400 bg-emerald-100 text-emerald-700' : predictiveCopyState === 'error' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'">
+                              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.91 11.91 0 0 0 12.04 0C5.5 0 .16 5.33.16 11.88c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.87 11.87 0 0 0 5.7 1.45h.01c6.54 0 11.88-5.33 11.88-11.88 0-3.18-1.24-6.17-3.4-8.43Zm-8.48 18.3h-.01a9.87 9.87 0 0 1-5.02-1.37l-.36-.22-3.76.99 1-3.67-.24-.38a9.85 9.85 0 0 1-1.5-5.25C2.15 6.45 6.58 2 12.04 2a9.84 9.84 0 0 1 7 2.9 9.84 9.84 0 0 1 2.88 6.99c0 5.45-4.44 9.89-9.88 9.89Zm5.42-7.42c-.3-.15-1.77-.87-2.04-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.16-.17.2-.34.23-.63.08-.3-.15-1.24-.46-2.37-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.5.15-.17.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5h-.56c-.2 0-.53.08-.8.38-.27.3-1.04 1.01-1.04 2.46s1.06 2.86 1.2 3.05c.15.2 2.08 3.17 5.03 4.45.7.3 1.25.49 1.68.63.7.22 1.34.19 1.84.12.56-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.18-1.42-.07-.12-.27-.2-.56-.35Z"/></svg>
+                              <span>{{ t('summary.copyMessage') }}</span>
+                            </button>
+                          </div>
                         </div>
                         <p class="text-[11px] text-slate-600 mb-1">{{ predictiveFiberAnalysis.subtitle }}</p>
                         <template v-if="predictiveFiberAnalysis.available">
@@ -735,6 +752,24 @@
                           <p class="font-semibold" :class="predictiveFiberAnalysis.verdictTextClass">{{ predictiveFiberAnalysis.efficiencyBody }}</p>
                         </template>
                         <p v-else class="text-slate-500">{{ t('summary.noData') }}</p>
+                        <!-- Resultado IA Gemini -->
+                        <div v-if="aiBlendLoading" class="mt-2 flex items-center gap-1.5 text-[11px] text-indigo-600 font-medium">
+                          <svg class="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                          Consultando IA Gemini…
+                        </div>
+                        <div v-else-if="aiBlendInsight" class="mt-2 rounded border border-indigo-200 bg-indigo-50 px-3 py-3 relative group shadow-sm">
+                          <div class="flex items-center justify-between mb-2 pb-2 border-b border-indigo-100">
+                            <p class="text-[12px] font-bold text-indigo-800 flex items-center gap-1.5"><span>🤖</span> Análisis IA Gemini</p>
+                            <button type="button" @click="copyAiInsightWhatsapp"
+                              class="inline-flex items-center gap-1 rounded-md bg-white px-2.5 py-1 text-[10px] font-semibold text-indigo-600 border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-sm"
+                              :class="aiCopyState === 'success' ? '!bg-emerald-100 !text-emerald-800 !border-emerald-300' : ''">
+                              <svg v-if="aiCopyState === 'success'" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                              <svg v-else class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                              {{ aiCopyState === 'success' ? 'Copiado' : 'WhatsApp' }}
+                            </button>
+                          </div>
+                          <div class="text-[11.5px] text-slate-700 leading-relaxed max-w-full overflow-hidden break-words space-y-2 ai-markdown-content" v-html="formatMarkdownToHtml(aiBlendInsight)"></div>
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -1326,21 +1361,38 @@
                                 {{ predictiveFiberAnalysis.badgeLabel }}
                               </span>
                             </div>
-                            <button
-                              type="button"
-                              @click="copyPredictiveWhatsappMessage"
+                          <div class="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
+                            <!-- 📋 Proyección -->
+                            <button type="button" @click="copyPredictiveWhatsappMessage"
+                              class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors whitespace-nowrap"
+                              :class="predictiveCopyState === 'success' ? 'border-emerald-400 bg-emerald-100 text-emerald-700' : predictiveCopyState === 'error' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'">
+                              <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/></svg>
+                              <span>Proyección</span>
+                            </button>
+                            <!-- 🤖 IA Gemini -->
+                            <button type="button" @click="solicitarAnalisisBlend"
+                              :disabled="aiBlendLoading || !predictiveFiberAnalysis.available"
+                              class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors whitespace-nowrap disabled:opacity-50"
+                              :class="aiBlendLoading ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-indigo-300 bg-indigo-50 text-indigo-700 hover:bg-indigo-100'">
+                              <svg v-if="aiBlendLoading" class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                              <svg v-else class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"/></svg>
+                              <span>{{ aiBlendLoading ? 'Consultando…' : 'IA Gemini' }}</span>
+                            </button>
+                            <!-- { } JSON -->
+                            <button type="button" @click="copyGeminiJsonPayload"
+                              class="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors whitespace-nowrap"
+                              :class="jsonBlendCopyState === 'success' ? 'border-violet-400 bg-violet-100 text-violet-700' : jsonBlendCopyState === 'error' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100'">
+                              <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/></svg>
+                              <span>{{ jsonBlendCopyState === 'success' ? '¡Copiado!' : 'JSON' }}</span>
+                            </button>
+                            <!-- WhatsApp original -->
+                            <button type="button" @click="copyPredictiveWhatsappMessage"
                               class="inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] font-semibold transition-colors whitespace-nowrap"
-                              :class="predictiveCopyState === 'success'
-                                ? 'border-emerald-400 bg-emerald-100 text-emerald-700'
-                                : (predictiveCopyState === 'error'
-                                  ? 'border-rose-300 bg-rose-50 text-rose-700'
-                                  : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100')"
-                            >
-                              <svg viewBox="0 0 24 24" class="h-4 w-4" fill="currentColor" aria-hidden="true">
-                                <path d="M20.52 3.48A11.91 11.91 0 0 0 12.04 0C5.5 0 .16 5.33.16 11.88c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.87 11.87 0 0 0 5.7 1.45h.01c6.54 0 11.88-5.33 11.88-11.88 0-3.18-1.24-6.17-3.4-8.43Zm-8.48 18.3h-.01a9.87 9.87 0 0 1-5.02-1.37l-.36-.22-3.76.99 1-3.67-.24-.38a9.85 9.85 0 0 1-1.5-5.25C2.15 6.45 6.58 2 12.04 2a9.84 9.84 0 0 1 7 2.9 9.84 9.84 0 0 1 2.88 6.99c0 5.45-4.44 9.89-9.88 9.89Zm5.42-7.42c-.3-.15-1.77-.87-2.04-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.16-.17.2-.34.23-.63.08-.3-.15-1.24-.46-2.37-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.5.15-.17.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5h-.56c-.2 0-.53.08-.8.38-.27.3-1.04 1.01-1.04 2.46s1.06 2.86 1.2 3.05c.15.2 2.08 3.17 5.03 4.45.7.3 1.25.49 1.68.63.7.22 1.34.19 1.84.12.56-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.18-1.42-.07-.12-.27-.2-.56-.35Z"/>
-                              </svg>
+                              :class="predictiveCopyState === 'success' ? 'border-emerald-400 bg-emerald-100 text-emerald-700' : predictiveCopyState === 'error' ? 'border-rose-300 bg-rose-50 text-rose-700' : 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'">
+                              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="currentColor" aria-hidden="true"><path d="M20.52 3.48A11.91 11.91 0 0 0 12.04 0C5.5 0 .16 5.33.16 11.88c0 2.1.55 4.15 1.6 5.95L0 24l6.33-1.66a11.87 11.87 0 0 0 5.7 1.45h.01c6.54 0 11.88-5.33 11.88-11.88 0-3.18-1.24-6.17-3.4-8.43Zm-8.48 18.3h-.01a9.87 9.87 0 0 1-5.02-1.37l-.36-.22-3.76.99 1-3.67-.24-.38a9.85 9.85 0 0 1-1.5-5.25C2.15 6.45 6.58 2 12.04 2a9.84 9.84 0 0 1 7 2.9 9.84 9.84 0 0 1 2.88 6.99c0 5.45-4.44 9.89-9.88 9.89Zm5.42-7.42c-.3-.15-1.77-.87-2.04-.96-.27-.1-.47-.15-.66.15-.2.3-.76.96-.93 1.16-.17.2-.34.23-.63.08-.3-.15-1.24-.46-2.37-1.47-.88-.78-1.47-1.75-1.64-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.34.45-.5.15-.17.2-.3.3-.5.1-.2.05-.38-.02-.53-.08-.15-.66-1.6-.9-2.18-.24-.57-.48-.5-.66-.5h-.56c-.2 0-.53.08-.8.38-.27.3-1.04 1.01-1.04 2.46s1.06 2.86 1.2 3.05c.15.2 2.08 3.17 5.03 4.45.7.3 1.25.49 1.68.63.7.22 1.34.19 1.84.12.56-.08 1.77-.72 2.02-1.42.25-.7.25-1.3.18-1.42-.07-.12-.27-.2-.56-.35Z"/></svg>
                               <span>{{ t('summary.copyMessage') }}</span>
                             </button>
+                          </div>
                           </div>
                           <p class="text-[10px] text-slate-600 mb-1">{{ predictiveFiberAnalysis.subtitle }}</p>
                           <template v-if="predictiveFiberAnalysis.available">
@@ -1355,6 +1407,24 @@
                             <p class="font-semibold" :class="predictiveFiberAnalysis.verdictTextClass">{{ predictiveFiberAnalysis.efficiencyBody }}</p>
                           </template>
                           <p v-else class="text-slate-500">{{ t('summary.noData') }}</p>
+                          <!-- Resultado IA Gemini -->
+                          <div v-if="aiBlendLoading" class="mt-2 flex items-center gap-1.5 text-[10px] text-indigo-600 font-medium">
+                            <svg class="h-3 w-3 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg>
+                            Consultando IA Gemini…
+                          </div>
+                          <div v-else-if="aiBlendInsight" class="mt-2 rounded border border-indigo-200 bg-indigo-50 px-2.5 py-2.5 relative group shadow-sm">
+                            <div class="flex items-center justify-between mb-1.5 pb-1.5 border-b border-indigo-100">
+                              <p class="text-[11px] font-bold text-indigo-800 flex items-center gap-1.5"><span>🤖</span> Análisis IA Gemini</p>
+                              <button type="button" @click="copyAiInsightWhatsapp"
+                                class="inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 text-[9px] font-semibold text-indigo-600 border border-indigo-200 hover:bg-indigo-50 transition-colors shadow-sm"
+                                :class="aiCopyState === 'success' ? '!bg-emerald-100 !text-emerald-800 !border-emerald-300' : ''">
+                                <svg v-if="aiCopyState === 'success'" class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                <svg v-else class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                                {{ aiCopyState === 'success' ? 'Copiado' : 'WhatsApp' }}
+                              </button>
+                            </div>
+                            <div class="text-[10px] text-slate-700 leading-relaxed max-w-full overflow-hidden break-words space-y-1.5 ai-markdown-content" v-html="formatMarkdownToHtml(aiBlendInsight)"></div>
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -2899,6 +2969,150 @@ const copyPredictiveWhatsappMessage = async () => {
     console.warn('No se pudo copiar el mensaje de proyección:', error);
     predictiveCopyState.value = 'error';
     resetPredictiveCopyState();
+  }
+};
+
+// =====================================================
+// IA BLEND + JSON PAYLOAD
+// =====================================================
+const aiBlendInsight = ref('');
+const aiBlendLoading = ref(false);
+const jsonBlendCopyState = ref('idle');
+let jsonBlendCopyTimer = null;
+
+const formatMarkdownToHtml = (text) => {
+  if (!text) return '';
+  return text
+    // Convertir titulos con # (hasta 3)
+    .replace(/^### (.*)$/gm, '<h3 class="font-bold text-[12px] text-indigo-900 mt-2 mb-1">$1</h3>')
+    // Negrita
+    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-indigo-900">$1</strong>')
+    // Listas (asteriscos sueltos)
+    .replace(/^\* (.*)$/gm, '<li class="ml-3 list-disc">$1</li>')
+    // Saltos de línea
+    .replace(/\n\n/g, '<br><br>')
+    .replace(/\n/g, '<br>');
+};
+
+const aiCopyState = ref('idle');
+let aiCopyTimer = null;
+
+const resetAiCopyState = () => {
+  if (aiCopyTimer) clearTimeout(aiCopyTimer);
+  aiCopyTimer = setTimeout(() => { aiCopyState.value = 'idle'; }, 2000);
+};
+
+const copyAiInsightWhatsapp = async () => {
+  try {
+    const text = aiBlendInsight.value || '';
+    if (!text.trim()) return;
+    
+    // Adaptar markdown para WhatsApp (donde el negrita es *)
+    const whatsappText = text
+      .replace(/\*\*(.*?)\*\*/g, '*$1*')    // Convertir de ** a * para negrita en WP
+      .replace(/^### (.*)$/gm, '*$1*')      // Títulos a negrita de WP
+      .replace(/^\* (.*)$/gm, '• $1');      // Asteriscos de lista a bullets reales
+
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(whatsappText);
+    } else {
+      const textArea = document.createElement('textarea');
+      textArea.value = whatsappText;
+      textArea.setAttribute('readonly', '');
+      textArea.style.position = 'absolute';
+      textArea.style.left = '-9999px';
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+    }
+    aiCopyState.value = 'success';
+    resetAiCopyState();
+  } catch (err) {
+    aiCopyState.value = 'error';
+    resetAiCopyState();
+  }
+};
+
+const geminiBlendPayload = computed(() => {
+  const analysis = predictiveFiberAnalysis.value;
+  const refItems = (loteFiacReferenceSummary.value || []).map(item => ({
+    lote: item.loteFiac,
+    fecha: item.dataInicial,
+    kg_usados: item.kgUsados,
+    residuos_pct: item.residuosPct,
+    classe: item.classeArg,
+    MIC: item.MIC,
+    LEN: item.LEN,
+    STR: item.STR,
+    ELG: item.ELG
+  }));
+  const columns = activeBlendColumns.value || [];
+  const stats = blendPlan.value?.estadisticas || {};
+
+  return {
+    analisis_proyeccion: {
+      titulo: analysis.title,
+      severidad: analysis.badgeLabel,
+      conclusion: analysis.conclusionBody,
+      veredicto: analysis.efficiencyBody,
+      secciones: (analysis.sections || []).map(s => ({
+        titulo: s.title,
+        puntos: s.bullets || []
+      }))
+    },
+    lotes_referencia: refItems,
+    bloques_mezcla: columns.map(col => ({
+      bloque: col,
+      fardos: stats[col]?.totalFardos,
+      kg_por_mezcla: stats[col]?.pesoPorMezcla,
+      kg_total_bloque: stats[col]?.pesoTotalBloque
+    })),
+    algoritmo: appliedAlgorithmLabel.value || 'N/A'
+  };
+});
+
+const copyGeminiJsonPayload = async () => {
+  try {
+    const text = JSON.stringify(geminiBlendPayload.value, null, 2);
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'absolute';
+      ta.style.left = '-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    jsonBlendCopyState.value = 'success';
+  } catch {
+    jsonBlendCopyState.value = 'error';
+  } finally {
+    if (jsonBlendCopyTimer) clearTimeout(jsonBlendCopyTimer);
+    jsonBlendCopyTimer = setTimeout(() => { jsonBlendCopyState.value = 'idle'; }, 2000);
+  }
+};
+
+const solicitarAnalisisBlend = async () => {
+  if (!predictiveFiberAnalysis.value?.available) return;
+  aiBlendLoading.value = true;
+  aiBlendInsight.value = '';
+  try {
+    const response = await fetch('/api/hvi/analizar-mezcla', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ payload: geminiBlendPayload.value, model: 'gemini-2.5-pro' })
+    });
+    const data = await response.json();
+    aiBlendInsight.value = data.success ? data.insight : ('Error: ' + (data.error || 'Respuesta inválida'));
+  } catch (err) {
+    aiBlendInsight.value = 'Error al conectar con la IA: ' + err.message;
+  } finally {
+    aiBlendLoading.value = false;
   }
 };
 
