@@ -1,8 +1,11 @@
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import pool, { query } from '../db/pg.js';
+import crypto from 'crypto';
 
 const router = express.Router();
+
+const cachedAnalysis = new Map();
 
 // =====================================================
 // POST /save
@@ -354,6 +357,15 @@ router.post('/predecir-hilatura', async (req, res) => {
 
     const modelName = req.body.model || 'gemini-2.5-pro';
 
+    const rawDataStr = JSON.stringify({ lote, pacas, metadata, contexto, modelName });
+    const hash = crypto.createHash('sha256').update(rawDataStr).digest('hex');
+    const cacheKey = `predecir_${modelName}_${hash}`;
+
+    if (cachedAnalysis.has(cacheKey)) {
+      console.log('⚡ [CACHÉ] Sirviendo predicción previamente generada de Hilatura.');
+      return res.json({ success: true, insight: cachedAnalysis.get(cacheKey) });
+    }
+
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: modelName });
 
@@ -438,7 +450,11 @@ NOTA: Si solo recibes 'lote_recibido' sin 'referencia_muestra', realiza la evalu
     const result = await model.generateContent(prompt);
     const text = result.response.text();
 
-    res.json({ success: true, insight: text });
+    const sign = `\n\n---\n🤖 **Agente:** ${modelName}\n🕒 **Generado:** ${new Date().toLocaleString()}\n💾 *Almacenado temporalmente en Caché para optimizar peticiones.*`;
+    const finalInsight = text + sign;
+
+    cachedAnalysis.set(cacheKey, finalInsight);
+    res.json({ success: true, insight: finalInsight });
   } catch (error) {
     console.error('Error Gemini:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -459,6 +475,15 @@ router.post('/analizar-mezcla', async (req, res) => {
     }
     if (!payload) {
       return res.status(400).json({ success: false, error: 'Falta el payload de la mezcla' });
+    }
+
+    const rawDataStr = JSON.stringify(payload);
+    const hash = crypto.createHash('sha256').update(rawDataStr).digest('hex');
+    const cacheKey = `${modelName}_${hash}`;
+
+    if (cachedAnalysis.has(cacheKey)) {
+      console.log('⚡ [CACHÉ] Sirviendo análisis previamente generado para este JSON exacto.');
+      return res.json({ success: true, insight: cachedAnalysis.get(cacheKey) });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -482,8 +507,14 @@ RESPONDE EN ESTE FORMATO EJECUTIVO (máximo 300 palabras):
 
 Sé conciso y técnico. No repitas datos ya presentes en el análisis.`;
 
+    console.log(`🧠 Consultando ${modelName}...`);
     const result = await model.generateContent(prompt);
-    res.json({ success: true, insight: result.response.text() });
+    
+    const sign = `\n\n---\n🤖 **Agente:** ${modelName}\n🕒 **Generado:** ${new Date().toLocaleString()}\n💾 *Almacenado temporalmente en Caché para optimizar peticiones.*`;
+    const finalInsight = result.response.text() + sign;
+    
+    cachedAnalysis.set(cacheKey, finalInsight);
+    res.json({ success: true, insight: finalInsight });
   } catch (error) {
     console.error('Error Gemini blend:', error);
     res.status(500).json({ success: false, error: error.message });
