@@ -574,8 +574,52 @@ router.post('/analizar-mezcla', async (req, res) => {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: modelName });
+    const isBlendPayloadV2 = payload?.version === 'blend-analisis-v2';
 
-    const prompt = `Actúa como Ingeniero Senior de Planta de Denim con experiencia en hilatura OE (rotor), telar de aire y tintura índigo.
+    const prompt = isBlendPayloadV2
+      ? `Actúa como Ingeniero Senior de Planta de Denim con experiencia en hilatura OE (rotor), tejeduría, tintura índigo y gestión industrial.
+
+Recibirás un JSON versión blend-analisis-v2 con dos capas:
+- resumen_ejecutivo: pensado para gerencia
+- detalle_tecnico: pensado para especialista de proceso
+
+Tu tarea: convertir ese JSON en un análisis claro de doble lectura, sin perder rigor técnico.
+
+Reglas:
+- Usa como fuente principal metadata, resumen_ejecutivo, comparativo_principal y detalle_tecnico.
+- No repitas todo el JSON; interpreta y jerarquiza.
+- Señala claramente qué mejora, qué empeora y qué requiere seguimiento.
+- Si falta un dato, dilo de forma explícita; no inventes.
+- Mantén consistencia entre la capa ejecutiva y la técnica.
+
+JSON DE ENTRADA:
+${JSON.stringify(payload, null, 2)}
+
+RESPONDE EN ESTE FORMATO EJECUTIVO-TÉCNICO (máximo 350 palabras):
+
+1. RESUMEN GERENCIAL
+- 2 o 3 oraciones.
+- Explica si la mezcla favorece o compromete la operación.
+- Menciona impacto esperado en estabilidad, eficiencia o riesgo.
+
+2. DIAGNÓSTICO TÉCNICO
+- Analiza STR, ELG, LEN, MIC y SCI si están presentes.
+- Explica qué variable empuja el resultado y cuál limita.
+- Relaciona bloque objetivo vs lote referencia.
+
+3. RIESGOS OPERATIVOS
+- Enumera hasta 3 riesgos concretos en planta.
+- Indica si el riesgo es de tensión, tintura, resistencia o variabilidad.
+
+4. SETEO / ACCIÓN RECOMENDADA
+- Da 2 o 3 acciones concretas para el siguiente turno.
+- Prioriza estabilidad antes que velocidad cuando el escenario no sea favorable.
+
+5. SEMÁFORO FINAL
+- Usa exactamente una de estas opciones: APROBAR / APROBAR CON VIGILANCIA / REVISAR ANTES DE ARRANCAR.
+
+Sé conciso, técnico y útil para toma de decisión.`
+      : `Actúa como Ingeniero Senior de Planta de Denim con experiencia en hilatura OE (rotor), telar de aire y tintura índigo.
 
 Recibirás el análisis técnico de una mezcla de algodón calculada por un optimizador de blendomat, junto con los datos de lotes históricos y bloques del plan.
 
@@ -603,6 +647,103 @@ Sé conciso y técnico. No repitas datos ya presentes en el análisis.`;
     res.json({ success: true, insight: finalInsight });
   } catch (error) {
     console.error('Error Gemini blend:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// =====================================================
+// POST /analizar-relato-integral
+// Relato IA con estilo ejecutivo (conclusion + recomendaciones)
+// =====================================================
+router.post('/analizar-relato-integral', async (req, res) => {
+  try {
+    const {
+      payload,
+      nivelLectura = 'gerencial', // 'gerencial' | 'especialista'
+      model: modelName = 'gemini-2.5-pro'
+    } = req.body;
+
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, error: 'GOOGLE_API_KEY no configurada' });
+    }
+    if (!payload) {
+      return res.status(400).json({ success: false, error: 'Falta payload para análisis' });
+    }
+
+    const nivelNormalizado = String(nivelLectura || 'gerencial').toLowerCase() === 'especialista'
+      ? 'especialista'
+      : 'gerencial';
+
+    const rawDataStr = JSON.stringify({ payload, nivelNormalizado });
+    const hash = crypto.createHash('sha256').update(rawDataStr).digest('hex');
+    const cacheKey = `relato_${modelName}_${hash}`;
+
+    if (cachedAnalysis.has(cacheKey)) {
+      return res.json({
+        success: true,
+        insight: cachedAnalysis.get(cacheKey),
+        source: 'cache'
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: modelName });
+
+    const enfoqueNivel = nivelNormalizado === 'especialista'
+      ? 'Nivel especialista: prioriza causalidad de variables (STR, ELG, LEN, MIC, SCI), trade-offs técnicos y acciones de seteo por proceso.'
+      : 'Nivel gerencial: prioriza lectura rápida, impacto operativo y decisiones de continuidad/revisión.';
+
+    const prompt = `Actúa como líder técnico de hilandería y calidad en planta denim.
+
+${enfoqueNivel}
+
+Vas a recibir un JSON de mezcla y debes redactar una narrativa ejecutiva con estilo visual claro.
+
+JSON DE ENTRADA:
+${JSON.stringify(payload, null, 2)}
+
+INSTRUCCIONES DE FORMATO (OBLIGATORIO):
+1) Usa texto plano compatible con Markdown simple.
+2) Incluye exactamente estas secciones y en este orden:
+
+📌 1. RESUMEN EJECUTIVO
+[2-4 líneas]
+
+📈 2. HALLAZGOS CLAVE
+[3 bullets máximo]
+
+🛠 3. PLAN DE ACCIÓN (24h)
+[3 bullets máximo]
+
+💡 4. CONCLUSIÓN Y RECOMENDACIONES
+1. [emoji estado] **Título corto**: explicación concreta y accionable.
+2. [emoji estado] **Título corto**: explicación concreta y accionable.
+3. [emoji estado] **Título corto**: explicación concreta y accionable.
+
+Reglas para la sección 4:
+- Usa emojis de estado (🔴, ⚠️, ✅) según criticidad.
+- Cada recomendación debe iniciar con título en negrita y dos puntos.
+- Máximo 2 líneas por recomendación.
+- Evita texto genérico, fundamenta en los datos.
+
+No agregues secciones extra.`;
+
+    const result = await model.generateContent(prompt);
+    const baseText = result.response.text();
+    const sign = `\n\n---\n🤖 **Agente:** ${modelName}\n🕒 **Generado:** ${new Date().toLocaleString()}\n💾 *Almacenado temporalmente en caché.*`;
+    const finalInsight = baseText + sign;
+
+    cachedAnalysis.set(cacheKey, finalInsight);
+    res.json({
+      success: true,
+      insight: finalInsight,
+      source: 'gemini',
+      nivelLectura: nivelNormalizado,
+      model: modelName
+    });
+  } catch (error) {
+    console.error('Error Gemini relato integral:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

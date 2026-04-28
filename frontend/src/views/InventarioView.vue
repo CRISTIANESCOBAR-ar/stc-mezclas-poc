@@ -3049,26 +3049,112 @@ const geminiBlendPayload = computed(() => {
   }));
   const columns = activeBlendColumns.value || [];
   const stats = blendPlan.value?.estadisticas || {};
+  const preferredTargetBlock = columns.find((blockId) => /^M1-M\d+$/i.test(String(blockId || '')));
+  const fallbackTargetBlock = primaryBlendBlockId.value || columns[0] || null;
+  const targetBlockId = preferredTargetBlock || fallbackTargetBlock;
+  const sortedRefs = [...(loteFiacReferenceSummary.value || [])]
+    .filter(item => item && item.loteFiac !== null && item.loteFiac !== undefined)
+    .sort((a, b) => Number(a.loteFiac) - Number(b.loteFiac));
+  const comparisonRef = sortedRefs.length ? sortedRefs[sortedRefs.length - 1] : null;
+
+  const targetColumn = targetBlockId ? { kind: 'block', blockId: targetBlockId, label: targetBlockId } : null;
+  const comparisonColumn = comparisonRef ? { kind: 'reference', data: comparisonRef } : null;
+  const trackedParams = [
+    { key: 'STR', label: 'Resistencia fibra', format: 'STR' },
+    { key: 'ELG', label: 'Elongación fibra', format: 'ELG' },
+    { key: 'LEN', label: 'Longitud fibra', format: 'UHML' },
+    { key: 'MIC', label: 'Micronaire', format: 'MIC' },
+    { key: 'SCI', label: 'Spinning Consistency Index', format: 'SCI' }
+  ];
+
+  const variableComparisons = trackedParams.map((param) => {
+    const objetivo = targetColumn ? getSummaryValueByParam(targetColumn, param.key) : null;
+    const referencia = comparisonColumn ? getSummaryValueByParam(comparisonColumn, param.key) : null;
+    const delta = (objetivo !== null && referencia !== null) ? objetivo - referencia : null;
+    const deltaPct = (objetivo !== null && referencia !== null && referencia !== 0)
+      ? ((objetivo - referencia) / referencia) * 100
+      : null;
+
+    return {
+      variable: param.key,
+      label: param.label,
+      valor_objetivo: objetivo,
+      valor_referencia: referencia,
+      delta,
+      delta_pct: deltaPct,
+      formato: param.format
+    };
+  });
+
+  const totalFardos = columns.reduce((sum, col) => sum + (Number(stats[col]?.totalFardos) || 0), 0);
+  const totalKgMezcla = columns.reduce((sum, col) => sum + (Number(stats[col]?.pesoPorMezcla) || 0), 0);
+  const executiveRisks = (analysis.sections || []).map(section => ({
+    titulo: section.title,
+    hallazgos: Array.isArray(section.bullets) ? section.bullets : []
+  }));
 
   return {
-    analisis_proyeccion: {
+    version: 'blend-analisis-v2',
+    objetivo_informe: {
+      perfiles: ['gerencia', 'especialista'],
+      enfoque: 'resumen-ejecutivo-mas-detalle-tecnico'
+    },
+    metadata: {
+      algoritmo: appliedAlgorithmLabel.value || 'N/A',
+      fecha_generacion: new Date().toISOString(),
+      bloque_objetivo: targetBlockId,
+      lote_referencia_principal: comparisonRef?.loteFiac ?? null,
+      total_bloques: columns.length
+    },
+    resumen_ejecutivo: {
       titulo: analysis.title,
       severidad: analysis.badgeLabel,
       conclusion: analysis.conclusionBody,
-      veredicto: analysis.efficiencyBody,
-      secciones: (analysis.sections || []).map(s => ({
-        titulo: s.title,
-        puntos: s.bullets || []
-      }))
+      veredicto_operativo: analysis.efficiencyBody,
+      total_fardos_plan: totalFardos,
+      total_kg_por_mezcla: totalKgMezcla,
+      riesgos_clave: executiveRisks
+    },
+    comparativo_principal: {
+      bloque_objetivo: targetBlockId ? {
+        id: targetBlockId,
+        fardos: stats[targetBlockId]?.totalFardos ?? null,
+        kg_por_mezcla: stats[targetBlockId]?.pesoPorMezcla ?? null,
+        kg_total_bloque: stats[targetBlockId]?.pesoTotalBloque ?? null
+      } : null,
+      lote_referencia: comparisonRef ? {
+        lote: comparisonRef.loteFiac,
+        fecha: comparisonRef.dataInicial,
+        kg_usados: comparisonRef.kgUsados,
+        residuos_pct: comparisonRef.residuosPct,
+        classe: comparisonRef.classeArg
+      } : null,
+      variables_clave: variableComparisons
     },
     lotes_referencia: refItems,
-    bloques_mezcla: columns.map(col => ({
+    bloques_operativos: columns.map(col => ({
       bloque: col,
-      fardos: stats[col]?.totalFardos,
-      kg_por_mezcla: stats[col]?.pesoPorMezcla,
-      kg_total_bloque: stats[col]?.pesoTotalBloque
+      fardos: stats[col]?.totalFardos ?? null,
+      kg_por_mezcla: stats[col]?.pesoPorMezcla ?? null,
+      kg_total_bloque: stats[col]?.pesoTotalBloque ?? null,
+      clasificacion_promedio: stats[col]?.clasificacionProm ?? null,
+      variables: trackedParams.reduce((acc, param) => {
+        acc[param.key] = getSummaryValueByParam({ kind: 'block', blockId: col }, param.key);
+        return acc;
+      }, {})
     })),
-    algoritmo: appliedAlgorithmLabel.value || 'N/A'
+    detalle_tecnico: {
+      subtitulo: analysis.subtitle,
+      conclusion_linea: analysis.conclusionLine,
+      veredicto_linea: analysis.verdictLine,
+      proyeccion_predictiva: {
+        secciones: (analysis.sections || []).map(s => ({
+          titulo: s.title,
+          puntos: s.bullets || []
+        })),
+        lineas_operativas: Array.isArray(analysis.lines) ? analysis.lines : []
+      }
+    }
   };
 });
 
@@ -3102,6 +3188,12 @@ const solicitarAnalisisBlend = async () => {
   aiBlendLoading.value = true;
   aiBlendInsight.value = '';
   try {
+    try {
+      localStorage.setItem('stc_last_blend_payload_v2', JSON.stringify(geminiBlendPayload.value));
+    } catch {
+      // no-op: localStorage puede no estar disponible
+    }
+
     const response = await fetch('/api/hvi/analizar-mezcla', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

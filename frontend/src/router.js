@@ -46,6 +46,12 @@ const routes = [
     name: 'tensorapid',
     component: () => import('./views/TensoRapidView.vue'),
     meta: { title: 'Carga de Archivos TensoRapid' }
+  },
+  {
+    path: '/relato-ia',
+    name: 'relato-ia',
+    component: () => import('./views/RelatoIAView.vue'),
+    meta: { title: 'Relato Integral IA' }
   }
 ]
 
