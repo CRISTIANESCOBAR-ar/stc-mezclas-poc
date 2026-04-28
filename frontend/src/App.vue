@@ -61,6 +61,42 @@
           </span>
         </router-link>
 
+        <!-- Uster -->
+        <router-link
+          to="/uster"
+          class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
+          :class="$route.path === '/uster'
+            ? 'bg-indigo-100 text-indigo-700'
+            : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h16"/>
+            <path d="M4 12h16"/>
+            <path d="M4 17h10"/>
+            <circle cx="18" cy="17" r="2"/>
+          </svg>
+          <span class="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md bg-white border border-gray-200 shadow-md px-2 py-1 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            Uster
+          </span>
+        </router-link>
+
+        <!-- Trazabilidad OE -->
+        <router-link
+          to="/oe-trazabilidad"
+          class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
+          :class="$route.path === '/oe-trazabilidad'
+            ? 'bg-indigo-100 text-indigo-700'
+            : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+          </svg>
+          <span class="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md bg-white border border-gray-200 shadow-md px-2 py-1 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            Trazabilidad OE
+          </span>
+        </router-link>
+
       </nav>
 
       <!-- Espaciador -->

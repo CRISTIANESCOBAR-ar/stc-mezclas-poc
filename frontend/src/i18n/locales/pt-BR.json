@@ -251,7 +251,8 @@
     "tooltips": {
       "saveTest": "Salvar ensaio",
       "resaveTest": "Re-salvar (substitui dados existentes)",
-      "editMetadata": "Editar metadados"
+      "editMetadata": "Editar metadados",
+      "deleteTest": "Excluir ensaio"
     },
     "status": {
       "saved": "Salvo",
@@ -354,6 +355,15 @@
       "parseRiskText": "Foram detectadas {correctedGrade} correções automáticas em Grade e {fieldIssues} linhas com campos não numéricos. Se continuar, você pode salvar dados anômalos na base.",
       "parseRiskConfirm": "Salvar mesmo assim",
       "parseRiskCancel": "Cancelar"
+    },
+    "delete": {
+      "confirmTitle": "Excluir ensaio",
+      "confirmText": "{tipo} · Lote {lote} · {proveedor} será excluído. Esta ação não pode ser desfeita.",
+      "confirmButton": "Sim, excluir",
+      "cancelButton": "Cancelar",
+      "success": "Ensaio excluído",
+      "errorTitle": "Erro ao excluir",
+      "error": "Não foi possível excluir o ensaio"
     }
   }
 }

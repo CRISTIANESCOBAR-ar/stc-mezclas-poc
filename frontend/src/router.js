@@ -22,6 +22,18 @@ const routes = [
     name: 'hvi',
     component: () => import('./views/HVIView.vue'),
     meta: { title: 'Carga de Archivos HVI' } 
+  },
+  {
+    path: '/uster',
+    name: 'uster',
+    component: () => import('./views/UsterView.vue'),
+    meta: { title: 'Carga de Archivos Uster' }
+  },
+  {
+    path: '/oe-trazabilidad',
+    name: 'oe-trazabilidad',
+    component: () => import('./views/OETrazabilidadView.vue'),
+    meta: { title: 'Trazabilidad OE' }
   }
 ]
 

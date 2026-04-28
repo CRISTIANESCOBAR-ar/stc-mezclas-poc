@@ -251,7 +251,8 @@
     "tooltips": {
       "saveTest": "Guardar ensayo",
       "resaveTest": "Re-guardar (reemplaza datos existentes)",
-      "editMetadata": "Editar metadatos"
+      "editMetadata": "Editar metadatos",
+      "deleteTest": "Eliminar ensayo"
     },
     "status": {
       "saved": "Guardado",
@@ -354,6 +355,15 @@
       "parseRiskText": "Se detectaron {correctedGrade} correcciones automáticas en Grade y {fieldIssues} filas con campos no numéricos. Si continúa, podría guardar datos anómalos en la base.",
       "parseRiskConfirm": "Guardar de todos modos",
       "parseRiskCancel": "Cancelar"
+    },
+    "delete": {
+      "confirmTitle": "Eliminar ensayo",
+      "confirmText": "Se eliminará {tipo} · Lote {lote} · {proveedor}. Esta acción no se puede deshacer.",
+      "confirmButton": "Sí, eliminar",
+      "cancelButton": "Cancelar",
+      "success": "Ensayo eliminado",
+      "errorTitle": "Error al eliminar",
+      "error": "No se pudo eliminar el ensayo"
     }
   }
 }

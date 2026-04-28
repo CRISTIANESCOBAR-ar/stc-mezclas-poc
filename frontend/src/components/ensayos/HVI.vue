@@ -202,6 +202,15 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
                     </button>
+                    <button
+                      @click="handleDeleteFromRow(item)"
+                      v-tippy="{ content: t('hvi.tooltips.deleteTest') }"
+                      class="p-1.5 rounded-md transition-all sm:p-1 text-red-600 hover:bg-red-50 active:scale-95 border border-transparent hover:border-red-200"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6M9 7V4a1 1 0 011-1h4a1 1 0 011 1v3M4 7h16" />
+                      </svg>
+                    </button>
                   </div>
                 </td>
                 <td class="px-1 py-2 text-xs text-center">
@@ -1747,6 +1756,7 @@ const parseFileName = (fileName, handle = null, file = null) => {
   }
 
   return {
+    id: null,
     fileName,
     handle,
     file,
@@ -1889,6 +1899,60 @@ const handleEditFromRow = (item) => {
   // Simplemente selecciona la fila para permitir editar los campos en la tabla
   if (selectedFileName.value !== item.fileName) {
     selectFile(item);
+  }
+};
+
+const handleDeleteFromRow = async (item) => {
+  const confirm = await Swal.fire({
+    icon: 'warning',
+    title: t('hvi.delete.confirmTitle'),
+    text: t('hvi.delete.confirmText', {
+      tipo: item.tipo || '-',
+      lote: item.loteEntrada || '-',
+      proveedor: item.proveedor || '-'
+    }),
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    confirmButtonText: t('hvi.delete.confirmButton'),
+    cancelButtonText: t('hvi.delete.cancelButton')
+  });
+
+  if (!confirm.isConfirmed) return;
+
+  try {
+    if (item.estado === 'Procesado' && item.id) {
+      const resp = await fetch(`/api/hvi/saved/${item.id}`, { method: 'DELETE' });
+      const json = await resp.json();
+      if (!resp.ok || !json.success) {
+        throw new Error(json.error || t('hvi.delete.error'));
+      }
+    }
+
+    parsedFiles.value = parsedFiles.value.filter(f => f.fileName !== item.fileName);
+    filesList.value = filesList.value.filter(f => f.fileName !== item.fileName);
+
+    if (selectedFileName.value === item.fileName) {
+      selectedFileName.value = '';
+      selectedFileItem.value = null;
+      hviDetails.value = [];
+      latestParseReport.value = null;
+    }
+
+    Swal.fire({
+      toast: true,
+      position: 'top-end',
+      icon: 'success',
+      title: t('hvi.delete.success'),
+      showConfirmButton: false,
+      timer: 2500
+    });
+  } catch (err) {
+    console.error('Error deleting HVI record:', err);
+    Swal.fire({
+      icon: 'error',
+      title: t('hvi.delete.errorTitle'),
+      text: err.message || t('hvi.delete.error')
+    });
   }
 };
 
@@ -2344,6 +2408,7 @@ onMounted(async () => {
     const json = await resp.json();
     if (json.success && json.data.length > 0) {
       const savedItems = json.data.map(r => ({
+        id: r.id,
         fileName: r.archivo_fuente,
         handle: null,
         file: null,

@@ -77,6 +77,28 @@ router.post('/save', async (req, res) => {
         await client.query('DELETE FROM tb_hvi_ensayos WHERE id = $1', [existing.rows[0].id]);
       }
 
+      // Evita duplicados de un mismo lote para un proveedor.
+      // Se permite re-guardar el mismo archivo fuente (caso edición/reproceso).
+      if (metadata.loteEntrada && metadata.proveedor) {
+        const duplicated = await client.query(
+          `SELECT id, tipo, lote, proveedor, archivo_fuente
+           FROM tb_hvi_ensayos
+           WHERE UPPER(TRIM(COALESCE(lote, ''))) = UPPER(TRIM($1))
+             AND UPPER(TRIM(COALESCE(proveedor, ''))) = UPPER(TRIM($2))
+             AND ($3::text IS NULL OR archivo_fuente <> $3)
+           LIMIT 1`,
+          [metadata.loteEntrada, metadata.proveedor, metadata.fileName || null]
+        );
+
+        if (duplicated.rows.length > 0) {
+          const errDup = new Error(
+            `Ya existe un ensayo para lote ${metadata.loteEntrada} y proveedor ${metadata.proveedor} (archivo: ${duplicated.rows[0].archivo_fuente}). Elimine el registro anterior o use el mismo archivo para reemplazarlo.`
+          );
+          errDup.statusCode = 409;
+          throw errDup;
+        }
+      }
+
       const headerRes = await client.query(
         `INSERT INTO tb_hvi_ensayos (tipo, lote, proveedor, grado, fecha, muestra, cantidad, color, cort, obs, archivo_fuente)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
@@ -121,7 +143,7 @@ router.post('/save', async (req, res) => {
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error guardando datos HVI:', err);
-    res.status(500).json({ success: false, error: err.message });
+    res.status(err.statusCode || 500).json({ success: false, error: err.message });
   } finally {
     client.release();
   }
@@ -225,29 +247,59 @@ router.get('/comparacion-muestra', async (req, res) => {
 
     const sql = `
       WITH promedios_lote AS (
+        SELECT
+          e.id AS ensayo_id,
+          e.lote,
+          UPPER(TRIM(COALESCE(e.lote, ''))) AS lote_norm,
+          e.tipo,
+          e.muestra,
+          UPPER(TRIM(COALESCE(e.muestra, ''))) AS muestra_norm,
+          e.creado_at,
+          AVG(d.sci) as sci_avg,
+          AVG(d.str) as str_avg,
+          AVG(d.sf) as sf_avg,
+          COUNT(d.id) as fardos
+        FROM tb_hvi_ensayos e
+        JOIN tb_hvi_detalles d ON e.id = d.ensayo_id
+        GROUP BY e.id, e.lote, e.tipo, e.muestra, e.creado_at
+      ),
+      muestras_ref AS (
+        SELECT *
+        FROM (
           SELECT
-              e.id AS ensayo_id,
-              e.lote,
-              e.tipo,
-              e.muestra,
-              AVG(d.sci) as sci_avg,
-              AVG(d.str) as str_avg,
-              AVG(d.sf) as sf_avg,
-              COUNT(d.id) as fardos
-          FROM tb_hvi_ensayos e
-          JOIN tb_hvi_detalles d ON e.id = d.ensayo_id
-          GROUP BY e.id, e.lote, e.tipo, e.muestra
+            p.*,
+            ROW_NUMBER() OVER (
+              PARTITION BY p.lote_norm
+              ORDER BY p.creado_at DESC, p.ensayo_id DESC
+            ) AS rn
+          FROM promedios_lote p
+          WHERE p.tipo = 'Mue'
+        ) x
+        WHERE x.rn = 1
+      ),
+      entradas_ref AS (
+        SELECT *
+        FROM (
+          SELECT
+            p.*,
+            ROW_NUMBER() OVER (
+              PARTITION BY p.lote_norm
+              ORDER BY p.creado_at DESC, p.ensayo_id DESC
+            ) AS rn
+          FROM promedios_lote p
+          WHERE p.tipo = 'Ent'
+        ) x
+        WHERE x.rn = 1
       )
       SELECT
-          ent.lote as lote_ent,
-          mue.lote as lote_mue,
-          ent.sci_avg as sci_ent, mue.sci_avg as sci_mue,
-          ent.str_avg as str_ent, mue.str_avg as str_mue,
-          ent.sf_avg as sf_ent,  mue.sf_avg as sf_mue
-      FROM promedios_lote ent
-      LEFT JOIN promedios_lote mue ON ent.muestra = mue.lote
-      WHERE ent.tipo = 'Ent' AND (mue.tipo = 'Mue' OR mue.tipo IS NULL)
-      ORDER BY ent.lote ASC
+        ent.lote as lote_ent,
+        mue.lote as lote_mue,
+        ent.sci_avg as sci_ent, mue.sci_avg as sci_mue,
+        ent.str_avg as str_ent, mue.str_avg as str_mue,
+        ent.sf_avg as sf_ent,  mue.sf_avg as sf_mue
+      FROM entradas_ref ent
+      LEFT JOIN muestras_ref mue ON ent.muestra_norm = mue.lote_norm
+      ORDER BY ent.lote_norm ASC
     `;
 
     const result = await query(sql, []);
@@ -307,12 +359,46 @@ router.get('/saved', async (req, res) => {
       return res.json({ success: true, data: [] });
     }
     const result = await query(
-      `SELECT tipo, lote, proveedor, grado, fecha, muestra, cantidad, color, cort, obs, archivo_fuente
+      `SELECT id, tipo, lote, proveedor, grado, fecha, muestra, cantidad, color, cort, obs, archivo_fuente
        FROM tb_hvi_ensayos ORDER BY creado_at DESC`
     );
     res.json({ success: true, data: result.rows });
   } catch (err) {
     console.error('Error getting saved HVI:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// =====================================================
+// DELETE /saved/:id
+// Elimina un ensayo guardado (header + detalles por cascade)
+// =====================================================
+router.delete('/saved/:id', async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ success: false, error: 'id inválido' });
+    }
+
+    const tableCheck = await query(`SELECT to_regclass('public.tb_hvi_ensayos') as exists`);
+    if (!tableCheck.rows[0].exists) {
+      return res.status(404).json({ success: false, error: 'Tabla tb_hvi_ensayos no encontrada' });
+    }
+
+    const result = await query(
+      `DELETE FROM tb_hvi_ensayos
+       WHERE id = $1
+       RETURNING id, tipo, lote, proveedor, archivo_fuente`,
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ success: false, error: 'Ensayo no encontrado' });
+    }
+
+    res.json({ success: true, deleted: result.rows[0] });
+  } catch (err) {
+    console.error('Error deleting HVI saved record:', err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
