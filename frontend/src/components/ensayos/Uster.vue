@@ -448,6 +448,23 @@ function getTestnrFromName(name) {
   return m ? m[1] : null
 }
 
+function getPrefixFromName(name) {
+  const m = String(name || '').match(/^(STC\d+)_/i)
+  return m ? m[1].toUpperCase() : ''
+}
+
+function isCardasParText(text, filename = '') {
+  const style = String(extractTsvCell(text, 11, 5) || '').toUpperCase()
+  const prefix = getPrefixFromName(filename)
+  const nomcount = Number.parseFloat(String(extractTsvCell(text, 15, 5) || '').replace(',', '.'))
+
+  if (style.includes('MANUAR') || style.includes('TRUTZSCHLER') || style.includes('RIETER')) return true
+  if (prefix.startsWith('STC01') || prefix.startsWith('STC001') || prefix.startsWith('STC02') || prefix.startsWith('STC002')) return true
+  if (Number.isFinite(nomcount) && nomcount <= 1.5) return true
+
+  return false
+}
+
 function onTituloInput(srcIndex, ev) {
   try {
     // read raw typed value
@@ -638,11 +655,15 @@ async function scanDirectory(dirHandle) {
         map[t] = { testnr: t, hasPar: false, hasTbl: false, parHandle: null, tblHandle: null, imp: false, nomcount: null, maschnr: null, timeStamp: null };
       }
       if (ln.endsWith('.par')) {
-        map[t].hasPar = true;
-        map[t].parHandle = handle;
         try {
           const f = await handle.getFile();
           const txt = await f.text();
+          if (isCardasParText(txt, name)) {
+            delete map[t]
+            continue
+          }
+          map[t].hasPar = true;
+          map[t].parHandle = handle;
           map[t].nomcount = extractTsvCell(txt, 15, 5) || '';
           map[t].maschnr = extractTsvCell(txt, 13, 5) || '';
           map[t].matclass = extractTsvCell(txt, 14, 8) || '';
@@ -759,10 +780,14 @@ async function onFolderInputChange(e) {
       if (!t) continue
       if (!map[t]) map[t] = { testnr: t, hasPar: false, hasTbl: false, parHandle: null, tblHandle: null, imp: null, nomcount: null, maschnr: null, timeStamp: null }
       if (ln.endsWith('.par')) {
-        map[t].hasPar = true
-        map[t].parHandle = f
         try {
           const txt = await f.text()
+          if (isCardasParText(txt, name)) {
+            delete map[t]
+            continue
+          }
+          map[t].hasPar = true
+          map[t].parHandle = f
           map[t].nomcount = extractTsvCell(txt, 15, 5) || ''
           map[t].maschnr = extractTsvCell(txt, 13, 5) || ''
           map[t].matclass = extractTsvCell(txt, 14, 8) || ''

@@ -30,6 +30,12 @@ const routes = [
     meta: { title: 'Carga de Archivos Uster' }
   },
   {
+    path: '/uster-cardas',
+    name: 'uster-cardas',
+    component: () => import('./views/UsterCardasView.vue'),
+    meta: { title: 'Carga de Archivos Uster Cardas' }
+  },
+  {
     path: '/oe-trazabilidad',
     name: 'oe-trazabilidad',
     component: () => import('./views/OETrazabilidadView.vue'),

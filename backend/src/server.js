@@ -7,6 +7,7 @@ import hviRoutes from './routes/hviRoutes.js'
 import oeRoutes from './routes/oeRoutes.js'
 import usterRoutes from './routes/usterRoutes.js'
 import tensorapidRoutes from './routes/tensorapidRoutes.js'
+import usterCardasRoutes from './routes/usterCardasRoutes.js'
 
 const app = express()
 const PORT = process.env.PORT || 3006
@@ -21,6 +22,7 @@ app.use('/api/hvi', hviRoutes)
 app.use('/api/oe', oeRoutes)
 app.use('/api/uster', usterRoutes)
 app.use('/api/tensorapid', tensorapidRoutes)
+app.use('/api/uster-cardas', usterCardasRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {
