@@ -80,6 +80,22 @@
           </span>
         </router-link>
 
+        <!-- TensoRapid -->
+        <router-link
+          to="/tensorapid"
+          class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
+          :class="$route.path === '/tensorapid'
+            ? 'bg-indigo-100 text-indigo-700'
+            : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          <span class="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md bg-white border border-gray-200 shadow-md px-2 py-1 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            TensoRapid
+          </span>
+        </router-link>
+
         <!-- Trazabilidad OE -->
         <router-link
           to="/oe-trazabilidad"

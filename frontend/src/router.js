@@ -34,6 +34,12 @@ const routes = [
     name: 'oe-trazabilidad',
     component: () => import('./views/OETrazabilidadView.vue'),
     meta: { title: 'Trazabilidad OE' }
+  },
+  {
+    path: '/tensorapid',
+    name: 'tensorapid',
+    component: () => import('./views/TensoRapidView.vue'),
+    meta: { title: 'Carga de Archivos TensoRapid' }
   }
 ]
 
