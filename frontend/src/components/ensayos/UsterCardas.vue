@@ -6,8 +6,17 @@
   </div>
 
   <div class="hidden md:flex w-full h-screen flex-col p-1">
-    <main class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col overflow-y-auto">
+    <main class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col overflow-hidden">
       <div class="shrink-0 mb-3 flex items-center gap-3">
+        <div class="text-2xl font-semibold text-slate-800 mr-4 inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 4h16v4H4z"/>
+            <path d="M4 12h16v8H4z"/>
+            <path d="M9 8v4"/>
+            <path d="M15 8v4"/>
+          </svg>
+          <span>Datos de Cardas y Manuares</span>
+        </div>
         <label class="text-sm font-semibold text-slate-700 mr-2 shrink-0">Carpeta Uster Cardas:</label>
 
         <div class="flex-1 min-w-0">
@@ -22,16 +31,24 @@
         <div class="flex items-center gap-2">
           <button
             @click="selectFolder"
+            v-tippy="{ content: 'Seleccionar carpeta de ensayos', theme: 'light', placement: 'bottom' }"
             class="inline-flex items-center gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7a2 2 0 012-2h3l2 3h9a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+            </svg>
             Seleccionar
           </button>
 
           <button
             v-if="hasPersistedHandle"
             @click="refreshFolder"
+            v-tippy="{ content: 'Actualizar lectura de la carpeta', theme: 'light', placement: 'bottom' }"
             class="inline-flex items-center gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
             Actualizar
           </button>
 
@@ -49,7 +66,7 @@
         </div>
       </div>
 
-      <div class="grid gap-4" style="grid-template-columns: 520px 1fr;">
+      <div class="grid gap-4 flex-1 min-h-0" style="grid-template-columns: 624px 1fr;">
         <div class="flex flex-col gap-3 min-h-0">
           <div class="bg-slate-50 rounded-lg border border-slate-200 p-3 flex items-center gap-4 text-sm">
             <label class="flex items-center gap-2">
@@ -355,7 +372,7 @@ function detectMachineFamily(style, prefix, maschnr) {
   return 'NO DEFINIDO'
 }
 
-function parseParText(text, filename) {
+function parseParText(text, filename, sourcePath = '') {
   const prefix = getPrefixFromName(filename)
   const rawTime = extractTsvCell(text, 9, 5)
   const timeDate = parseDateFromRaw(rawTime)
@@ -372,6 +389,7 @@ function parseParText(text, filename) {
     OBS: extractTsvCell(text, 22, 5),
     CATALOG: extractTsvCell(text, 3, 1).replace(/^CATALOG\s+/i, ''),
     SOURCE_PREFIX: prefix,
+    SOURCE_PATH: sourcePath || filename,
     TIME_MS: timeDate ? timeDate.getTime() : null,
     TIME_DISPLAY: timeDate ? formatDateTimeFromDate(timeDate) : (rawTime || ''),
     TURNO: getTurnoFromDate(timeDate),
@@ -380,8 +398,34 @@ function parseParText(text, filename) {
   return out
 }
 
+function hasOpenEndHints(par) {
+  if (!par || typeof par !== 'object') return false
+
+  const joined = [
+    par.STYLE,
+    par.SORTIMENT,
+    par.MATCLASS,
+    par.OBS,
+    par.CATALOG,
+    par.SOURCE_PREFIX,
+    par.SOURCE_PATH,
+  ]
+    .map((v) => String(v || '').toUpperCase())
+    .join(' ')
+
+  if (joined.includes('OPEN END') || joined.includes('OPENEND') || joined.includes('ROTOR')) return true
+  if (/(^|[^A-Z0-9])OE([^A-Z0-9]|$)/.test(joined)) return true
+
+  const prefix = String(par.SOURCE_PREFIX || '').toUpperCase()
+  if (prefix.startsWith('STC03') || prefix.startsWith('STC003')) return true
+
+  return false
+}
+
 function isCardasPar(par) {
   if (!par || typeof par !== 'object') return false
+
+  if (hasOpenEndHints(par)) return false
 
   const family = String(par.MACHINE_FAMILY || '').toUpperCase()
   if (family === 'MANUAR' || family === 'TRUTZSCHLER' || family === 'CARDA RIETER') return true
@@ -391,9 +435,6 @@ function isCardasPar(par) {
 
   const prefix = String(par.SOURCE_PREFIX || '').toUpperCase()
   if (prefix.startsWith('STC01') || prefix.startsWith('STC001') || prefix.startsWith('STC02') || prefix.startsWith('STC002')) return true
-
-  const nomcount = Number.parseFloat(String(par.NOMCOUNT || '').replace(',', '.'))
-  if (Number.isFinite(nomcount) && nomcount <= 1.5) return true
 
   return false
 }
@@ -674,7 +715,7 @@ async function scanDirectory(dirHandle) {
     if (lower.endsWith('.par')) {
       try {
         const txt = await (await handle.getFile()).text()
-        const par = parseParText(txt, name)
+        const par = parseParText(txt, name, name)
         if (!isCardasPar(par)) {
           delete map[testnr]
           continue
@@ -698,7 +739,7 @@ async function scanDirectory(dirHandle) {
     }
   }
 
-  const list = sortScanItems(Object.values(map))
+  const list = sortScanItems(Object.values(map).filter((item) => item.hasPar))
   const existing = await checkExistingTests(list.map((i) => i.testnr))
   const existingSet = new Set(existing)
   const existingNormSet = new Set(existing.map((x) => normalizeTestnr(x)))
@@ -1040,7 +1081,7 @@ async function onFolderInputChange(event) {
 
     if (lower.endsWith('.par')) {
       const txt = await f.text()
-      const par = parseParText(txt, f.name)
+      const par = parseParText(txt, f.name, f.webkitRelativePath || f.name)
       if (!isCardasPar(par)) {
         delete map[testnr]
         continue
@@ -1061,7 +1102,7 @@ async function onFolderInputChange(event) {
     }
   }
 
-  const list = sortScanItems(Object.values(map))
+  const list = sortScanItems(Object.values(map).filter((item) => item.hasPar))
   const existing = await checkExistingTests(list.map((i) => i.testnr))
   const existingSet = new Set(existing)
   const existingNormSet = new Set(existing.map((x) => normalizeTestnr(x)))

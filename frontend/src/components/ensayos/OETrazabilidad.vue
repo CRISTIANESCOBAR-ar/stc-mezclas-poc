@@ -3,7 +3,13 @@
 
     <!-- Encabezado -->
     <div class="mb-5">
-      <h1 class="text-lg font-black text-gray-800 tracking-tight">Trazabilidad OE</h1>
+      <div class="text-2xl font-semibold text-slate-800 inline-flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        <span>Trazabilidad OE</span>
+      </div>
       <p class="text-xs text-gray-400 mt-0.5">Producción Open End cruzada con laboratorio Uster + Tensorapid</p>
     </div>
 

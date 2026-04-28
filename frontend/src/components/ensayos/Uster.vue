@@ -11,6 +11,15 @@
       <!-- Top: compact carpeta selector on a single line for desktop -->
           <div class="shrink-0 mb-3">
         <div class="flex items-center gap-3">
+          <div class="text-2xl font-semibold text-slate-800 mr-4 inline-flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M4 7h16"/>
+              <path d="M4 12h16"/>
+              <path d="M4 17h10"/>
+              <circle cx="18" cy="17" r="2"/>
+            </svg>
+            <span>Datos de Uster</span>
+          </div>
           <label class="text-sm font-semibold text-slate-700 mr-2 shrink-0">Carpeta de archivos Uster:</label>
 
           <div class="flex-1 min-w-0">
@@ -76,6 +85,33 @@
       <div class="grid uster-grid" style="grid-template-columns: 440px 160px 270px;">
         <!-- Columna 1: Lista de Ensayos, Botones y Estado -->
         <div class="flex flex-col gap-3">
+          <!-- Filtros de visualización -->
+          <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
+            <div class="flex items-center gap-4 text-xs">
+              <label
+                class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
+                <input type="checkbox" v-model="filterShowAll"
+                  @change="() => { if (filterShowAll) { filterShowNotSaved = false; filterShowSaved = false; clearSelection(); } }"
+                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
+                <span class="text-slate-700 font-medium">Mostrar todos</span>
+              </label>
+              <label
+                class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
+                <input type="checkbox" v-model="filterShowNotSaved"
+                  @change="() => { if (filterShowNotSaved) { filterShowAll = false; filterShowSaved = false; clearSelection(); } }"
+                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
+                <span class="text-slate-700 font-medium">No guardados</span>
+              </label>
+              <label
+                class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
+                <input type="checkbox" v-model="filterShowSaved"
+                  @change="() => { if (filterShowSaved) { filterShowAll = false; filterShowNotSaved = false; clearSelection(); } }"
+                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
+                <span class="text-slate-700 font-medium">Guardados</span>
+              </label>
+            </div>
+          </div>
+
           <div class="scan-container rounded-xl border border-slate-200 overflow-hidden bg-white">
             <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs scan-table">
               <colgroup>
@@ -148,33 +184,6 @@
 
           <div class="text-sm text-slate-600 font-medium">
             {{ scanStatusDisplay }}
-          </div>
-
-          <!-- Filtros de visualización -->
-          <div class="mt-2 bg-slate-50 rounded-lg p-3 border border-slate-200">
-            <div class="flex items-center gap-4 text-xs">
-              <label
-                class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" v-model="filterShowAll"
-                  @change="() => { if (filterShowAll) { filterShowNotSaved = false; filterShowSaved = false; clearSelection(); } }"
-                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
-                <span class="text-slate-700 font-medium">Mostrar todos</span>
-              </label>
-              <label
-                class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" v-model="filterShowNotSaved"
-                  @change="() => { if (filterShowNotSaved) { filterShowAll = false; filterShowSaved = false; clearSelection(); } }"
-                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
-                <span class="text-slate-700 font-medium">No guardados</span>
-              </label>
-              <label
-                class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" v-model="filterShowSaved"
-                  @change="() => { if (filterShowSaved) { filterShowAll = false; filterShowNotSaved = false; clearSelection(); } }"
-                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
-                <span class="text-slate-700 font-medium">Guardados</span>
-              </label>
-            </div>
           </div>
         </div>
 
@@ -321,13 +330,23 @@
 
           <div class="mt-3 flex gap-2">
             <button ref="saveButton" v-if="canSave" @click="saveCurrentTest" :disabled="isSaving"
+              v-tippy="{ content: 'Guardar ensayo seleccionado', theme: 'light', placement: 'bottom' }"
               @keydown.up.prevent="focusLastTitulo"
               class="inline-flex items-center gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 shadow-sm hover:shadow-md">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
               <span v-if="!isSaving">Guardar</span>
               <span v-else>Guardando...</span>
             </button>
             <button v-if="selectedTestnr && isTestSaved" @click="deleteCurrentTest" :disabled="isDeleting"
+              v-tippy="{ content: 'Eliminar ensayo guardado', theme: 'light', placement: 'bottom' }"
               class="inline-flex items-center gap-2 px-3 py-1 border border-red-300 bg-white text-red-700 rounded-md text-sm font-medium hover:bg-red-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-offset-2 shadow-sm hover:shadow-md">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 7h12" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7l1 12h6l1-12" />
+              </svg>
               <span v-if="!isDeleting">Eliminar</span>
               <span v-else>Eliminando...</span>
             </button>
@@ -640,6 +659,7 @@ async function refreshFolder() {
 async function scanDirectory(dirHandle) {
   console.log('Iniciando scanDirectory con handle:', dirHandle.name);
   const map = {};
+  const rejectedTestnrs = new Set();
   let fileCount = 0;
   try {
     for await (const [name, handle] of dirHandle.entries()) {
@@ -650,6 +670,7 @@ async function scanDirectory(dirHandle) {
 
       const t = getTestnrFromName(name);
       if (!t) continue;
+      if (rejectedTestnrs.has(t)) continue;
 
       if (!map[t]) {
         map[t] = { testnr: t, hasPar: false, hasTbl: false, parHandle: null, tblHandle: null, imp: false, nomcount: null, maschnr: null, timeStamp: null };
@@ -659,6 +680,7 @@ async function scanDirectory(dirHandle) {
           const f = await handle.getFile();
           const txt = await f.text();
           if (isCardasParText(txt, name)) {
+            rejectedTestnrs.add(t)
             delete map[t]
             continue
           }
@@ -688,7 +710,9 @@ async function scanDirectory(dirHandle) {
 
   console.log(`Escaneo finalizado. Total de archivos en el directorio: ${fileCount}. Ensayos mapeados: ${Object.keys(map).length}`);
 
-  let newScanList = Object.values(map).sort((a, b) => a.testnr.localeCompare(b.testnr));
+  let newScanList = Object.values(map)
+    .filter((item) => item.hasPar)
+    .sort((a, b) => a.testnr.localeCompare(b.testnr));
 
   if (newScanList.length > 0) {
     console.log('Llamando a checkExistingTests...');
@@ -771,6 +795,7 @@ async function onFolderInputChange(e) {
   try {
     const files = (e && e.target && e.target.files) || []
     const map = {}
+    const rejectedTestnrs = new Set()
     for (let i = 0; i < files.length; i++) {
       const f = files[i]
       const name = f.name || ''
@@ -778,11 +803,13 @@ async function onFolderInputChange(e) {
       if (!(ln.endsWith('.par') || ln.endsWith('.tbl'))) continue
       const t = getTestnrFromName(name)
       if (!t) continue
+      if (rejectedTestnrs.has(t)) continue
       if (!map[t]) map[t] = { testnr: t, hasPar: false, hasTbl: false, parHandle: null, tblHandle: null, imp: null, nomcount: null, maschnr: null, timeStamp: null }
       if (ln.endsWith('.par')) {
         try {
           const txt = await f.text()
           if (isCardasParText(txt, name)) {
+            rejectedTestnrs.add(t)
             delete map[t]
             continue
           }
@@ -803,7 +830,9 @@ async function onFolderInputChange(e) {
         map[t].tblHandle = f
       }
     }
-    scanList.value = Object.values(map).sort((a, b) => a.testnr.localeCompare(b.testnr))
+    scanList.value = Object.values(map)
+      .filter((item) => item.hasPar)
+      .sort((a, b) => a.testnr.localeCompare(b.testnr))
     selectedFolderName.value = 'Carpeta seleccionada (local)'
     scanStatus.value = scanList.value.length ? (`Encontrados ${scanList.value.length} ensayos (fallback)`) : 'No se encontraron archivos .PAR/.TBL en la selección local'
     // After scanning, check which ones are already in the DB
@@ -2249,13 +2278,13 @@ function getFieldValueByCode(code) {
 
 /* Columnas tabla compacta */
 .col-dato {
-  /* Increased by ~15% to give more room to the 'Dato' column */
-  width: 115px;
+  /* Reducida para ceder espacio a la columna Valor */
+  width: 95px;
 }
 
 .col-valor {
-  /* Reduced to compensate the increase on .col-dato so total width stays similar */
-  width: 165px;
+  /* Aumentada para dar mas espacio al contenido del valor */
+  width: 185px;
 }
 
 /* ensure table cells use border-box so widths include borders/padding */

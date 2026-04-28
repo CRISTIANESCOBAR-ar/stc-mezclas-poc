@@ -10,7 +10,12 @@
 			class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col overflow-y-auto">
 			<!-- Selector de carpeta (con título principal delante) -->
 			<div class="flex-shrink-0 mb-3 flex items-center gap-3">
-				<div class="text-2xl font-semibold text-slate-800 mr-4">Datos TensoRapid</div>
+				<div class="text-2xl font-semibold text-slate-800 mr-4 inline-flex items-center gap-2">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+						<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+					</svg>
+					<span>Datos TensoRapid</span>
+				</div>
 				<label class="text-sm font-semibold text-slate-700 mr-2 shrink-0">Carpeta TensoRapid:</label>
 				<div class="w-64 min-w-0">
 					<div class="px-3 py-2 border border-slate-300 rounded-lg bg-slate-50 text-sm text-slate-800 truncate"
