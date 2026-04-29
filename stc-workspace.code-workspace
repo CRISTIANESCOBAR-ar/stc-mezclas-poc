@@ -1,0 +1,20 @@
+{
+  "folders": [
+    {
+      "name": "stc-mezclas-poc",
+      "path": "."
+    },
+    {
+      "name": "stc-produccion-v2",
+      "path": "../stc-produccion-v2"
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": false,
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/dev-dist": true
+    }
+  }
+}
