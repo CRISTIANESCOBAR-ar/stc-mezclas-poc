@@ -154,9 +154,9 @@
         <div class="w-5 h-px bg-gray-300 my-1"></div>
 
         <!-- Grupo Reportes -->
-        <div class="relative w-full flex items-center justify-center px-1.5 h-10">
+        <div class="relative w-full flex items-center justify-center px-1.5 h-10" ref="reportsAnchor">
           <button
-            @click="reportsOpen = !reportsOpen"
+            @click="toggleReports"
             class="group w-full h-full flex items-center justify-center rounded-lg transition-all relative"
             :class="isReportRoute ? 'bg-indigo-100 text-indigo-700' : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
             title="Reportes y Dashboards"
@@ -176,7 +176,8 @@
           <!-- Dropdown Reportes -->
                       <div
               v-if="reportsOpen"
-              class="absolute left-full top-0 ml-3 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-[130] w-64 flex flex-col py-1"
+              class="reports-dropdown fixed bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-[130] w-64 flex flex-col py-1"
+              :style="reportsDropdownStyle"
             >
               <div class="px-3 py-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1" style="display:flex; justify-content: space-between; align-items: center;">
                 Reportes y Dashboards
@@ -267,7 +268,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -277,8 +278,50 @@ const { t, locale } = useI18n();
 const currentLocale = locale;
 const langOpen = ref(false);
   const reportsOpen = ref(false);
+  const reportsAnchor = ref(null);
+  const reportsDropdownStyle = ref({});
   const reportRoutes = ['/resumen', '/resumen-cardas', '/resumen-semanal-hilanderia', '/analisis-calidad-fibra', '/informe-auditoria-lote', '/resumen-diario', '/dashboard-mezcla', '/stats'];
   const isReportRoute = computed(() => reportRoutes.includes($route.path));
+
+  const DROPDOWN_HEIGHT = 360; // approx: header + 8 items
+  const VIEWPORT_MARGIN = 8;
+
+  function computeReportsPosition() {
+    const el = reportsAnchor.value;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const left = rect.right + 12; // ml-3
+    const spaceBelow = vh - rect.top;
+    let top;
+    if (spaceBelow >= DROPDOWN_HEIGHT + VIEWPORT_MARGIN) {
+      top = rect.top;
+    } else {
+      // anchor near bottom of viewport, leaving margin
+      top = Math.max(VIEWPORT_MARGIN, vh - DROPDOWN_HEIGHT - VIEWPORT_MARGIN);
+    }
+    reportsDropdownStyle.value = { top: `${top}px`, left: `${left}px`, maxHeight: `${vh - top - VIEWPORT_MARGIN}px`, overflowY: 'auto' };
+  }
+
+  async function toggleReports() {
+    reportsOpen.value = !reportsOpen.value;
+    if (reportsOpen.value) {
+      await nextTick();
+      computeReportsPosition();
+    }
+  }
+
+  function onWindowResize() {
+    if (reportsOpen.value) computeReportsPosition();
+  }
+  onMounted(() => {
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('scroll', onWindowResize, true);
+  });
+  onBeforeUnmount(() => {
+    window.removeEventListener('resize', onWindowResize);
+    window.removeEventListener('scroll', onWindowResize, true);
+  });
 
   const LANG_OPTIONS = [
   { code: 'es',    flag: '🇦🇷', label: 'Español' },
@@ -298,6 +341,17 @@ const setLocale = (code) => {
 }
 .fade-enter-from, .fade-leave-to {
   opacity: 0;
+}
+
+/* Item activo dentro del dropdown de Reportes */
+.reports-dropdown a.router-link-active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.10), rgba(99, 102, 241, 0.02));
+  color: #4338ca;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 0 #6366f1, 0 1px 2px rgba(99, 102, 241, 0.08);
+}
+.reports-dropdown a.router-link-active svg {
+  color: #6366f1;
 }
 </style>
 

@@ -8,6 +8,8 @@ import oeRoutes from './routes/oeRoutes.js'
 import usterRoutes from './routes/usterRoutes.js'
 import tensorapidRoutes from './routes/tensorapidRoutes.js'
 import usterCardasRoutes from './routes/usterCardasRoutes.js'
+import calidadFibraRoutes from './routes/calidadFibraRoutes.js'
+import dashboardRoutes from './routes/dashboardRoutes.js'
 
 const app = express()
 const PORT = process.env.PORT || 3006
@@ -23,6 +25,8 @@ app.use('/api/oe', oeRoutes)
 app.use('/api/uster', usterRoutes)
 app.use('/api/tensorapid', tensorapidRoutes)
 app.use('/api/uster-cardas', usterCardasRoutes)
+app.use('/api/calidad-fibra', calidadFibraRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {

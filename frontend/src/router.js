@@ -52,6 +52,55 @@ const routes = [
     name: 'relato-ia',
     component: () => import('./views/RelatoIAView.vue'),
     meta: { title: 'Relato Integral IA' }
+  },
+  // NUEVAS RUTAS DE REPORTES
+  {
+    path: '/resumen',
+    name: 'resumen',
+    component: () => import('./components/ensayos/ResumenEnsayos.vue'),
+    meta: { title: 'Resumen Ensayos' }
+  },
+  {
+    path: '/resumen-cardas',
+    name: 'resumen-cardas',
+    component: () => import('./components/ensayos/ResumenEnsayosCardas.vue'),
+    meta: { title: 'Resumen Ensayos Cardas' }
+  },
+  {
+    path: '/resumen-semanal-hilanderia',
+    name: 'resumen-semanal-hilanderia',
+    component: () => import('./components/ensayos/ResumenSemanalHilanderia.vue'),
+    meta: { title: 'Resumen Semanal Hilanderia' }
+  },
+  {
+    path: '/analisis-calidad-fibra',
+    name: 'analisis-calidad-fibra',
+    component: () => import('./components/ensayos/AnalisisCalidadFibra.vue'),
+    meta: { title: 'Análisis Calidad Fibra' }
+  },
+  {
+    path: '/informe-auditoria-lote',
+    name: 'informe-auditoria-lote',
+    component: () => import('./components/ensayos/InformeAuditoriaLote.vue'),
+    meta: { title: 'Informe Auditoría Lote' }
+  },
+  {
+    path: '/resumen-diario',
+    name: 'resumen-diario',
+    component: () => import('./components/ensayos/ResumenDiario.vue'),
+    meta: { title: 'Resumen Diario' }
+  },
+  {
+    path: '/dashboard-mezcla',
+    name: 'dashboard-mezcla',
+    component: () => import('./components/ensayos/DashboardMezclaHilo.vue'),
+    meta: { title: 'Dashboard Mezcla' }
+  },
+  {
+    path: '/stats',
+    name: 'stats',
+    component: () => import('./components/UsterStatsPage.vue'),
+    meta: { title: 'Gráficos Ensayos' }
   }
 ]
 
