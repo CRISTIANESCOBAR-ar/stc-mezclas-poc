@@ -150,6 +150,75 @@
           </span>
         </router-link>
 
+        <!-- Separador Reportes -->
+        <div class="w-5 h-px bg-gray-300 my-1"></div>
+
+        <!-- Grupo Reportes -->
+        <div class="relative w-full flex items-center justify-center px-1.5 h-10">
+          <button
+            @click="reportsOpen = !reportsOpen"
+            class="group w-full h-full flex items-center justify-center rounded-lg transition-all relative"
+            :class="isReportRoute ? 'bg-indigo-100 text-indigo-700' : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
+            title="Reportes y Dashboards"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+            <span v-if="!reportsOpen" class="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md bg-white border border-gray-200 shadow-md px-2 py-1 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+              Reportes
+            </span>
+          </button>
+
+          <!-- Dropdown Reportes -->
+                      <div
+              v-if="reportsOpen"
+              class="absolute left-full top-0 ml-3 bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-[130] w-64 flex flex-col py-1"
+            >
+              <div class="px-3 py-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1" style="display:flex; justify-content: space-between; align-items: center;">
+                Reportes y Dashboards
+                <button @click.stop="reportsOpen = false" class="text-gray-400 hover:text-gray-600 md:hidden">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+              </div>
+              <router-link to="/resumen" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Resumen Ensayos
+              </router-link>
+              <router-link to="/resumen-cardas" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Resumen Ensayos Cardas
+              </router-link>
+              <router-link to="/resumen-semanal-hilanderia" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                Resumen Semanal Hil.
+              </router-link>
+              <router-link to="/analisis-calidad-fibra" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                Análisis Calidad Fibra
+              </router-link>
+              <router-link to="/informe-auditoria-lote" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Informe Auditoría Lote
+              </router-link>
+              <router-link to="/resumen-diario" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Resumen Diario
+              </router-link>
+              <router-link to="/dashboard-mezcla" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                Dashboard Mezcla → Hilo
+              </router-link>
+              <router-link to="/stats" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                Gráficos Ensayos
+              </router-link>
+            </div>
+          </div>
+
       </nav>
 
       <!-- Espaciador -->
@@ -198,7 +267,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
@@ -207,8 +276,11 @@ const { t, locale } = useI18n();
 
 const currentLocale = locale;
 const langOpen = ref(false);
+  const reportsOpen = ref(false);
+  const reportRoutes = ['/resumen', '/resumen-cardas', '/resumen-semanal-hilanderia', '/analisis-calidad-fibra', '/informe-auditoria-lote', '/resumen-diario', '/dashboard-mezcla', '/stats'];
+  const isReportRoute = computed(() => reportRoutes.includes($route.path));
 
-const LANG_OPTIONS = [
+  const LANG_OPTIONS = [
   { code: 'es',    flag: '🇦🇷', label: 'Español' },
   { code: 'pt-BR', flag: '🇧🇷', label: 'Português (BR)' },
 ];
@@ -228,4 +300,5 @@ const setLocale = (code) => {
   opacity: 0;
 }
 </style>
+
 
