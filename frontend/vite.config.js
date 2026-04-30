@@ -50,10 +50,10 @@ export default defineConfig({
   },
   server: {
     host: true,
-    port: 5174,
+    port: 5173,
     proxy: {
-    '/api': {
-        target: 'http://127.0.0.1:3006',
+      '/api': {
+        target: 'http://127.0.0.1:3005',
         changeOrigin: true,
       },
     },

@@ -99,6 +99,27 @@
                 class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
                 ⬇ Descargar .md
               </button>
+
+              <div class="pt-1">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Exportar</p>
+                <div class="flex flex-col gap-1">
+                  <button @click="exportarImagen" :disabled="!!exporting"
+                    class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors disabled:opacity-50"
+                    :class="exporting === 'png' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
+                    {{ exporting === 'png' ? '⏳ Generando…' : '🖼 Imagen (.png)' }}
+                  </button>
+                  <button @click="exportarPDF" :disabled="!!exporting"
+                    class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors disabled:opacity-50"
+                    :class="exporting === 'pdf' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
+                    {{ exporting === 'pdf' ? '⏳ Generando…' : '📄 PDF A4 (.pdf)' }}
+                  </button>
+                  <button @click="exportarDOCX" :disabled="!!exporting"
+                    class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors disabled:opacity-50"
+                    :class="exporting === 'docx' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
+                    {{ exporting === 'docx' ? '⏳ Generando…' : '📝 Word (.docx)' }}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </aside>
@@ -117,6 +138,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import CustomDatepicker from '@/components/CustomDatepicker.vue'
+import { toPng } from 'html-to-image'
+import jsPDF from 'jspdf'
+import {
+  Document, Packer, Paragraph, TextRun, HeadingLevel,
+  AlignmentType, BorderStyle, TableRow, TableCell, Table,
+  WidthType, ShadingType,
+} from 'docx'
 
 marked.setOptions({ gfm: true, breaks: true })
 
@@ -235,6 +263,258 @@ function descargarMarkdown() {
   a.download = `informe-${lotesInput.value.replace(/\s+/g, '')}-${fechaInput.value}.md`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+const exporting = ref('')  // '' | 'png' | 'pdf' | 'docx'
+
+function baseFilename() {
+  return `informe-${lotesInput.value.replace(/[^0-9,]/g, '').replace(/,/g, '-')}-${fechaInput.value}`
+}
+
+async function exportarImagen() {
+  if (!docRef.value) return
+  exporting.value = 'png'
+  try {
+    const dataUrl = await toPng(docRef.value, {
+      quality: 1,
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+      style: { borderRadius: '0' },
+    })
+    const a = document.createElement('a')
+    a.href = dataUrl
+    a.download = `${baseFilename()}.png`
+    a.click()
+  } catch (e) {
+    alert('Error al generar imagen: ' + e.message)
+  } finally {
+    exporting.value = ''
+  }
+}
+
+async function exportarPDF() {
+  if (!docRef.value) return
+  exporting.value = 'pdf'
+  try {
+    const dataUrl = await toPng(docRef.value, {
+      quality: 1,
+      pixelRatio: 2,
+      backgroundColor: '#ffffff',
+      style: { borderRadius: '0' },
+    })
+    const img = new Image()
+    img.src = dataUrl
+    await new Promise(resolve => { img.onload = resolve })
+
+    // A4 en puntos: 595 x 842
+    const A4_W = 595
+    const A4_H = 842
+    const MARGIN = 28  // ~10mm en puntos
+    const usableW = A4_W - MARGIN * 2
+
+    const imgW = img.naturalWidth
+    const imgH = img.naturalHeight
+    const scale = usableW / imgW
+    const scaledH = imgH * scale
+
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+    let y = MARGIN
+    let remaining = scaledH
+
+    while (remaining > 0) {
+      const pageH = A4_H - MARGIN * 2
+      const sliceH = Math.min(remaining, pageH)
+      // srcY en píxeles de la imagen original correspondiente a este slice
+      const srcY = (scaledH - remaining) / scale
+      const srcSliceH = sliceH / scale
+
+      // Canvas temporal para recortar el slice
+      const canvas = document.createElement('canvas')
+      canvas.width = imgW
+      canvas.height = Math.ceil(srcSliceH)
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(img, 0, -srcY)
+      const sliceUrl = canvas.toDataURL('image/png')
+
+      pdf.addImage(sliceUrl, 'PNG', MARGIN, y, usableW, sliceH)
+      remaining -= sliceH
+      if (remaining > 0) {
+        pdf.addPage()
+        y = MARGIN
+      }
+    }
+
+    pdf.save(`${baseFilename()}.pdf`)
+  } catch (e) {
+    alert('Error al generar PDF: ' + e.message)
+  } finally {
+    exporting.value = ''
+  }
+}
+
+async function exportarDOCX() {
+  if (!docRef.value) return
+  exporting.value = 'docx'
+  try {
+    const el = docRef.value
+    const children = []
+
+    function runFromSpan(span) {
+      const text = span.textContent || ''
+      const bold = span.style.fontWeight === 'bold' || span.tagName === 'STRONG'
+      const italic = span.style.fontStyle === 'italic' || span.tagName === 'EM'
+      const code = span.tagName === 'CODE'
+      return new TextRun({
+        text,
+        bold: bold || code,
+        italics: italic,
+        font: code ? 'Courier New' : 'Calibri',
+        size: code ? 18 : 22,
+        color: code ? 'BE185D' : undefined,
+      })
+    }
+
+    function nodeToRuns(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent || ''
+        if (!text) return []
+        return [new TextRun({ text, font: 'Calibri', size: 22 })]
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return []
+      const tag = node.tagName
+      if (tag === 'STRONG' || tag === 'B')
+        return [new TextRun({ text: node.textContent || '', bold: true, font: 'Calibri', size: 22 })]
+      if (tag === 'EM' || tag === 'I')
+        return [new TextRun({ text: node.textContent || '', italics: true, font: 'Calibri', size: 22 })]
+      if (tag === 'CODE')
+        return [new TextRun({ text: node.textContent || '', font: 'Courier New', size: 18, color: 'BE185D' })]
+      return Array.from(node.childNodes).flatMap(nodeToRuns)
+    }
+
+    function parseParagraph(node) {
+      const runs = Array.from(node.childNodes).flatMap(nodeToRuns)
+      return new Paragraph({ children: runs, spacing: { after: 100 }, style: 'Normal' })
+    }
+
+    function parseTable(tableEl) {
+      const rows = Array.from(tableEl.querySelectorAll('tr')).map(tr => {
+        const cells = Array.from(tr.querySelectorAll('th, td')).map(td => {
+          const isHeader = td.tagName === 'TH'
+          return new TableCell({
+            children: [new Paragraph({
+              children: [new TextRun({
+                text: td.textContent?.trim() || '',
+                bold: isHeader,
+                font: 'Calibri',
+                size: isHeader ? 18 : 20,
+                color: isHeader ? '334155' : undefined,
+              })],
+            })],
+            shading: isHeader ? { type: ShadingType.SOLID, color: 'F1F5F9' } : undefined,
+          })
+        })
+        return new TableRow({ children: cells })
+      })
+      return new Table({
+        rows,
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top:    { style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' },
+          bottom: { style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' },
+          left:   { style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' },
+          right:  { style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' },
+          insideH:{ style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' },
+          insideV:{ style: BorderStyle.SINGLE, size: 1, color: 'E2E8F0' },
+        },
+      })
+    }
+
+    function walkNode(node) {
+      if (node.nodeType !== Node.ELEMENT_NODE) return
+      const tag = node.tagName
+
+      if (tag === 'H1') {
+        children.push(new Paragraph({
+          text: node.textContent?.trim() || '',
+          heading: HeadingLevel.HEADING_1,
+          spacing: { before: 200, after: 120 },
+        }))
+      } else if (tag === 'H2') {
+        children.push(new Paragraph({
+          text: node.textContent?.trim() || '',
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 100 },
+        }))
+      } else if (tag === 'H3') {
+        children.push(new Paragraph({
+          text: node.textContent?.trim() || '',
+          heading: HeadingLevel.HEADING_3,
+          spacing: { before: 160, after: 80 },
+        }))
+      } else if (tag === 'P') {
+        children.push(parseParagraph(node))
+      } else if (tag === 'BLOCKQUOTE') {
+        children.push(new Paragraph({
+          children: [new TextRun({ text: node.textContent?.trim() || '', italics: true, color: '4F46E5', font: 'Calibri', size: 20 })],
+          indent: { left: 400 },
+          spacing: { before: 80, after: 80 },
+          border: { left: { style: BorderStyle.THICK, size: 6, color: '6366F1' } },
+        }))
+      } else if (tag === 'UL' || tag === 'OL') {
+        Array.from(node.querySelectorAll(':scope > li')).forEach((li, idx) => {
+          const bullet = tag === 'OL' ? `${idx + 1}. ` : '• '
+          children.push(new Paragraph({
+            children: [new TextRun({ text: bullet + (li.textContent?.trim() || ''), font: 'Calibri', size: 22 })],
+            indent: { left: 400 },
+            spacing: { after: 60 },
+          }))
+        })
+      } else if (tag === 'TABLE') {
+        children.push(parseTable(node))
+        children.push(new Paragraph({ text: '', spacing: { after: 100 } }))
+      } else if (tag === 'HR') {
+        children.push(new Paragraph({
+          border: { bottom: { style: BorderStyle.SINGLE, size: 1, color: 'CBD5E1' } },
+          spacing: { before: 100, after: 100 },
+          text: '',
+        }))
+      } else {
+        // div, article, section, etc. — recursar
+        Array.from(node.childNodes).forEach(walkNode)
+      }
+    }
+
+    Array.from(el.childNodes).forEach(walkNode)
+
+    const doc = new Document({
+      styles: {
+        default: {
+          document: { run: { font: 'Calibri', size: 22 } },
+        },
+      },
+      sections: [{
+        properties: {
+          page: {
+            size: { width: 11906, height: 16838 },   // A4 en twentieths of a point
+            margin: { top: 1134, bottom: 1134, left: 1134, right: 1134 },  // ~2cm
+          },
+        },
+        children,
+      }],
+    })
+
+    const blob = await Packer.toBlob(doc)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${baseFilename()}.docx`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    alert('Error al generar DOCX: ' + e.message)
+  } finally {
+    exporting.value = ''
+  }
 }
 
 // ── Carga: 1) trae rows del dashboard 2) llama narrativa ──

@@ -2,7 +2,7 @@ import express from 'express';
 import pool, { query } from '../db/pg.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import crypto from 'crypto';
-import { formatOEParaPrompt, generarNarrativaLocal } from '../helpers/narrativaHelpers.js';
+import { formatOEParaPrompt, generarNarrativaLocal, buildBloqueOE } from '../helpers/narrativaHelpers.js';
 import { parseNarrativaStructure } from '../helpers/narrativaSections.js';
 const router = express.Router();
 
@@ -60,64 +60,6 @@ function hashRowsPayload(rows, proveedores = []) {
   }));
   const prov = proveedores.map(p => ({ m: p.mistura, p: p.produtor, f: p.fardos_consumidos, str: p.str }));
   return sha256(JSON.stringify({ norm, prov }));
-}
-
-export function buildBloqueOE(oeData, lotesSorted) {
-  if (!oeData || !oeData.length) return [];
-  const numV = (v) => Number(v) || 0;
-  const tipos = [
-    { key: 'nat_total', label: 'Naturales' },
-    { key: 'n_total',   label: 'N (Neps)' },
-    { key: 's_total',   label: 'S (Cortos)' },
-    { key: 'l_total',   label: 'L (Largos)' },
-    { key: 't_total',   label: 'T (Finos)' },
-    { key: 'mo_total',  label: 'MO (Moiré)' },
-    { key: 'jp_total',  label: 'JP (P+)' },
-    { key: 'jm_total',  label: 'JM (P-)' },
-  ];
-  const machineKeys = [...new Map(
-    oeData.map(r => [`${r.maquina}|${r.item}`, { maquina: r.maquina, item: r.item, desc_item: r.desc_item }])
-  ).values()];
-  const lines = [];
-  lines.push('🔗 CORRELACIÓN CON PRODUCCIÓN OE:');
-  lines.push('Cortes de purga Open End — totales acumulados por período analizado');
-  lines.push('');
-  for (const mk of machineKeys) {
-    const maqRows = oeData.filter(r => r.maquina === mk.maquina && r.lado === mk.lado && r.item === mk.item);
-    const lotesConDatos = lotesSorted.filter(l => maqRows.some(r => Number(r.lote) === l));
-    if (!lotesConDatos.length) continue;
-    const maqNum = String(mk.maquina).slice(-2).replace(/^0+/, '');
-    const ladoStr = mk.lado === 'A' ? 'LP' : (mk.lado === 'B' ? 'LI' : (mk.lado || ''));
-    const displayMaq = `${maqNum} ${ladoStr}`.trim();
-    lines.push(`  Máq. ${displayMaq} — ${mk.desc_item || mk.item}:`);
-    const loteHeader = lotesConDatos.map(l => `L.${l}`.padStart(7)).join(' |');
-    lines.push(`    ${'Tipo'.padEnd(12)} |${loteHeader}`);
-    for (const ct of tipos) {
-      const vals = lotesConDatos.map(l => {
-        const row = maqRows.find(r => Number(r.lote) === l);
-        return row ? numV(row[ct.key]) : null;
-      });
-      if (vals.filter(v => v !== null).every(v => v === 0)) continue;
-      const valStr = vals.map(v => (v === null ? '      –' : String(v).padStart(7))).join(' |');
-      let trend = '';
-      const numericVals = vals.filter(v => v !== null);
-      if (numericVals.length >= 2) {
-        const first = numericVals[0], last = numericVals[numericVals.length - 1];
-        if (first > 0) {
-          const p = Math.round((last - first) / first * 100);
-          trend = last < first ? ` ⬇️ Mejoró (${p}%)` : last > first ? ` ⬆️ Empeoró (+${p}%)` : ' = Sin cambio';
-        }
-      }
-      lines.push(`    ${ct.label.padEnd(12)} |${valStr}${trend}`);
-    }
-    const eficStr = lotesConDatos.map(l => {
-      const row = maqRows.find(r => Number(r.lote) === l);
-      return (row && row.efic_avg != null) ? `${row.efic_avg}%`.padStart(7) : '      –';
-    }).join(' |');
-    lines.push(`    ${'Efic. Prom.'.padEnd(12)} |${eficStr}`);
-    lines.push('');
-  }
-  return lines;
 }
 
 router.get('/mezcla-lotes', async (req, res) => {
@@ -680,9 +622,12 @@ router.post('/narrativa-lotes', async (req, res) => {
       const provLote = (proveedores || []).filter(p => Number(p.mistura) === mistura);
       const totalFardosProv = provLote.reduce((s, p) => s + (Number(p.fardos_consumidos) || 0), 0);
       const provStr = provLote.length
-        ? '\n  Proveedores:\n' + provLote.map(p => {
+        ? '\n  Proveedores (' + totalFardosProv + ' fardos totales):\n' +
+          '  | Proveedor | Fardos | % | STR | SCI | MIC | UHML |\n' +
+          '  |---|---:|---:|---:|---:|---:|---:|\n' +
+          provLote.map(p => {
             const pct = totalFardosProv > 0 ? ((Number(p.fardos_consumidos) / totalFardosProv) * 100).toFixed(1) : '–';
-            return `   • ${p.produtor}: ${p.fardos_consumidos} fardos (${pct}%) STR=${p.str ?? '-'} SCI=${p.sci ?? '-'} MIC=${p.mic ?? '-'} UHML=${p.uhml ?? '-'}`;
+            return `  | ${p.produtor} | ${p.fardos_consumidos} | ${pct}% | ${p.str ?? '—'} | ${p.sci ?? '—'} | ${p.mic ?? '—'} | ${p.uhml ?? '—'} |`;
           }).join('\n')
         : '';
       return `LOTE_FIAC ${misturaLabel}${mistura === actual ? ' [ACTUAL]' : ' [REFERENCIA]'}:
@@ -733,7 +678,7 @@ _Veredicto en 2 oraciones citando el estado operativo (APROBADO / PRECAUCIÓN / 
 _Tabla Markdown con columnas: Métrica | Lote ref | Lote actual | Δ% | Impacto. Incluí STR, Tenacidad, CVm%, Neps+200%, Elongación._
 
 ## 📦 Proveedores Clave
-_Para cada proveedor: nombre, fardos consumidos, % participación, STR, SCI, MIC, UHML._
+_Tabla Markdown con columnas: Proveedor | Fardos | % | STR (g/tex) | SCI | MIC | UHML (mm). Una fila por proveedor. NO uses listas ni bullets para los datos de proveedor._
 
 ### Observaciones
 - 🏆 Mejor STR: ...

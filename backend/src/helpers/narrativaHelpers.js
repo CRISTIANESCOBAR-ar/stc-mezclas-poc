@@ -335,4 +335,63 @@ export function generarNarrativaLocal(rows, loteActual, proveedores = [], oeData
   ];
 
   return lines.join('\n');
-}
+}
+
+export function buildBloqueOE(oeData, lotesSorted) {
+  if (!oeData || !oeData.length) return [];
+  const numV = (v) => Number(v) || 0;
+  const tipos = [
+    { key: 'nat_total', label: 'Naturales' },
+    { key: 'n_total',   label: 'N (Neps)' },
+    { key: 's_total',   label: 'S (Cortos)' },
+    { key: 'l_total',   label: 'L (Largos)' },
+    { key: 't_total',   label: 'T (Finos)' },
+    { key: 'mo_total',  label: 'MO (Moir\u00e9)' },
+    { key: 'jp_total',  label: 'JP (P+)' },
+    { key: 'jm_total',  label: 'JM (P-)' },
+  ];
+  const machineKeys = [...new Map(
+    oeData.map(r => [`${r.maquina}|${r.item}|${r.lado}`, { maquina: r.maquina, item: r.item, lado: r.lado, desc_item: r.desc_item }])
+  ).values()];
+  const lines = [];
+  lines.push('\uD83D\uDD17 CORRELACI\u00d3N CON PRODUCCI\u00d3N OE:');
+  lines.push('Cortes de purga Open End \u2014 totales acumulados por per\u00edodo analizado');
+  lines.push('');
+  for (const mk of machineKeys) {
+    const maqRows = oeData.filter(r => r.maquina === mk.maquina && r.lado === mk.lado && r.item === mk.item);
+    const lotesConDatos = lotesSorted.filter(l => maqRows.some(r => Number(r.lote) === l));
+    if (!lotesConDatos.length) continue;
+    const maqNum = String(mk.maquina).slice(-2).replace(/^0+/, '');
+    const ladoStr = mk.lado === 'A' ? 'LP' : (mk.lado === 'B' ? 'LI' : (mk.lado || ''));
+    const displayMaq = `${maqNum} ${ladoStr}`.trim();
+    lines.push(`  M\u00e1q. ${displayMaq} \u2014 ${mk.desc_item || mk.item}:`);
+    const loteHeader = lotesConDatos.map(l => `L.${l}`.padStart(7)).join(' |');
+    lines.push(`    ${'Tipo'.padEnd(12)} |${loteHeader}`);
+    for (const ct of tipos) {
+      const vals = lotesConDatos.map(l => {
+        const row = maqRows.find(r => Number(r.lote) === l);
+        return row ? numV(row[ct.key]) : null;
+      });
+      if (vals.filter(v => v !== null).every(v => v === 0)) continue;
+      const valStr = vals.map(v => (v === null ? '      \u2013' : String(v).padStart(7))).join(' |');
+      let trend = '';
+      const numericVals = vals.filter(v => v !== null);
+      if (numericVals.length >= 2) {
+        const first = numericVals[0], last = numericVals[numericVals.length - 1];
+        if (first > 0) {
+          const p = Math.round((last - first) / first * 100);
+          trend = last < first ? ` \u2B07\uFE0F Mejor\u00f3 (${p}%)` : last > first ? ` \u2B06\uFE0F Empeor\u00f3 (+${p}%)` : ' = Sin cambio';
+        }
+      }
+      lines.push(`    ${ct.label.padEnd(12)} |${valStr}${trend}`);
+    }
+    const eficStr = lotesConDatos.map(l => {
+      const row = maqRows.find(r => Number(r.lote) === l);
+      return (row && row.efic_avg != null) ? `${row.efic_avg}%`.padStart(7) : '      \u2013';
+    }).join(' |');
+    lines.push(`    ${'Efic. Prom.'.padEnd(12)} |${eficStr}`);
+    lines.push('');
+  }
+  return lines;
+}
+
