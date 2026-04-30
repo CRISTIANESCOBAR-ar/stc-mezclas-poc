@@ -1,13 +1,26 @@
 import express from 'express';
+import crypto from 'crypto';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { query } from '../db/pg.js';
 
 const router = express.Router();
+
+// Cache simple en memoria para diagnósticos IA (key = hash del payload + modelo)
+const cachedOeIA = new Map();
+
+// Pricing Gemini (USD por 1M tokens) — usado para estimar costo por respuesta.
+const GEMINI_PRICING = {
+  'gemini-2.5-pro':   { in: 1.25, out: 10.00 },
+  'gemini-2.5-flash': { in: 0.30, out: 2.50 },
+  'gemini-2.0-flash': { in: 0.10, out: 0.40 },
+};
 
 function sqlParseDate(colIdent) {
   return `(
     CASE
       WHEN ${colIdent} IS NULL OR ${colIdent} = '' THEN NULL
-      WHEN split_part(btrim(${colIdent}), ' ', 1) ~ '^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}$' THEN to_date(split_part(btrim(${colIdent}), ' ', 1), 'DD/MM/YYYY')
+      WHEN split_part(btrim(${colIdent}), ' ', 1) ~ '^[0-9]{1,2}/[0-9]{1,2}/[0-9]{4}$' THEN to_date(split_part(btrim(${colIdent}), ' ', 1), 'FMDD/FMMM/YYYY')
+      WHEN split_part(btrim(${colIdent}), ' ', 1) ~ '^[0-9]{1,2}/[0-9]{1,2}/[0-9]{2}$' THEN to_date(split_part(btrim(${colIdent}), ' ', 1), 'FMDD/FMMM/YY')
       WHEN ${colIdent} ~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}' THEN substring(${colIdent} from 1 for 10)::date
       ELSE NULL
     END
@@ -95,7 +108,13 @@ function buildAlerts(row) {
   const push = (severity, code, message) => alerts.push({ severity, code, message });
 
   const neNum = Number.parseFloat(row.ne);
-  const robTotal = [row.rob_01, row.rob_02, row.rob_03].reduce((sum, value) => sum + (Number(value) || 0), 0);
+  // Robots empalmadores: rob_01/02/03 son % de eficiencia individual de cada Robot.
+  // El indicador correcto es el PROMEDIO (no la suma).
+  const robValues = [row.rob_01, row.rob_02, row.rob_03]
+    .map((v) => Number(v))
+    .filter((v) => Number.isFinite(v) && v > 0);
+  const robAvg = robValues.length ? (robValues.reduce((s, v) => s + v, 0) / robValues.length) : null;
+  row.robots_efic_avg = robAvg;
 
   if (row.efic_informada != null) {
     if (Number(row.efic_informada) < 85) push('alta', 'eficiencia', `Eficiencia informada ${Number(row.efic_informada).toFixed(1)}%.`);
@@ -107,8 +126,20 @@ function buildAlerts(row) {
     else if (Number(row.cort_nat) > 150) push('media', 'corte_nat', `Corte natural ${Number(row.cort_nat).toFixed(1)} en vigilancia.`);
   }
 
-  if (robTotal > 4) push('alta', 'robos', `Suma de robos ${robTotal.toFixed(1)}%.`);
-  else if (robTotal > 2) push('media', 'robos', `Robos ${robTotal.toFixed(1)}% en seguimiento.`);
+  // Cortes cortos (CC = CCp + CCm) — defectos puntuales tipo nep/sucio/mota
+  const ccTotal = (Number(row.ccp) || 0) + (Number(row.ccm) || 0);
+  if (ccTotal > 30) push('alta', 'cortes_cortos', `Cortes cortos ${ccTotal} elevados (calidad de cinta/carda).`);
+  else if (ccTotal > 15) push('media', 'cortes_cortos', `Cortes cortos ${ccTotal} en vigilancia.`);
+
+  // Empalmes (J = JP + JM) — calidad mecánica del puesto/empalmador
+  const jTotal = (Number(row.jp) || 0) + (Number(row.jm) || 0);
+  if (jTotal > 25) push('alta', 'empalmes', `Empalmes ${jTotal} elevados (revisar piecer).`);
+  else if (jTotal > 15) push('media', 'empalmes', `Empalmes ${jTotal} en vigilancia.`);
+
+  if (robAvg != null) {
+    if (robAvg < 85) push('alta', 'robots', `Eficiencia promedio Robots ${robAvg.toFixed(1)}% (baja).`);
+    else if (robAvg < 90) push('media', 'robots', `Eficiencia promedio Robots ${robAvg.toFixed(1)}% en seguimiento.`);
+  }
 
   if (row.cvm != null) {
     if (Number(row.cvm) > 13) push('alta', 'cvm', `CVm ${Number(row.cvm).toFixed(2)}%.`);
@@ -139,7 +170,7 @@ function buildRecommendation(row, alerts) {
   const parts = [];
   const has = (code) => alerts.some((alert) => alert.code === code);
 
-  if (has('eficiencia') || has('corte_nat') || has('robos')) {
+  if (has('eficiencia') || has('corte_nat') || has('robots')) {
     parts.push('Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE.');
   }
   if (has('cvm') || has('neps_200')) {
@@ -189,6 +220,23 @@ router.get('/trazabilidad', async (req, res) => {
     const cRob01 = findColumn(oeColSet, ['% ROB 01', 'rob 01', 'rob_01']);
     const cRob02 = findColumn(oeColSet, ['% ROB 02', 'rob 02', 'rob_02']);
     const cRob03 = findColumn(oeColSet, ['% ROB 03', 'rob 03', 'rob_03']);
+    // Campos extendidos: alfa, paradas y Classimat
+    const cAlfa = findColumn(oeColSet, ['alfa', 'ALFA', 'Alfa']);
+    const cTBob = findColumn(oeColSet, ['T.BOB.', 't.bob.', 't_bob', 'tbob']);
+    const cRpmCard = findColumn(oeColSet, ['RPM CARD', 'rpm card', 'rpm_card']);
+    const cMo = findColumn(oeColSet, ['mo', 'MO', 'Mo']);
+    const cCp = findColumn(oeColSet, ['CP V+ SL+', 'cp v+ sl+', 'cp']);
+    const cCm = findColumn(oeColSet, ['CM V- SL-', 'cm v- sl-', 'cm']);
+    const cCcp = findColumn(oeColSet, ['CCp C+', 'ccp c+', 'ccp']);
+    const cCcm = findColumn(oeColSet, ['CCm C-', 'ccm c-', 'ccm']);
+    const cJp = findColumn(oeColSet, ['JP (P+)', 'jp (p+)', 'jp']);
+    const cJm = findColumn(oeColSet, ['JM (P-)', 'jm (p-)', 'jm']);
+    const cCvp = findColumn(oeColSet, ['cvp', 'CVP', 'Cvp']);
+    const cCvmOe = findColumn(oeColSet, ['cvm', 'CVM', 'Cvm']);
+    const cClmN = findColumn(oeColSet, ['n', 'N']);
+    const cClmS = findColumn(oeColSet, ['s', 'S']);
+    const cClmL = findColumn(oeColSet, ['l', 'L']);
+    const cClmT = findColumn(oeColSet, ['t', 'T']);
 
     if (!cData || !cLote || !cTitulo) {
       return res.status(500).json({
@@ -220,6 +268,22 @@ router.get('/trazabilidad', async (req, res) => {
     const exprRob01 = col(cRob01);
     const exprRob02 = col(cRob02);
     const exprRob03 = col(cRob03);
+    const exprAlfa = col(cAlfa);
+    const exprTBob = col(cTBob);
+    const exprRpmCard = col(cRpmCard);
+    const exprMo = col(cMo);
+    const exprCp = col(cCp);
+    const exprCm = col(cCm);
+    const exprCcp = col(cCcp);
+    const exprCcm = col(cCcm);
+    const exprJp = col(cJp);
+    const exprJm = col(cJm);
+    const exprCvpOe = col(cCvp);
+    const exprCvmOe = col(cCvmOe);
+    const exprClmN = col(cClmN);
+    const exprClmS = col(cClmS);
+    const exprClmL = col(cClmL);
+    const exprClmT = col(cClmT);
 
     const oeSql = `
       WITH oe_base AS (
@@ -250,7 +314,23 @@ router.get('/trazabilidad', async (req, res) => {
           ${sqlParseNumberIntl(`${exprCortNat}::text`)} AS cort_nat,
           ${sqlParseNumberIntl(`${exprRob01}::text`)} AS rob_01,
           ${sqlParseNumberIntl(`${exprRob02}::text`)} AS rob_02,
-          ${sqlParseNumberIntl(`${exprRob03}::text`)} AS rob_03
+          ${sqlParseNumberIntl(`${exprRob03}::text`)} AS rob_03,
+          ${sqlParseNumberIntl(`${exprAlfa}::text`)} AS alfa,
+          ${sqlParseNumberIntl(`${exprTBob}::text`)} AS t_bob,
+          ${sqlParseNumberIntl(`${exprRpmCard}::text`)} AS rpm_card,
+          ${sqlParseNumberIntl(`${exprMo}::text`)} AS mo,
+          ${sqlParseNumberIntl(`${exprCp}::text`)} AS cp,
+          ${sqlParseNumberIntl(`${exprCm}::text`)} AS cm,
+          ${sqlParseNumberIntl(`${exprCcp}::text`)} AS ccp,
+          ${sqlParseNumberIntl(`${exprCcm}::text`)} AS ccm,
+          ${sqlParseNumberIntl(`${exprJp}::text`)} AS jp,
+          ${sqlParseNumberIntl(`${exprJm}::text`)} AS jm,
+          ${sqlParseNumberIntl(`${exprCvpOe}::text`)} AS oe_cvp,
+          ${sqlParseNumberIntl(`${exprCvmOe}::text`)} AS oe_cvm,
+          ${sqlParseNumberIntl(`${exprClmN}::text`)} AS clm_n,
+          ${sqlParseNumberIntl(`${exprClmS}::text`)} AS clm_s,
+          ${sqlParseNumberIntl(`${exprClmL}::text`)} AS clm_l,
+          ${sqlParseNumberIntl(`${exprClmT}::text`)} AS clm_t
         FROM tb_produccion_oe t
         WHERE ${sqlParseDate(`${exprData}::text`)} = $1::date
           AND ($2::text IS NULL OR TRIM(${exprLote}::text) = TRIM($2))
@@ -343,7 +423,8 @@ router.get('/trazabilidad', async (req, res) => {
           ROUND(AVG(tt.tenacidad)::numeric, 2) AS tenacidad,
           ROUND(AVG(tt.elongacion)::numeric, 2) AS elongacion,
           ROUND(AVG(tt.fuerza_b)::numeric, 2) AS fuerza_b,
-          ROUND(AVG(tt.trabajo)::numeric, 2) AS trabajo_b
+          ROUND(AVG(tt.trabajo)::numeric, 2) AS trabajo_b,
+          STRING_AGG(DISTINCT NULLIF(TRIM(COALESCE(tp.comment, tp.comment_text, '')), ''), ' | ') AS obs
         FROM uster_lotes ul
         JOIN tb_tensorapid_par tp ON tp.uster_testnr = ul.testnr
         JOIN tb_tensorapid_tbl tt ON tt.testnr = tp.testnr
@@ -356,7 +437,8 @@ router.get('/trazabilidad', async (req, res) => {
           ROUND(AVG(tt.tenacidad)::numeric, 2) AS tenacidad,
           ROUND(AVG(tt.elongacion)::numeric, 2) AS elongacion,
           ROUND(AVG(tt.fuerza_b)::numeric, 2) AS fuerza_b,
-          ROUND(AVG(tt.trabajo)::numeric, 2) AS trabajo_b
+          ROUND(AVG(tt.trabajo)::numeric, 2) AS trabajo_b,
+          STRING_AGG(DISTINCT NULLIF(TRIM(COALESCE(tp.comment, tp.comment_text, '')), ''), ' | ') AS obs
         FROM uster_lotes ul
         JOIN tb_tensorapid_par tp ON tp.uster_testnr = ul.testnr
         JOIN tb_tensorapid_tbl tt ON tt.testnr = tp.testnr
@@ -383,6 +465,22 @@ router.get('/trazabilidad', async (req, res) => {
         oe.rob_01,
         oe.rob_02,
         oe.rob_03,
+        oe.alfa,
+        oe.t_bob,
+        oe.rpm_card,
+        oe.mo,
+        oe.cp,
+        oe.cm,
+        oe.ccp,
+        oe.ccm,
+        oe.jp,
+        oe.jm,
+        oe.oe_cvp,
+        oe.oe_cvm,
+        oe.clm_n,
+        oe.clm_s,
+        oe.clm_l,
+        oe.clm_t,
         COALESCE(ua_l.passador, ua_m.passador) AS passador,
         COALESCE(ua_l.maquinas_uster, ua_m.maquinas_uster) AS maquinas_uster,
         COALESCE(ua_l.cvm, ua_m.cvm) AS cvm,
@@ -398,7 +496,8 @@ router.get('/trazabilidad', async (req, res) => {
         COALESCE(ta_l.tenacidad, ta_m.tenacidad) AS tenacidad,
         COALESCE(ta_l.elongacion, ta_m.elongacion) AS elongacion,
         COALESCE(ta_l.fuerza_b, ta_m.fuerza_b) AS fuerza_b,
-        COALESCE(ta_l.trabajo_b, ta_m.trabajo_b) AS trabajo_b
+        COALESCE(ta_l.trabajo_b, ta_m.trabajo_b) AS trabajo_b,
+        COALESCE(ta_l.obs, ta_m.obs) AS tensor_obs
       FROM oe_base oe
       LEFT JOIN uster_agg_lote ua_l
         ON ua_l.lote::bigint = oe.lote_num
@@ -496,6 +595,55 @@ router.get('/trazabilidad', async (req, res) => {
     } catch (cardaTurnoError) {
       cardaTurno = [];
       console.warn('[oe/trazabilidad] Cobertura turno/style cardas no disponible:', cardaTurnoError.message);
+    }
+
+    // Producción Kg/h por turno — directo de tb_produccion_carda, sin depender
+    // de USTER. Promedia todas las cardas que produjeron en ese turno.
+    let cardaProdTurno = [];
+    try {
+      // Regla fija de alimentación según nº de carda:
+      //   002-007 (TRUTZSCHLER)        -> MANUAR
+      //   008-013, 015-017 (RIETER)    -> CARDA RIETER
+      const cardaProdTurnoSql = `
+        WITH base AS (
+          SELECT
+            ${sqlParseDate('data')} AS fecha_prod,
+            UPPER(TRIM(COALESCE(t::text, ''))) AS turno,
+            CASE
+              WHEN TRIM(COALESCE(lf::text, '')) ~ '^[0-9]{1,3}$'
+                THEN TRIM(lf::text)::int
+              ELSE NULL
+            END AS carda_num,
+            ${sqlParseNumberIntl('"PROD KG/H"')} AS prod_kgh
+          FROM tb_produccion_carda
+          WHERE ${sqlParseDate('data')} = $1::date
+        )
+        SELECT
+          fecha_prod,
+          turno,
+          CASE
+            WHEN carda_num BETWEEN 2 AND 7 THEN 'MANUAR'
+            WHEN carda_num IN (8,9,10,11,12,13,15,16,17) THEN 'CARDA RIETER'
+            ELSE NULL
+          END AS alim,
+          ROUND(AVG(prod_kgh)::numeric, 2) AS prod_kgh_avg,
+          ROUND(MIN(prod_kgh)::numeric, 2) AS prod_kgh_min,
+          ROUND(MAX(prod_kgh)::numeric, 2) AS prod_kgh_max,
+          COUNT(*) AS registros_prod
+        FROM base
+        WHERE prod_kgh IS NOT NULL AND prod_kgh > 0
+          AND carda_num IS NOT NULL
+          AND (
+            carda_num BETWEEN 2 AND 7
+            OR carda_num IN (8,9,10,11,12,13,15,16,17)
+          )
+        GROUP BY fecha_prod, turno, alim
+      `;
+      const cardaProdResult = await query(cardaProdTurnoSql, [fecha]);
+      cardaProdTurno = cardaProdResult.rows;
+    } catch (cardaProdError) {
+      cardaProdTurno = [];
+      console.warn('[oe/trazabilidad] Producción Kg/h cardas no disponible:', cardaProdError.message);
     }
 
     let cardas = [];
@@ -629,6 +777,9 @@ router.get('/trazabilidad', async (req, res) => {
     const cardaByTurnoStyle = new Map(
       cardaTurno.map((item) => [`${item.fecha_prod}|${String(item.turno || '').trim().toUpperCase()}|${item.style_norm}`, item])
     );
+    const cardaProdByTurnoAlim = new Map(
+      cardaProdTurno.map((item) => [`${item.fecha_prod}|${String(item.turno || '').trim().toUpperCase()}|${item.alim}`, item])
+    );
 
     const rows = rowsResult.rows.map((row) => {
       const passador = normalizePassador(row.passador) || row.passador || null;
@@ -645,6 +796,10 @@ router.get('/trazabilidad', async (req, res) => {
           : null;
       const muestrasTurno = cardaRow ? Number(cardaRow.muestras_turno) || 0 : 0;
       const muestrasEsperadas = styleObjetivo ? 2 : 0;
+      const alimKgh = passador === 'si' ? 'MANUAR' : passador === 'no' ? 'CARDA RIETER' : null;
+      const prodCardaRow = alimKgh
+        ? (cardaProdByTurnoAlim.get(`${rowKeyBase}${alimKgh}`) || null)
+        : null;
       const alerts = buildAlerts(row);
       return {
         ...row,
@@ -663,6 +818,9 @@ router.get('/trazabilidad', async (req, res) => {
         muestras_carda_turno: muestrasTurno,
         muestras_carda_esperadas: muestrasEsperadas,
         maquinas_carda_turno: cardaRow?.maquinas_lab || null,
+        prod_kgh_carda_turno: prodCardaRow?.prod_kgh_avg != null ? Number(prodCardaRow.prod_kgh_avg) : null,
+        prod_kgh_carda_min: prodCardaRow?.prod_kgh_min != null ? Number(prodCardaRow.prod_kgh_min) : null,
+        prod_kgh_carda_max: prodCardaRow?.prod_kgh_max != null ? Number(prodCardaRow.prod_kgh_max) : null,
         cobertura_carda_turno: !styleObjetivo
           ? 'sin_regla'
           : muestrasTurno >= 2
@@ -693,6 +851,151 @@ router.get('/trazabilidad', async (req, res) => {
   } catch (error) {
     console.error('[oe/trazabilidad] Error:', error);
     res.status(500).json({ error: error.message });
+  }
+});
+
+// =====================================================
+// POST /api/oe/diagnostico-ia
+// Genera análisis técnico contextual con Gemini para una fila/grupo OE.
+// Devuelve además métricas: tokens, latencia y costo USD estimado.
+// =====================================================
+router.post('/diagnostico-ia', async (req, res) => {
+  const t0 = Date.now();
+  try {
+    const { fila, alertas = [], model: modelName = 'gemini-2.5-flash' } = req.body || {};
+    const apiKey = process.env.GOOGLE_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ success: false, error: 'GOOGLE_API_KEY no configurada' });
+    }
+    if (!fila) {
+      return res.status(400).json({ success: false, error: 'Falta payload "fila"' });
+    }
+
+    const hash = crypto
+      .createHash('sha256')
+      .update(JSON.stringify({ fila, alertas, modelName }))
+      .digest('hex');
+    const cacheKey = `oediag_${modelName}_${hash}`;
+    if (cachedOeIA.has(cacheKey)) {
+      const cached = cachedOeIA.get(cacheKey);
+      return res.json({ success: true, ...cached, cache_hit: true, latencia_ms: Date.now() - t0 });
+    }
+
+    // Compactamos solo los campos relevantes para reducir tokens
+    const compact = {
+      maquina: fila.maquina_label,
+      lote: fila.lote,
+      ne: fila.ne,
+      turnos: fila.turnos || [fila.turno],
+      alimentacion: fila.alimentacion,
+      passador: fila.passador,
+      open_end: {
+        rpm: fila.rpm,
+        alfa: fila.alfa,
+        efic_informada: fila.efic_informada ?? fila.efic_avg,
+        cort_nat: fila.cort_nat ?? fila.cort_nat_avg,
+        ccp: fila.ccp_sum ?? fila.ccp,
+        ccm: fila.ccm_sum ?? fila.ccm,
+        jp: fila.jp_sum ?? fila.jp,
+        jm: fila.jm_sum ?? fila.jm,
+        cp: fila.cp_sum ?? fila.cp,
+        cm: fila.cm_sum ?? fila.cm,
+        mo: fila.mo,
+        cvp: fila.oe_cvp,
+        cvm: fila.oe_cvm,
+        t_bob: fila.t_bob ?? fila.t_bob_avg,
+        rpm_card: fila.rpm_card ?? fila.rpm_card_avg,
+        robots_efic_avg: fila.robots_efic_avg
+          ?? (() => {
+            const vals = [fila.rob_01, fila.rob_02, fila.rob_03]
+              .map((v) => Number(v))
+              .filter((v) => Number.isFinite(v) && v > 0);
+            return vals.length ? +(vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(2) : null;
+          })(),
+        clm_n: fila.clm_n, clm_s: fila.clm_s, clm_l: fila.clm_l, clm_t: fila.clm_t,
+      },
+      uster: {
+        cvm: fila.cvm,
+        neps_140: fila.neps_140,
+        neps_200: fila.neps_200,
+        thin_30: fila.thin_30, thin_40: fila.thin_40, thin_50: fila.thin_50,
+        thick_35: fila.thick_35, thick_50: fila.thick_50,
+        vellosidad: fila.vellosidad,
+      },
+      cardas: {
+        kgh_prom: fila.prod_kgh_carda_avg ?? fila.prod_kgh_carda_turno,
+        kgh_min: fila.prod_kgh_carda_min,
+        kgh_max: fila.prod_kgh_carda_max,
+        cvm_carda: fila.cvm_carda_avg ?? fila.cvm_carda_turno,
+      },
+      tensorapid: {
+        tenacidad: fila.tenacidad,
+        elongacion: fila.elongacion,
+        fuerza_b: fila.fuerza_b,
+        trabajo_b: fila.trabajo_b,
+      },
+      alertas: alertas.map(a => ({ code: a.code, severity: a.severity, msg: a.message || a.msg })),
+    };
+
+    const prompt = `Actúas como Ingeniero Senior de Hilandería de Open End con 20 años de experiencia. Analizá la siguiente fila operativa de producción y devolvé un diagnóstico breve, técnico y accionable en español rioplatense para un supervisor de turno.
+
+REGLAS DE FORMATO (OBLIGATORIO):
+- Markdown.
+- Máximo 220 palabras.
+- Estructura:
+  **Diagnóstico:** 1-2 oraciones claras sobre qué está pasando.
+  **Causas probables:** lista de 2 a 4 causas técnicas (no genéricas).
+  **Acciones recomendadas:** lista de 2 a 4 acciones concretas que el operario o supervisor debe ejecutar (ir a la máquina, revisar X, medir Y).
+  **Prioridad:** 🔴 Alta / 🟡 Media / 🟢 Baja, con justificación de 1 línea.
+
+CRITERIOS TÉCNICOS:
+- Eficiencia <85% es baja; <60% es crítica.
+- Cortes Naturales >150 indica algodón inestable o rotor sucio.
+- CCp+CCm >50 (cortes cortos) suele apuntar a problemas en cinta o rotor.
+- JP+JM >25 (empalmes) implica roturas frecuentes: tensión, mecha o navetes.
+- CVm hilo >12% es alto; Neps+200 >60/km es alto.
+- Tenacidad <14.5 cN/tex es crítico; <16 es bajo para urdimbre.
+- Variación grande entre cardas (Kg/h min/max diff >15) sugiere desbalance de alimentación.
+
+GLOSARIO IMPORTANTE (no confundir):
+- "robots_efic_avg" = porcentaje promedio de eficiencia de los Robots empalmadores automáticos (cambiadores) que recorren la máquina OE. NO son "robos de fibra" ni pérdidas. Valores normales 90-98%; <85% indica que los robots no están logrando empalmar (puede ser por roturas excesivas, mecha mala o falla mecánica del propio robot).
+- Open End = hilatura por rotor (no anillo).
+- "passador" = cinta alimentadora previa (SI = pasó por Manuar; NO = directo de Carda Rieter).
+
+DATOS:
+${JSON.stringify(compact, null, 2)}
+
+NO inventes valores que no estén en los datos. Si un campo es null, ignoralo.`;
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({ model: modelName });
+    const result = await model.generateContent(prompt);
+    const texto = result.response.text();
+
+    const usage = result.response.usageMetadata || {};
+    const tokensIn = usage.promptTokenCount || 0;
+    const tokensOut = usage.candidatesTokenCount || 0;
+    const pricing = GEMINI_PRICING[modelName] || GEMINI_PRICING['gemini-2.5-flash'];
+    const costoUsd = +(((tokensIn / 1e6) * pricing.in) + ((tokensOut / 1e6) * pricing.out)).toFixed(6);
+
+    const payload = {
+      texto,
+      model: modelName,
+      tokens_in: tokensIn,
+      tokens_out: tokensOut,
+      costo_usd: costoUsd,
+    };
+    cachedOeIA.set(cacheKey, payload);
+
+    res.json({
+      success: true,
+      ...payload,
+      latencia_ms: Date.now() - t0,
+      cache_hit: false,
+    });
+  } catch (error) {
+    console.error('[oe/diagnostico-ia] Error:', error);
+    res.status(500).json({ success: false, error: error.message, latencia_ms: Date.now() - t0 });
   }
 });
 
