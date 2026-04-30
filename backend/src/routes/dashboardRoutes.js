@@ -678,7 +678,16 @@ _Veredicto en 2 oraciones citando el estado operativo (APROBADO / PRECAUCIÓN / 
 _Tabla Markdown con columnas: Métrica | Lote ref | Lote actual | Δ% | Impacto. Incluí STR, Tenacidad, CVm%, Neps+200%, Elongación._
 
 ## 📦 Proveedores Clave
-_Tabla Markdown con columnas: Proveedor | Fardos | % | STR (g/tex) | SCI | MIC | UHML (mm). Una fila por proveedor. NO uses listas ni bullets para los datos de proveedor._
+Para el Lote FIAC {actual} ({totalFardos} fardos):
+
+OBLIGATORIO: Renderizá los datos de proveedores **EXACTAMENTE** como tabla Markdown con esta estructura (usá los datos reales del bloque "Proveedores" del contexto). NO uses listas, NO uses bullets, NO uses líneas con "STR=... SCI=...". SOLO esta tabla:
+
+| Proveedor | Fardos | % | STR (g/tex) | SCI | MIC | UHML (mm) |
+|---|---:|---:|---:|---:|---:|---:|
+| NOMBRE_PROV_1 | 247 | 95.4% | 27.23 | 106.9 | 4.310 | 26.37 |
+| NOMBRE_PROV_2 | 6 | 2.3% | 26.10 | 96.0 | 4.330 | 25.82 |
+
+(reemplazá las filas con los proveedores reales del lote).
 
 ### Observaciones
 - 🏆 Mejor STR: ...

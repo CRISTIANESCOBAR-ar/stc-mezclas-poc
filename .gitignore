@@ -4,3 +4,8 @@ frontend/dev-dist/
 .env
 **/.env
 *.local
+
+# Archivos de prueba con secretos
+test-gemini*
+*.bak
+
