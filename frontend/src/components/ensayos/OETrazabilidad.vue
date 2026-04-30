@@ -280,7 +280,7 @@
                 </td>
                 <td class="px-3 py-2.5 text-center" @click.stop>
                   <button
-                    v-tippy="{ content: tooltipCardaHtml(grupo.s, true), placement: 'left', theme: 'light', maxWidth: 360, interactive: true, popperOptions: { strategy: 'fixed', modifiers: [{ name: 'flip', options: { fallbackPlacements: ['right', 'top', 'bottom'] } }, { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8 } }] } }"
+                    v-tippy="{ content: tooltipCardaHtml(grupo.s, true), placement: 'left', theme: 'light', maxWidth: 480, interactive: true, popperOptions: { strategy: 'fixed', modifiers: [{ name: 'flip', options: { fallbackPlacements: ['right', 'top', 'bottom'] } }, { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8 } }] } }"
                     class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 text-[10px] font-bold transition-colors"
                     aria-label="Ver detalle Cardas + Uster"
                   >ⓘ</button>
@@ -359,7 +359,7 @@
                     </td>
                     <td class="px-3 py-2 text-center" @click.stop>
                       <button
-                        v-tippy="{ content: tooltipCardaHtml(row, false), placement: 'left', theme: 'light', maxWidth: 360, interactive: true, popperOptions: { strategy: 'fixed', modifiers: [{ name: 'flip', options: { fallbackPlacements: ['right', 'top', 'bottom'] } }, { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8 } }] } }"
+                        v-tippy="{ content: tooltipCardaHtml(row, false), placement: 'left', theme: 'light', maxWidth: 480, interactive: true, popperOptions: { strategy: 'fixed', modifiers: [{ name: 'flip', options: { fallbackPlacements: ['right', 'top', 'bottom'] } }, { name: 'preventOverflow', options: { boundary: 'viewport', padding: 8 } }] } }"
                         class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-600 hover:text-emerald-700 text-[10px] font-bold transition-colors"
                         aria-label="Ver detalle Cardas + Uster del turno"
                       >ⓘ</button>
@@ -886,8 +886,29 @@ const grupos = computed(() => {
         tensor_obs: firstVal('tensor_obs'),
         alertas: [...alertasMap.values()],
         turnos,
+        // Detalle por turno: lista de cardas con su CVm individual,
+        // junto con el tipo de alimentación (MANUAR / CARDA RIETER).
+        detalle_cardas_por_turno: rows.map(r => ({
+          turno: r.turno,
+          alim: r.alimentacion,
+          cvm_avg: r.cvm_carda_turno,
+          cvm_max: r.cvm_carda_max_turno,
+          items: Array.isArray(r.detalle_cardas_turno) ? r.detalle_cardas_turno : [],
+        })),
       },
     };
+  })
+  // Ordenar por número de máquina ascendente (3 LP, 3 LI, 7 U, 8 U, …, 10 U).
+  // Empate por número → suborden alfabético del sufijo (LI antes que LP, U al final).
+  .sort((a, b) => {
+    const parse = (lbl) => {
+      const m = String(lbl || '').trim().match(/^(\d+)\s*(.*)$/);
+      return m ? { n: Number(m[1]), suf: (m[2] || '').trim() } : { n: 9999, suf: String(lbl || '') };
+    };
+    const A = parse(a.s.maquina_label);
+    const B = parse(b.s.maquina_label);
+    if (A.n !== B.n) return A.n - B.n;
+    return A.suf.localeCompare(B.suf);
   });
 });
 
@@ -1244,6 +1265,64 @@ function tooltipCardaHtml(d, isGroup = false) {
     ['Pasador',      k.pas ? String(k.pas).toUpperCase() : '–'],
   ]);
 
+  // ── Detalle de CVm por carda (laboratorio) ─────────────────────────────
+  // Para grupo: muestra una mini-tabla por cada turno con sus cardas y CVm.
+  // Para fila turno: usa directamente d.detalle_cardas_turno.
+  const cvmCardaClass = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return '#9ca3af';
+    if (n > 4.0) return '#dc2626';   // rojo
+    if (n > 3.5) return '#d97706';   // ámbar
+    return '#047857';                // verde
+  };
+  const renderDetalleTurno = (turno, alim, items, cvmAvg, cvmMax) => {
+    const safeItems = (items || []).filter(it => it && it.cvm != null);
+    if (!safeItems.length) return '';
+    const chips = safeItems.map(it => `
+      <span style="display:inline-flex;align-items:center;gap:3px;padding:2px 6px;border-radius:6px;background:#fff;border:1px solid #e2e8f0;font-size:10px;">
+        <span style="color:#6b7280;font-weight:500;">${it.carda != null ? `C${String(it.carda).padStart(2,'0')}` : '?'}</span>
+        <span style="color:${cvmCardaClass(it.cvm)};font-weight:700;font-variant-numeric:tabular-nums;">${Number(it.cvm).toFixed(2)}</span>
+      </span>
+    `).join('');
+    return `
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:6px 8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="color:#047857;font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.04em;">
+            Turno ${turno || '?'} · ${alim || 'N/D'} · ${safeItems.length} carda${safeItems.length === 1 ? '' : 's'}
+          </span>
+          <span style="font-size:9px;color:#475569;font-variant-numeric:tabular-nums;">
+            μ ${cvmAvg != null ? Number(cvmAvg).toFixed(2) : '–'} · máx ${cvmMax != null ? Number(cvmMax).toFixed(2) : '–'}
+          </span>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">${chips}</div>
+      </div>
+    `;
+  };
+
+  let blockDetalleCardas = '';
+  if (isGroup && Array.isArray(d.detalle_cardas_por_turno) && d.detalle_cardas_por_turno.length) {
+    const html = d.detalle_cardas_por_turno
+      .map(t => renderDetalleTurno(t.turno, t.alim, t.items, t.cvm_avg, t.cvm_max))
+      .filter(Boolean)
+      .join('');
+    if (html) {
+      blockDetalleCardas = `
+        <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:4px;">
+          <div style="${sBlockTitle}color:#047857;">CVm por carda · detalle del laboratorio</div>
+          ${html}
+        </div>`;
+    }
+  } else if (!isGroup && Array.isArray(d.detalle_cardas_turno) && d.detalle_cardas_turno.length) {
+    const html = renderDetalleTurno(d.turno, d.alimentacion, d.detalle_cardas_turno, d.cvm_carda_turno, d.cvm_carda_max_turno);
+    if (html) {
+      blockDetalleCardas = `
+        <div style="grid-column:1/-1;display:flex;flex-direction:column;gap:4px;">
+          <div style="${sBlockTitle}color:#047857;">CVm por carda · detalle del laboratorio</div>
+          ${html}
+        </div>`;
+    }
+  }
+
   return `
     <div style="min-width:300px;font-size:11px;line-height:1.45;">
       <div style="margin-bottom:8px;">
@@ -1266,6 +1345,7 @@ function tooltipCardaHtml(d, isGroup = false) {
         ${blockOtros}
         ${blockThin}
         ${blockThick}
+        ${blockDetalleCardas}
       </div>
     </div>
   `;

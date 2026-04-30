@@ -585,7 +585,14 @@ router.get('/trazabilidad', async (req, res) => {
           ROUND(AVG(cvm_test)::numeric, 2) AS cvm_turno_avg,
           ROUND(MAX(cvm_test)::numeric, 2) AS cvm_turno_max,
           COUNT(DISTINCT testnr) AS muestras_turno,
-          STRING_AGG(DISTINCT carda_num::text, ', ') FILTER (WHERE carda_num IS NOT NULL) AS maquinas_lab
+          STRING_AGG(DISTINCT carda_num::text, ', ') FILTER (WHERE carda_num IS NOT NULL) AS maquinas_lab,
+          (
+            SELECT json_agg(json_build_object('carda', carda_num, 'cvm', cvm_test) ORDER BY carda_num NULLS LAST)
+            FROM carda_lab cl2
+            WHERE cl2.fecha_prod = carda_lab.fecha_prod
+              AND cl2.turno = carda_lab.turno
+              AND cl2.style_norm = carda_lab.style_norm
+          ) AS detalle_cardas
         FROM carda_lab
         GROUP BY fecha_prod, turno, style_norm
       `;
@@ -818,6 +825,7 @@ router.get('/trazabilidad', async (req, res) => {
         muestras_carda_turno: muestrasTurno,
         muestras_carda_esperadas: muestrasEsperadas,
         maquinas_carda_turno: cardaRow?.maquinas_lab || null,
+        detalle_cardas_turno: cardaRow?.detalle_cardas || null,
         prod_kgh_carda_turno: prodCardaRow?.prod_kgh_avg != null ? Number(prodCardaRow.prod_kgh_avg) : null,
         prod_kgh_carda_min: prodCardaRow?.prod_kgh_min != null ? Number(prodCardaRow.prod_kgh_min) : null,
         prod_kgh_carda_max: prodCardaRow?.prod_kgh_max != null ? Number(prodCardaRow.prod_kgh_max) : null,
