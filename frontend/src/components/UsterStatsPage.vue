@@ -85,34 +85,16 @@
                         
                         <!-- Izquierda: Data Source & Filtros -->
                         <div class="flex items-center gap-6">
-                            <!-- Data Source Toggle (oculto en móvil) -->
-                            <div class="hidden md:flex items-center gap-1">
-                                <button @click="changeDataSource('oracle')" :disabled="!isLocalhost"
-                                    v-tippy="{ content: isLocalhost ? 'Datos desde Oracle (Localhost)' : 'Oracle solo disponible en localhost', placement: 'bottom', theme: 'custom' }"
-                                    :aria-label="'Cambiar a Oracle'" :class="[
-                                        'inline-flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200',
-                                        dataSource === 'oracle' ? 'bg-blue-600 text-white shadow-sm' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600',
-                                        !isLocalhost ? 'opacity-50 cursor-not-allowed' : ''
-                                    ]">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none"
-                                        stroke="currentColor" stroke-width="2">
-                                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                                        <line x1="8" y1="21" x2="16" y2="21"></line>
-                                        <line x1="12" y1="17" x2="12" y2="21"></line>
-                                    </svg>
-                                </button>
-                                <button @click="changeDataSource('firebase')"
-                                    v-tippy="{ content: 'Datos desde Firebase (Producción)', placement: 'bottom', theme: 'custom' }"
-                                    aria-label="Cambiar a Firebase" :class="[
-                                        'inline-flex items-center justify-center w-7 h-7 rounded-full transition-all duration-200',
-                                        dataSource === 'firebase' ? 'bg-orange-500 text-white shadow-sm' : 'bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600'
-                                    ]">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24"
-                                        fill="currentColor">
-                                        <path
-                                            d="M3.89 15.672L6.255.461A.542.542 0 017.27.288l2.543 4.771zm16.794 3.692l-2.25-14a.54.54 0 00-.919-.295L3.316 19.365l7.856 4.427a1.621 1.621 0 001.588 0zM14.3 7.147l-1.82-3.482a.542.542 0 00-.96 0L3.53 17.984z" />
-                                    </svg>
-                                </button>
+                            <!-- Indicador de fuente de datos USTER (compacto, no interactivo) -->
+                            <div class="hidden md:inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-semibold border whitespace-nowrap"
+                                :class="dataSource === 'oracle' ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-orange-50 border-orange-200 text-orange-700'"
+                                v-tippy="{ content: dataSource === 'oracle' ? 'Datos USTER desde Oracle (local)' : 'Datos USTER desde Firebase (producción)', placement: 'bottom', theme: 'custom' }">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                    <path d="M3 5v6c0 1.66 4.03 3 9 3s9-1.34 9-3V5"></path>
+                                    <path d="M3 11v6c0 1.66 4.03 3 9 3s9-1.34 9-3v-6"></path>
+                                </svg>
+                                <span>USTER · {{ dataSource === 'oracle' ? 'Local' : 'Cloud' }}</span>
                             </div>
 
                             <!-- Filtros -->
