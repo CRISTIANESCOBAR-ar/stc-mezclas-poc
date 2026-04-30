@@ -721,6 +721,24 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
         const result = await model.generateContent(prompt);
         const narrativaCompleta = result.response.text();
         const modelUsado = mName !== modelName ? mName : undefined;
+
+        // ── Tokens y costo ──
+        const usage = result.response.usageMetadata || {};
+        const tokensEntrada  = usage.promptTokenCount     || 0;
+        const tokensSalida   = usage.candidatesTokenCount || 0;
+        const tokensTotal    = usage.totalTokenCount      || (tokensEntrada + tokensSalida);
+        // Precios Gemini 2.5 Flash (contexto ≤200k): $0.15/1M entrada, $0.60/1M salida
+        // Gemini 2.0 Flash: $0.10/1M entrada, $0.40/1M salida
+        // Gemini 1.5 Flash: $0.075/1M entrada, $0.30/1M salida
+        const PRECIOS = {
+          'gemini-2.5-flash': { in: 0.15, out: 0.60 },
+          'gemini-2.0-flash': { in: 0.10, out: 0.40 },
+          'gemini-1.5-flash': { in: 0.075, out: 0.30 },
+        };
+        const p = PRECIOS[mName] || { in: 0.15, out: 0.60 };
+        const costoUSD = (tokensEntrada / 1_000_000) * p.in + (tokensSalida / 1_000_000) * p.out;
+        const tokenInfo = { tokensEntrada, tokensSalida, tokensTotal, costoUSD: +costoUSD.toFixed(6) };
+
         // Persistir en caché (best-effort)
         try {
           await pool.query(
@@ -732,7 +750,7 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
         } catch (e) {
           console.warn('No pude guardar en cache:', e.message);
         }
-        return res.json({ success: true, narrativa: narrativaCompleta, fuente: 'gemini', modelo: mName, jsonAnalisisIA, ...(modelUsado && { avisoModelo: `Gemini respondió con modelo alternativo: ${mName}` }), ...buildNarrativaStructuredFields(narrativaCompleta) });
+        return res.json({ success: true, narrativa: narrativaCompleta, fuente: 'gemini', modelo: mName, jsonAnalisisIA, tokenInfo, ...(modelUsado && { avisoModelo: `Gemini respondió con modelo alternativo: ${mName}` }), ...buildNarrativaStructuredFields(narrativaCompleta) });
       } catch (geminiErr) {
         const msg = geminiErr.message || String(geminiErr);
         const esTransient = /503|502|overloaded|high demand|unavailable|try again/i.test(msg);

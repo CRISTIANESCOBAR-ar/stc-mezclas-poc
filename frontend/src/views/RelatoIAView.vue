@@ -90,6 +90,29 @@
                 <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
                   :class="fuenteBadgeClass">{{ fuenteLabel }}</span>
               </div>
+
+              <!-- Tokens + costo -->
+              <div v-if="tokenInfo" class="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 space-y-1">
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tokens usados</p>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-slate-500">Entrada</span>
+                  <span class="font-semibold text-slate-700">{{ tokenInfo.tokensEntrada.toLocaleString('es-AR') }}</span>
+                </div>
+                <div class="flex justify-between text-[11px]">
+                  <span class="text-slate-500">Salida</span>
+                  <span class="font-semibold text-slate-700">{{ tokenInfo.tokensSalida.toLocaleString('es-AR') }}</span>
+                </div>
+                <div class="flex justify-between text-[11px] pt-0.5 border-t border-slate-200">
+                  <span class="text-slate-500">Total</span>
+                  <span class="font-bold text-slate-800">{{ tokenInfo.tokensTotal.toLocaleString('es-AR') }}</span>
+                </div>
+                <div class="flex justify-between text-[11px] pt-1">
+                  <span class="text-slate-500">Costo</span>
+                  <span class="font-bold" :class="tokenInfo.costoUSD < 0.001 ? 'text-emerald-600' : 'text-amber-600'">
+                    U$S {{ tokenInfo.costoUSD < 0.0001 ? '< 0.0001' : tokenInfo.costoUSD.toFixed(4) }}
+                  </span>
+                </div>
+              </div>
               <button @click="copiarTodo"
                 class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors"
                 :class="copiado ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
@@ -170,6 +193,7 @@ const modelo = ref('')
 const copiado = ref(false)
 const docRef = ref(null)
 const activeId = ref('')
+const tokenInfo = ref(null)   // { tokensEntrada, tokensSalida, tokensTotal, costoUSD }
 
 // ── Render Markdown ──
 const fuenteBanner = computed(() => {
@@ -314,9 +338,17 @@ async function exportarPDF() {
   if (!docRef.value) return
   exporting.value = 'pdf'
   try {
+    const A4_W = 595
+    const A4_H = 842
+    const MARGIN = 36
+    const FOOTER_H = 22       // espacio reservado para pie de página
+    const usableW = A4_W - MARGIN * 2
+    const usableH = A4_H - MARGIN * 2 - FOOTER_H
+    const PIX_RATIO = 2
+
     const dataUrl = await toPng(docRef.value, {
       quality: 1,
-      pixelRatio: 2,
+      pixelRatio: PIX_RATIO,
       backgroundColor: '#ffffff',
       style: { borderRadius: '0' },
     })
@@ -324,42 +356,79 @@ async function exportarPDF() {
     img.src = dataUrl
     await new Promise(resolve => { img.onload = resolve })
 
-    // A4 en puntos: 595 x 842
-    const A4_W = 595
-    const A4_H = 842
-    const MARGIN = 28  // ~10mm en puntos
-    const usableW = A4_W - MARGIN * 2
-
     const imgW = img.naturalWidth
     const imgH = img.naturalHeight
     const scale = usableW / imgW
     const scaledH = imgH * scale
 
+    // Recopilar posiciones (en puntos PDF) de todos los elementos bloque
+    // para cortar ENTRE elementos, nunca a través de ellos
+    function offsetTopRelative(el) {
+      let top = 0
+      let node = el
+      while (node && node !== docRef.value) {
+        top += node.offsetTop
+        node = node.offsetParent
+      }
+      return top
+    }
+
+    const blockEls = docRef.value.querySelectorAll('h1,h2,h3,h4,h5,p,li,tr,pre,blockquote,thead,tbody')
+    const elementTops = new Set()
+    blockEls.forEach(el => {
+      const topCSS = offsetTopRelative(el)
+      const topPDF = topCSS * PIX_RATIO * scale
+      if (topPDF > 10) elementTops.add(Math.round(topPDF))
+    })
+    const sortedTops = [...elementTops].sort((a, b) => a - b)
+
+    // Construir cortes de página respetando límites de elementos
+    const pageSlices = []
+    let pageStart = 0
+
+    while (pageStart < scaledH) {
+      const idealEnd = pageStart + usableH
+      if (idealEnd >= scaledH) {
+        pageSlices.push({ startPt: pageStart, endPt: scaledH })
+        break
+      }
+      // Último elemento que empieza antes del límite de página (margen mínimo 40pt desde inicio)
+      const candidates = sortedTops.filter(t => t > pageStart + 40 && t <= idealEnd)
+      const breakAt = candidates.length > 0 ? candidates[candidates.length - 1] : idealEnd
+      pageSlices.push({ startPt: pageStart, endPt: breakAt })
+      pageStart = breakAt
+    }
+
     const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
-    let y = MARGIN
-    let remaining = scaledH
+    const totalPages = pageSlices.length
 
-    while (remaining > 0) {
-      const pageH = A4_H - MARGIN * 2
-      const sliceH = Math.min(remaining, pageH)
-      // srcY en píxeles de la imagen original correspondiente a este slice
-      const srcY = (scaledH - remaining) / scale
-      const srcSliceH = sliceH / scale
+    for (let i = 0; i < pageSlices.length; i++) {
+      if (i > 0) pdf.addPage()
+      const { startPt, endPt } = pageSlices[i]
+      const sliceHPt = endPt - startPt
+      const srcY = startPt / scale
+      const srcH = sliceHPt / scale
 
-      // Canvas temporal para recortar el slice
+      // Canvas para este slice
       const canvas = document.createElement('canvas')
       canvas.width = imgW
-      canvas.height = Math.ceil(srcSliceH)
+      canvas.height = Math.ceil(srcH)
       const ctx = canvas.getContext('2d')
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(img, 0, -srcY)
-      const sliceUrl = canvas.toDataURL('image/png')
 
-      pdf.addImage(sliceUrl, 'PNG', MARGIN, y, usableW, sliceH)
-      remaining -= sliceH
-      if (remaining > 0) {
-        pdf.addPage()
-        y = MARGIN
-      }
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', MARGIN, MARGIN, usableW, sliceHPt)
+
+      // Pie de página: línea separadora + "Página X de Y"
+      const lineY  = A4_H - MARGIN - 10   // línea separadora
+      const textY  = A4_H - MARGIN + 6    // texto 16pt más abajo
+      pdf.setDrawColor(210, 210, 210)
+      pdf.setLineWidth(0.5)
+      pdf.line(MARGIN, lineY, A4_W - MARGIN, lineY)
+      pdf.setFontSize(8)
+      pdf.setTextColor(160, 160, 160)
+      pdf.text(`Página ${i + 1} de ${totalPages}`, A4_W / 2, textY, { align: 'center' })
     }
 
     pdf.save(`${baseFilename()}.pdf`)
@@ -581,6 +650,7 @@ async function cargar(force = false) {
     fuente.value = narrData.fuente || ''
     modelo.value = narrData.modelo || ''
     aviso.value = narrData.avisoModelo || narrData.aviso || ''
+    tokenInfo.value = narrData.tokenInfo || null
 
     await nextTick()
     buildToc()

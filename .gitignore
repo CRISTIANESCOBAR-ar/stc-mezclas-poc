@@ -9,3 +9,12 @@ frontend/dev-dist/
 test-gemini*
 *.bak
 
+# Scripts temporales / exploración (no formaron parte del producto)
+extractDash.*
+extractRoutes.*
+extracted_routes.json
+fix_hviRoutes.py
+temp-*.js
+update.js
+update-route.js
+
