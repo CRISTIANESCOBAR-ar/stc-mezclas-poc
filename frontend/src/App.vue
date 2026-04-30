@@ -10,6 +10,24 @@
       <!-- Navegación -->
       <nav class="flex flex-col items-center gap-1 w-full px-1.5">
 
+        <!-- Bienvenida -->
+        <router-link
+          to="/bienvenida"
+          class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
+          :class="$route.path === '/bienvenida'
+            ? 'bg-indigo-100 text-indigo-700'
+            : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9.5L12 3l9 6.5"/>
+            <path d="M5 9v11h14V9"/>
+            <path d="M9 20v-6h6v6"/>
+          </svg>
+          <span class="pointer-events-none absolute left-full ml-3 whitespace-nowrap rounded-md bg-white border border-gray-200 shadow-md px-2 py-1 text-xs font-semibold text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+            Inicio
+          </span>
+        </router-link>
+
         <!-- Inventario -->
         <router-link
           to="/inventario"

@@ -1,9 +1,15 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
-  { 
-    path: '/', 
-    redirect: '/inventario' 
+  {
+    path: '/',
+    redirect: () => (localStorage.getItem('stc_hide_welcome') === '1' ? '/inventario' : '/bienvenida'),
+  },
+  {
+    path: '/bienvenida',
+    name: 'bienvenida',
+    component: () => import('./views/BienvenidaView.vue'),
+    meta: { title: 'Bienvenido' },
   },
   { 
     path: '/inventario', 
