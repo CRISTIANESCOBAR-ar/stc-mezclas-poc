@@ -172,9 +172,27 @@ const docRef = ref(null)
 const activeId = ref('')
 
 // ── Render Markdown ──
+const fuenteBanner = computed(() => {
+  const f = fuente.value
+  if (f === 'gemini') {
+    const m = modelo.value ? ` <span style="opacity:.75">· ${modelo.value.replace('gemini-', '')}</span>` : ''
+    return `<div class="fuente-banner fuente-gemini" role="note">✨ <strong>Análisis generado por IA</strong> — Google Gemini${m}</div>`
+  }
+  if (f === 'cache') {
+    return `<div class="fuente-banner fuente-cache" role="note">💾 <strong>Análisis recuperado del caché</strong> — generado previamente por Gemini</div>`
+  }
+  if (f === 'local') {
+    return `<div class="fuente-banner fuente-local" role="note">⚡ <strong>Fallback local (sin IA)</strong> — Gemini no disponible. Generado por reglas internas.</div>`
+  }
+  return ''
+})
+
 const narrativaHtml = computed(() => {
   if (!narrativa.value) return ''
-  try { return DOMPurify.sanitize(marked.parse(narrativa.value)) } catch { return '' }
+  try {
+    const body = DOMPurify.sanitize(marked.parse(narrativa.value), { ADD_ATTR: ['role'] })
+    return fuenteBanner.value + body
+  } catch { return '' }
 })
 
 // ── TOC: extrae H1/H2 después de renderizar ──
@@ -596,6 +614,15 @@ watch(() => route.query, (q) => {
 
 <style scoped>
 .narrativa-prose { color: #334155; line-height: 1.65; font-size: 15px; }
+.narrativa-prose :deep(.fuente-banner) {
+  display: block; margin: 0 0 1.25rem; padding: .75rem 1rem;
+  border-radius: .5rem; font-size: 13px; font-weight: 500;
+  border-left: 4px solid currentColor;
+}
+.narrativa-prose :deep(.fuente-banner strong) { font-weight: 700; }
+.narrativa-prose :deep(.fuente-gemini) { background: #f5f3ff; color: #6d28d9; border-color: #8b5cf6; }
+.narrativa-prose :deep(.fuente-cache)  { background: #ecfdf5; color: #047857; border-color: #10b981; }
+.narrativa-prose :deep(.fuente-local)  { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
 .narrativa-prose :deep(h1) {
   font-size: 1.65rem; font-weight: 800; color: #0f172a; margin: 0 0 .8rem;
   letter-spacing: -.01em; padding-bottom: .5rem; border-bottom: 2px solid #e2e8f0;
