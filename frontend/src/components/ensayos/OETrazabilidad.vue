@@ -14,8 +14,8 @@
             <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
           </svg>
           <div>
-            <div class="text-2xl font-semibold text-slate-800 leading-tight">Trazabilidad OE</div>
-            <div class="text-[11px] text-gray-400 mt-0.5">Producción Open End · Uster + Tensorapid</div>
+            <div class="text-2xl font-semibold text-slate-800 leading-tight">{{ $t('oe.title') }}</div>
+            <div class="text-[11px] text-gray-400 mt-0.5">{{ $t('oe.subtitle') }}</div>
           </div>
         </div>
 
@@ -24,7 +24,7 @@
 
           <!-- Fecha -->
           <div class="flex flex-col gap-0.5">
-            <label class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Fecha *</label>
+            <label class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{{ $t('oe.date') }}</label>
             <CustomDatepicker
               v-model="filtros.fecha"
               placeholder="Selecciona fecha"
@@ -34,7 +34,7 @@
 
           <!-- Lote -->
           <div class="flex flex-col gap-0.5">
-            <label class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Lote</label>
+            <label class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{{ $t('oe.lot') }}</label>
             <input
               v-model="filtros.lote"
               type="text"
@@ -45,7 +45,7 @@
 
           <!-- Ne -->
           <div class="flex flex-col gap-0.5">
-            <label class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Título (Ne)</label>
+            <label class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{{ $t('oe.ne') }}</label>
             <input
               v-model="filtros.ne"
               type="text"
@@ -59,7 +59,7 @@
 
             <!-- Día anterior -->
             <button
-              v-tippy="{ content: 'Día anterior', placement: 'top', theme: 'light' }"
+              v-tippy="{ content: $t('oe.prev'), placement: 'top', theme: 'light' }"
               @click="moverFecha(-1)"
               :disabled="!filtros.fecha || loading"
               class="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm font-bold"
@@ -69,7 +69,7 @@
 
             <!-- Consultar -->
             <button
-              v-tippy="{ content: 'Consultar', placement: 'top', theme: 'light' }"
+              v-tippy="{ content: $t('oe.consult'), placement: 'top', theme: 'light' }"
               @click="cargar"
               :disabled="!filtros.fecha || loading"
               class="h-9 px-3.5 flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
@@ -80,12 +80,12 @@
               <svg v-else class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
               </svg>
-              <span class="hidden sm:inline">{{ loading ? 'Cargando…' : 'Consultar' }}</span>
+              <span class="hidden sm:inline">{{ loading ? $t('oe.loading') : $t('oe.consult') }}</span>
             </button>
 
             <!-- Día siguiente -->
             <button
-              v-tippy="{ content: 'Día siguiente', placement: 'top', theme: 'light' }"
+              v-tippy="{ content: $t('oe.next'), placement: 'top', theme: 'light' }"
               @click="moverFecha(1)"
               :disabled="!filtros.fecha || loading"
               class="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm font-bold"
@@ -96,7 +96,7 @@
             <!-- Limpiar -->
             <button
               v-if="data"
-              v-tippy="{ content: 'Limpiar resultados', placement: 'top', theme: 'light' }"
+              v-tippy="{ content: $t('oe.clear'), placement: 'top', theme: 'light' }"
               @click="limpiar"
               class="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
             >
@@ -112,8 +112,7 @@
         v-if="data && hayDesfaseTensorapid"
         class="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800"
       >
-        Hay filas sin tenacidad para esta fecha. Tensorapid suele registrarse al día siguiente del Uster;
-        para ver los últimos ensayos completos, navega un día hacia atrás.
+        {{ $t('oe.tensorapidDesfase') }}
       </div>
     </div>
 
@@ -124,28 +123,28 @@
       <div class="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 px-5 py-3 border-b border-gray-100">
         <!-- Título + contadores -->
         <div class="flex items-center gap-3">
-          <h2 class="text-sm font-bold text-gray-700">Resumen por máquina / lote</h2>
+          <h2 class="text-sm font-bold text-gray-700">{{ $t('oe.tableTitle') }}</h2>
           <span class="text-xs text-gray-400">{{ grupos.length }} grupos · {{ data.rows.length }} registros</span>
         </div>
         <!-- Stats inline -->
         <div class="flex items-center gap-4 flex-wrap">
           <div class="flex items-center gap-1.5">
-            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Máquinas</span>
+            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{{ $t('oe.stats.machines') }}</span>
             <span class="text-sm font-black text-gray-700">{{ data.resumen.maquinas_oe }}</span>
           </div>
           <div class="w-px h-4 bg-gray-200 hidden sm:block"></div>
           <div class="flex items-center gap-1.5">
-            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Lotes</span>
+            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{{ $t('oe.stats.lots') }}</span>
             <span class="text-sm font-black text-gray-700">{{ data.resumen.lotes }}</span>
           </div>
           <div class="w-px h-4 bg-gray-200 hidden sm:block"></div>
           <div class="flex items-center gap-1.5">
-            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Títulos Ne</span>
+            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{{ $t('oe.stats.ne') }}</span>
             <span class="text-sm font-black text-gray-700">{{ data.resumen.titulos }}</span>
           </div>
           <div class="w-px h-4 bg-gray-200 hidden sm:block"></div>
           <div class="flex items-center gap-1.5">
-            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Cob. Carda</span>
+            <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">{{ $t('oe.stats.cardCoverage') }}</span>
             <span class="text-sm font-black"
               :class="Number(resumenCoberturaCarda.split('/')[0]) >= Number(resumenCoberturaCarda.split('/')[1]) ? 'text-emerald-600' : 'text-amber-600'">
               {{ resumenCoberturaCarda }}
@@ -153,9 +152,7 @@
           </div>
         </div>
       </div>
-      <div class="px-5 py-2.5 bg-blue-50 border-b border-blue-100 text-[11px] text-blue-800">
-        Cada fila agrupa los turnos del día. Haz clic para expandir y ver el detalle por turno. Cardas: se esperan <strong>2 muestreos de CVm por turno</strong>. La columna <strong>Muestras</strong> indica cobertura acumulada del grupo.
-      </div>
+      <div class="px-5 py-2.5 bg-blue-50 border-b border-blue-100 text-[11px] text-blue-800" v-html="$t('oe.tableInfo')"></div>
       <div class="overflow-x-auto">
         <table class="w-full text-xs oe-table">
           <thead>
@@ -163,53 +160,53 @@
             <tr class="bg-slate-100 border-b border-slate-200">
               <th colspan="5" class="text-left px-2 py-1 text-[10px] font-bold text-slate-600 tracking-wide border-r border-slate-200">
                 <span class="inline-flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Identificación
+                  <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>{{ $t('oe.sections.id') }}
                 </span>
               </th>
               <th colspan="7" class="text-left px-2 py-1 text-[10px] font-bold text-blue-700 tracking-wide bg-blue-50/60 border-r border-blue-200">
                 <span class="inline-flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>Open End (producción)
+                  <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>{{ $t('oe.sections.oe') }}
                 </span>
               </th>
               <th colspan="5" class="text-left px-2 py-1 text-[10px] font-bold text-emerald-700 tracking-wide bg-emerald-50/60 border-r border-emerald-200">
                 <span class="inline-flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Cardas + Uster Hilo
+                  <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{{ $t('oe.sections.cards') }}
                 </span>
               </th>
               <th colspan="3" class="text-left px-2 py-1 text-[10px] font-bold text-purple-700 tracking-wide bg-purple-50/60 border-r border-purple-200">
                 <span class="inline-flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>Tensorapid
+                  <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>{{ $t('oe.sections.tensor') }}
                 </span>
               </th>
               <th class="text-left px-2 py-1 text-[10px] font-bold text-amber-700 tracking-wide bg-amber-50/60">
                 <span class="inline-flex items-center gap-1.5">
-                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>Alertas
+                  <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>{{ $t('oe.sections.alerts') }}
                 </span>
               </th>
             </tr>
             <!-- Fila inferior: nombres de columna -->
             <tr class="bg-gray-50 border-b border-gray-200">
-              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Maq.</th>
-              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Lote</th>
-              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Ne</th>
-              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Alim.</th>
-              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap border-r border-slate-200">Turnos</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">RPM</th>
+              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.maq') }}</th>
+              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.lot') }}</th>
+              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.ne') }}</th>
+              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.alim') }}</th>
+              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap border-r border-slate-200">{{ $t('oe.cols.shifts') }}</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.rpm') }}</th>
               <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">α<sub class="text-[8px]">e</sub></th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Efic%</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Cort Nat</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap" title="Cortes cortos = CCp + CCm">CC</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap" title="Empalmes = JP + JM">J</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.efic') }}</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.cortNat') }}</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap" title="Cortes cortos = CCp + CCm">{{ $t('oe.cols.cc') }}</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap" title="Empalmes = JP + JM">{{ $t('oe.cols.j') }}</th>
               <th class="text-center px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap border-r border-blue-200">+</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap" title="Producción promedio Kg/h de las cardas que alimentan este turno">Kg/h</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">CVm%</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Neps+200</th>
-              <th class="text-center px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Muestras</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap" title="Producción promedio Kg/h de las cardas que alimentan este turno">{{ $t('oe.cols.kgh') }}</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.cvm') }}</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.neps') }}</th>
+              <th class="text-center px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.samples') }}</th>
               <th class="text-center px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap border-r border-emerald-200">+</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Tenac.</th>
-              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Elong%</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.tenac') }}</th>
+              <th class="text-right px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.elong') }}</th>
               <th class="text-center px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap border-r border-purple-200">+</th>
-              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">Detalle</th>
+              <th class="text-left px-2 py-1.5 font-semibold text-gray-600 whitespace-nowrap">{{ $t('oe.cols.detail') }}</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-50">
@@ -395,7 +392,7 @@
                       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <!-- Laboratorio -->
                         <div>
-                          <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Laboratorio Uster/Tensorapid</div>
+                          <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ $t('oe.detail.lab') }}</div>
                           <div class="grid grid-cols-3 gap-2">
                             <div v-for="item in labItems(row)" :key="item.label" class="bg-white rounded-lg p-2 border border-gray-100">
                               <div class="text-[9px] text-gray-400 uppercase tracking-wider">{{ item.label }}</div>
@@ -405,27 +402,27 @@
                             </div>
                           </div>
                           <div class="mt-2 text-[10px] text-gray-500">
-                            Ensayos Uster: <strong>{{ row.ensayos_uster ?? 0 }}</strong>
-                            <span v-if="row.maquinas_uster"> · Máq. Uster: <strong>{{ row.maquinas_uster }}</strong></span>
+                            {{ $t('oe.detail.usterTests') }} <strong>{{ row.ensayos_uster ?? 0 }}</strong>
+                            <span v-if="row.maquinas_uster"> · {{ $t('oe.detail.usterMachines') }} <strong>{{ row.maquinas_uster }}</strong></span>
                           </div>
                           <div class="mt-3 rounded-xl bg-sky-50 border border-sky-200 px-3 py-2.5 text-xs text-sky-900 space-y-1">
                             <div>
-                              Alimentación inferida: <strong>{{ row.cadena_alimentacion || 'N/D' }}</strong>
-                              <span v-if="row.passador"> · Pasador: <strong>{{ String(row.passador).toUpperCase() }}</strong></span>
+                              {{ $t('oe.detail.feedInferred') }} <strong>{{ row.cadena_alimentacion || 'N/D' }}</strong>
+                              <span v-if="row.passador"> · {{ $t('oe.detail.passer') }} <strong>{{ String(row.passador).toUpperCase() }}</strong></span>
                             </div>
                             <div>
-                              Carda turno ({{ row.turno || '–' }}): CVm prom <strong>{{ row.cvm_carda_turno ?? '–' }}</strong>
+                              {{ $t('oe.detail.cardShift') }} ({{ row.turno || '–' }}): {{ $t('oe.detail.cvmProm') }} <strong>{{ row.cvm_carda_turno ?? '–' }}</strong>
                               <span class="mx-1">|</span>
-                              Muestras <strong>{{ muestrasCardaLabel(row) }}</strong>
+                              {{ $t('oe.detail.samples') }} <strong>{{ muestrasCardaLabel(row) }}</strong>
                             </div>
                             <div class="text-[11px] text-sky-700">
-                              Regla: 2 muestreos de CVm por turno. Cobertura completa = 2/2.
+                              {{ $t('oe.detail.cardRule') }}
                             </div>
                           </div>
                         </div>
                         <!-- Alertas + recomendación -->
                         <div>
-                          <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Detalle alertas</div>
+                          <div class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ $t('oe.detail.alerts') }}</div>
                           <ul v-if="row.alertas.length" class="space-y-1 mb-3">
                             <li v-for="alerta in row.alertas" :key="alerta.code" class="text-xs flex items-start gap-2">
                               <span :class="alerta.severity === 'alta' ? 'text-red-500' : 'text-amber-500'" class="mt-0.5 shrink-0">
@@ -434,9 +431,9 @@
                               <span class="text-gray-700">{{ alerta.message }}</span>
                             </li>
                           </ul>
-                          <p v-else class="text-xs text-emerald-700 mb-3">Sin alertas en esta fila.</p>
+                          <p v-else class="text-xs text-emerald-700 mb-3">{{ $t('oe.detail.noAlerts') }}</p>
                           <div class="rounded-xl bg-indigo-50 border border-indigo-200 px-3 py-2.5">
-                            <div class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Recomendación</div>
+                            <div class="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">{{ $t('oe.detail.recommendation') }}</div>
                             <p class="text-xs text-indigo-800">{{ row.recomendacion }}</p>
                           </div>
                         </div>
@@ -453,7 +450,7 @@
 
     <!-- Sin datos -->
     <div v-if="data && !data.rows.length" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center text-gray-400 text-sm mb-5">
-      Sin registros OE para la fecha seleccionada.
+      {{ $t('oe.noData') }}
     </div>
 
     <!-- ── Modal Diagnóstico (local + IA) ───────────────────────────── -->
@@ -462,12 +459,12 @@
         <div class="flex items-center justify-between px-5 py-3 border-b border-gray-100">
           <div class="flex items-center gap-3">
             <div class="text-base font-bold text-gray-800 flex items-center gap-2">
-              <span class="text-amber-500">⚕️</span> Diagnóstico operativo
+              <span class="text-amber-500">⚕️</span> {{ $t('oe.diag.title') }}
             </div>
             <div class="text-xs text-gray-500">
               {{ diagFila?.maquina_label || '–' }} · Lote {{ diagFila?.lote || '–' }} · Ne {{ diagFila?.ne || '–' }}
-              <span v-if="diagIsGroup">· Promedios del grupo</span>
-              <span v-else>· Turno {{ diagFila?.turno || '?' }}</span>
+              <span v-if="diagIsGroup">· {{ $t('oe.diag.group') }}</span>
+              <span v-else>· {{ $t('oe.diag.shift') }} {{ diagFila?.turno || '?' }}</span>
             </div>
           </div>
           <button @click="cerrarDiagnostico" class="text-gray-400 hover:text-gray-600 text-2xl leading-none px-2">×</button>
@@ -477,8 +474,8 @@
           <!-- Análisis local -->
           <div class="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-3">
             <div class="flex items-center justify-between mb-1.5">
-              <div class="text-xs font-bold text-emerald-700 uppercase tracking-wide">Análisis local · instantáneo</div>
-              <span class="text-[10px] text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold">⚡ 0 ms · sin costo</span>
+              <div class="text-xs font-bold text-emerald-700 uppercase tracking-wide">{{ $t('oe.diag.local') }}</div>
+              <span class="text-[10px] text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-full font-semibold">{{ $t('oe.diag.localBadge') }}</span>
             </div>
             <div class="text-sm text-gray-700 leading-snug" v-html="mdToHtml(diagnosticoLocal(diagFila))"></div>
           </div>
@@ -486,7 +483,7 @@
           <!-- Análisis IA -->
           <div class="rounded-2xl border border-indigo-200 bg-indigo-50/40 p-3">
             <div class="flex items-center justify-between mb-2 gap-2">
-              <div class="text-xs font-bold text-indigo-700 uppercase tracking-wide whitespace-nowrap">Análisis IA · Gemini</div>
+              <div class="text-xs font-bold text-indigo-700 uppercase tracking-wide whitespace-nowrap">{{ $t('oe.diag.ia') }}</div>
               <div class="flex items-center gap-2">
                 <select v-model="diagIAModel" class="text-[11px] rounded-lg border border-indigo-200 bg-white px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-300">
                   <option value="gemini-2.5-flash">2.5 Flash (rápido · barato)</option>
@@ -498,12 +495,12 @@
                   :disabled="diagIALoading"
                   class="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium transition-colors disabled:opacity-50"
                 >
-                  {{ diagIALoading ? 'Generando…' : (diagIA ? 'Regenerar' : 'Generar análisis') }}
+                  {{ diagIALoading ? $t('oe.diag.iaGenerating') : (diagIA ? $t('oe.diag.iaRegenerate') : $t('oe.diag.iaGenerate')) }}
                 </button>
               </div>
             </div>
 
-            <div v-if="diagIALoading" class="text-sm text-indigo-600 italic">Consultando a Gemini…</div>
+            <div v-if="diagIALoading" class="text-sm text-indigo-600 italic">{{ $t('oe.diag.iaQuerying') }}</div>
             <div v-else-if="diagIAError" class="rounded-xl bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-800">
               ⚠ {{ diagIAError }}
             </div>
@@ -511,34 +508,32 @@
               <div class="text-sm text-gray-700 leading-snug mb-2" v-html="mdToHtml(diagIA.texto)"></div>
               <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 text-[10px] pt-2 border-t border-indigo-200">
                 <div class="bg-white rounded-lg px-2 py-1 border border-indigo-100">
-                  <div class="text-gray-500 font-medium">⏱ Latencia</div>
+                  <div class="text-gray-500 font-medium">{{ $t('oe.diag.latency') }}</div>
                   <div class="text-indigo-700 font-bold">{{ diagIA.latencia_ms }} ms</div>
                 </div>
                 <div class="bg-white rounded-lg px-2 py-1 border border-indigo-100">
-                  <div class="text-gray-500 font-medium">🪙 Tokens in/out</div>
+                  <div class="text-gray-500 font-medium">{{ $t('oe.diag.tokens') }}</div>
                   <div class="text-indigo-700 font-bold">{{ diagIA.tokens_in }} / {{ diagIA.tokens_out }}</div>
                 </div>
                 <div class="bg-white rounded-lg px-2 py-1 border border-indigo-100">
-                  <div class="text-gray-500 font-medium">💵 Costo USD</div>
+                  <div class="text-gray-500 font-medium">{{ $t('oe.diag.cost') }}</div>
                   <div class="text-indigo-700 font-bold">${{ diagIA.costo_usd.toFixed(6) }}</div>
                 </div>
                 <div class="bg-white rounded-lg px-2 py-1 border border-indigo-100">
-                  <div class="text-gray-500 font-medium">📦 Cache</div>
+                  <div class="text-gray-500 font-medium">{{ $t('oe.diag.cache') }}</div>
                   <div class="text-indigo-700 font-bold">{{ diagIA.cache_hit ? 'HIT' : 'MISS' }}</div>
                 </div>
               </div>
-              <div class="text-[10px] text-gray-400 mt-1">Modelo: {{ diagIA.model }}</div>
+              <div class="text-[10px] text-gray-400 mt-1">{{ $t('oe.diag.model') }} {{ diagIA.model }}</div>
             </div>
-            <div v-else class="text-xs text-gray-500">
-              Click en <strong>Generar análisis</strong> para obtener un diagnóstico contextual de Gemini con métricas de tokens, latencia y costo USD.
-            </div>
+            <div v-else class="text-xs text-gray-500" v-html="$t('oe.diag.iaClick')"></div>
           </div>
         </div>
 
         <div class="flex justify-end gap-3 px-5 py-2.5 border-t border-gray-100 bg-gray-50 rounded-b-2xl">
-          <span class="text-[10px] text-gray-400 self-center mr-auto">Presioná <kbd class="px-1.5 py-0.5 rounded border border-gray-300 bg-white text-gray-600 font-mono text-[10px]">Esc</kbd> para cerrar</span>
+          <span class="text-[10px] text-gray-400 self-center mr-auto">{{ $t('oe.diag.escHint') }} <kbd class="px-1.5 py-0.5 rounded border border-gray-300 bg-white text-gray-600 font-mono text-[10px]">Esc</kbd> {{ $t('oe.diag.escClose') }}</span>
           <button @click="cerrarDiagnostico" class="px-4 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 text-sm font-medium transition-colors">
-            Cerrar
+            {{ $t('oe.diag.close') }}
           </button>
         </div>
       </div>
@@ -549,7 +544,10 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useI18n } from 'vue-i18n';
 import CustomDatepicker from '../CustomDatepicker.vue';
+
+const { t: $t } = useI18n();
 
 const filtros = reactive({
   fecha: new Date().toISOString().slice(0, 10),

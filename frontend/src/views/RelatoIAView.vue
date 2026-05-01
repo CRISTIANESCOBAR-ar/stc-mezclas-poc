@@ -6,36 +6,36 @@
         <div class="flex items-center gap-2 mr-auto">
           <span class="text-2xl">🧶</span>
           <div>
-            <h1 class="text-base md:text-lg font-bold text-slate-800 leading-tight">Informe Estratégico de Hilandería</h1>
-            <p class="text-[11px] text-slate-500 leading-tight">Análisis IA · Cruce Fibra ↔ Hilo ↔ Producción OE</p>
+            <h1 class="text-base md:text-lg font-bold text-slate-800 leading-tight">{{ $t('relatoIA.title') }}</h1>
+            <p class="text-[11px] text-slate-500 leading-tight">{{ $t('relatoIA.subtitle') }}</p>
           </div>
         </div>
 
         <div class="flex flex-wrap items-end gap-2">
           <div>
-            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Lotes</label>
+            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{{ $t('relatoIA.lots') }}</label>
             <input v-model="lotesInput" placeholder="113, 114, 115"
               class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm w-44 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
           </div>
           <div>
-            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Fecha</label>
+            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{{ $t('relatoIA.date') }}</label>
             <CustomDatepicker v-model="fechaInput" :show-buttons="false" />
           </div>
           <div>
-            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Formato</label>
+            <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{{ $t('relatoIA.format') }}</label>
             <select v-model="formato" class="rounded-lg border border-gray-200 px-2 py-1.5 text-sm">
-              <option value="actual">Actual</option>
-              <option value="estrategico">Estratégico</option>
+              <option value="actual">{{ $t('relatoIA.formatActual') }}</option>
+              <option value="estrategico">{{ $t('relatoIA.formatEstrategico') }}</option>
             </select>
           </div>
           <button @click="cargar(false)" :disabled="loading"
             class="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-colors disabled:opacity-50">
-            {{ loading ? 'Generando…' : (narrativa ? '↺ Recargar' : '✨ Generar') }}
+            {{ loading ? $t('relatoIA.generating') : (narrativa ? $t('relatoIA.reload') : $t('relatoIA.generate')) }}
           </button>
           <button v-if="narrativa" @click="cargar(true)" :disabled="loading"
             class="px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-sm font-medium transition-colors"
-            title="Regenerar ignorando caché">
-            ⟲ Forzar IA
+            :title="$t('relatoIA.forceIATitle')">
+            {{ $t('relatoIA.forceIA') }}
           </button>
         </div>
       </div>
@@ -45,18 +45,18 @@
       <!-- Estado vacío -->
       <div v-if="!narrativa && !loading && !error" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
         <div class="text-5xl mb-3">📑</div>
-        <h2 class="text-lg font-bold text-slate-700">Generá tu informe</h2>
+        <h2 class="text-lg font-bold text-slate-700">{{ $t('relatoIA.emptyTitle') }}</h2>
         <p class="text-sm text-slate-500 mt-1 max-w-md mx-auto">
-          Indicá los lotes a auditar y la fecha. La IA cruzará Fibra (HVI), Hilo (Uster · Tensorapid) y Producción OE.
+          {{ $t('relatoIA.emptyText') }}
         </p>
-        <p class="text-xs text-slate-400 mt-3">Ejemplo: <code class="bg-gray-100 px-2 py-0.5 rounded">113, 114, 115</code></p>
+        <p class="text-xs text-slate-400 mt-3">{{ $t('relatoIA.emptyExample') }} <code class="bg-gray-100 px-2 py-0.5 rounded">113, 114, 115</code></p>
       </div>
 
       <!-- Loading -->
       <div v-if="loading" class="bg-white rounded-2xl border border-gray-100 shadow-sm p-10 text-center">
         <div class="inline-block animate-spin text-3xl">⟳</div>
-        <p class="text-sm text-slate-500 mt-3">Procesando datos y generando narrativa…</p>
-        <p class="text-[11px] text-slate-400 mt-1">Si la respuesta ya estaba en caché, será instantánea.</p>
+        <p class="text-sm text-slate-500 mt-3">{{ $t('relatoIA.loadingText') }}</p>
+        <p class="text-[11px] text-slate-400 mt-1">{{ $t('relatoIA.loadingCacheNote') }}</p>
       </div>
 
       <!-- Error -->
@@ -74,7 +74,7 @@
         <!-- TOC sticky -->
         <aside class="hidden lg:block">
           <div class="sticky top-24 bg-white rounded-2xl border border-gray-100 shadow-sm p-4">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Contenido</p>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">{{ $t('relatoIA.toc') }}</p>
             <nav class="space-y-1">
               <a v-for="t in toc" :key="t.id" :href="`#${t.id}`"
                 @click.prevent="scrollTo(t.id)"
@@ -86,28 +86,28 @@
 
             <div class="mt-4 pt-3 border-t border-gray-100 space-y-2">
               <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-slate-400 uppercase">Fuente</span>
+                <span class="text-[10px] font-bold text-slate-400 uppercase">{{ $t('relatoIA.source') }}</span>
                 <span class="text-[10px] px-2 py-0.5 rounded-full font-bold"
                   :class="fuenteBadgeClass">{{ fuenteLabel }}</span>
               </div>
 
               <!-- Tokens + costo -->
               <div v-if="tokenInfo" class="rounded-lg bg-slate-50 border border-slate-100 px-3 py-2 space-y-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tokens usados</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ $t('relatoIA.tokensUsed') }}</p>
                 <div class="flex justify-between text-[11px]">
-                  <span class="text-slate-500">Entrada</span>
+                  <span class="text-slate-500">{{ $t('relatoIA.tokenInput') }}</span>
                   <span class="font-semibold text-slate-700">{{ tokenInfo.tokensEntrada.toLocaleString('es-AR') }}</span>
                 </div>
                 <div class="flex justify-between text-[11px]">
-                  <span class="text-slate-500">Salida</span>
+                  <span class="text-slate-500">{{ $t('relatoIA.tokenOutput') }}</span>
                   <span class="font-semibold text-slate-700">{{ tokenInfo.tokensSalida.toLocaleString('es-AR') }}</span>
                 </div>
                 <div class="flex justify-between text-[11px] pt-0.5 border-t border-slate-200">
-                  <span class="text-slate-500">Total</span>
+                  <span class="text-slate-500">{{ $t('relatoIA.tokenTotal') }}</span>
                   <span class="font-bold text-slate-800">{{ tokenInfo.tokensTotal.toLocaleString('es-AR') }}</span>
                 </div>
                 <div class="flex justify-between text-[11px] pt-1">
-                  <span class="text-slate-500">Costo</span>
+                  <span class="text-slate-500">{{ $t('relatoIA.cost') }}</span>
                   <span class="font-bold" :class="tokenInfo.costoUSD < 0.001 ? 'text-emerald-600' : 'text-amber-600'">
                     U$S {{ tokenInfo.costoUSD < 0.0001 ? '< 0.0001' : tokenInfo.costoUSD.toFixed(4) }}
                   </span>
@@ -116,30 +116,30 @@
               <button @click="copiarTodo"
                 class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors"
                 :class="copiado ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
-                {{ copiado ? '✓ Copiado' : '📋 Copiar todo' }}
+                {{ copiado ? $t('relatoIA.copied') : $t('relatoIA.copyAll') }}
               </button>
               <button @click="descargarMarkdown"
                 class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-                ⬇ Descargar .md
+                {{ $t('relatoIA.downloadMd') }}
               </button>
 
               <div class="pt-1">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Exportar</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">{{ $t('relatoIA.export') }}</p>
                 <div class="flex flex-col gap-1">
                   <button @click="exportarImagen" :disabled="!!exporting"
                     class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors disabled:opacity-50"
                     :class="exporting === 'png' ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
-                    {{ exporting === 'png' ? '⏳ Generando…' : '🖼 Imagen (.png)' }}
+                    {{ exporting === 'png' ? $t('relatoIA.exporting') : $t('relatoIA.exportPng') }}
                   </button>
                   <button @click="exportarPDF" :disabled="!!exporting"
                     class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors disabled:opacity-50"
                     :class="exporting === 'pdf' ? 'bg-rose-100 text-rose-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
-                    {{ exporting === 'pdf' ? '⏳ Generando…' : '📄 PDF A4 (.pdf)' }}
+                    {{ exporting === 'pdf' ? $t('relatoIA.exporting') : $t('relatoIA.exportPdf') }}
                   </button>
                   <button @click="exportarDOCX" :disabled="!!exporting"
                     class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors disabled:opacity-50"
                     :class="exporting === 'docx' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
-                    {{ exporting === 'docx' ? '⏳ Generando…' : '📝 Word (.docx)' }}
+                    {{ exporting === 'docx' ? $t('relatoIA.exporting') : $t('relatoIA.exportDocx') }}
                   </button>
                 </div>
               </div>
@@ -158,6 +158,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import CustomDatepicker from '@/components/CustomDatepicker.vue'
@@ -173,6 +174,7 @@ marked.setOptions({ gfm: true, breaks: true })
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 function defaultYesterdayISO() {
   const d = new Date()
@@ -200,13 +202,13 @@ const fuenteBanner = computed(() => {
   const f = fuente.value
   if (f === 'gemini') {
     const m = modelo.value ? ` <span style="opacity:.75">· ${modelo.value.replace('gemini-', '')}</span>` : ''
-    return `<div class="fuente-banner fuente-gemini" role="note">✨ <strong>Análisis generado por IA</strong> — Google Gemini${m}</div>`
+    return `<div class="fuente-banner fuente-gemini" role="note">${t('relatoIA.fuenteGemini')}${m}</div>`
   }
   if (f === 'cache') {
-    return `<div class="fuente-banner fuente-cache" role="note">💾 <strong>Análisis recuperado del caché</strong> — generado previamente por Gemini</div>`
+    return `<div class="fuente-banner fuente-cache" role="note">${t('relatoIA.fuenteCache')}</div>`
   }
   if (f === 'local') {
-    return `<div class="fuente-banner fuente-local" role="note">⚡ <strong>Fallback local (sin IA)</strong> — Gemini no disponible. Generado por reglas internas.</div>`
+    return `<div class="fuente-banner fuente-local" role="note">${t('relatoIA.fuenteLocal')}</div>`
   }
   return ''
 })
@@ -276,10 +278,10 @@ function onScroll() {
 
 // ── Badges ──
 const fuenteLabel = computed(() => {
-  if (fuente.value === 'gemini') return `✨ Gemini${modelo.value ? ' · ' + modelo.value.replace('gemini-', '') : ''}`
-  if (fuente.value === 'cache') return '💾 Caché'
-  if (fuente.value === 'local') return '⚡ Local'
-  return '—'
+  if (fuente.value === 'gemini') return `${t('relatoIA.badgeGemini')}${modelo.value ? ' · ' + modelo.value.replace('gemini-', '') : ''}`
+  if (fuente.value === 'cache') return t('relatoIA.badgeCache')
+  if (fuente.value === 'local') return t('relatoIA.badgeLocal')
+  return t('relatoIA.badgeDash')
 })
 const fuenteBadgeClass = computed(() => {
   if (fuente.value === 'gemini') return 'bg-purple-100 text-purple-700'
@@ -607,7 +609,7 @@ async function exportarDOCX() {
 // ── Carga: 1) trae rows del dashboard 2) llama narrativa ──
 async function cargar(force = false) {
   if (!lotesInput.value.trim() || !fechaInput.value) {
-    error.value = 'Indicá lotes y fecha.'
+    error.value = t('relatoIA.errorLotsDate')
     return
   }
   loading.value = true
@@ -627,7 +629,7 @@ async function cargar(force = false) {
 
     const rowsData = dashData.rows || []
     if (!rowsData.length) {
-      error.value = 'No hay datos para esos lotes en la fecha indicada.'
+      error.value = t('relatoIA.errorNoData')
       return
     }
 

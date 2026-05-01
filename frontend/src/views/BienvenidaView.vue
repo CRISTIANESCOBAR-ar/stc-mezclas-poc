@@ -6,15 +6,15 @@
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h1 class="text-2xl md:text-3xl font-black text-gray-800 tracking-tight">
-              👋 Bienvenido al Optimizador STC
+              {{ $t('bienvenida.title') }}
             </h1>
             <p class="text-sm text-gray-500 mt-1">
-              Selecciona una vista para comenzar. Cada tarjeta describe brevemente qué información encontrarás.
+              {{ $t('bienvenida.subtitle') }}
             </p>
           </div>
           <label class="inline-flex items-center gap-2 text-xs font-medium text-gray-600 bg-white px-3 py-2 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
             <input type="checkbox" v-model="hideWelcome" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-            <span>No mostrar al iniciar</span>
+            <span>{{ $t('bienvenida.noShow') }}</span>
           </label>
         </div>
       </div>
@@ -24,7 +24,7 @@
         <div class="flex items-center gap-2 mb-3">
           <span class="text-[11px] font-bold uppercase tracking-wider text-gray-500">{{ cat.titulo }}</span>
           <div class="flex-1 h-px bg-gray-200"></div>
-          <span class="text-[10px] text-gray-400">{{ cat.items.length }} {{ cat.items.length === 1 ? 'vista' : 'vistas' }}</span>
+          <span class="text-[10px] text-gray-400">{{ cat.items.length }} {{ cat.items.length === 1 ? $t('bienvenida.view') : $t('bienvenida.views') }}</span>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <router-link
@@ -53,16 +53,18 @@
       </section>
 
       <div class="text-center text-[11px] text-gray-400 mt-8">
-        💡 Podés volver a esta pantalla escribiendo <code class="bg-white px-1.5 py-0.5 rounded border border-gray-200 font-mono">/bienvenida</code> en la URL.
+        💡 {{ $t('bienvenida.hint1') }} <code class="bg-white px-1.5 py-0.5 rounded border border-gray-200 font-mono">/bienvenida</code> {{ $t('bienvenida.hint2') }}
       </div>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const STORAGE_KEY = 'stc_hide_welcome';
+const { t } = useI18n();
 
 const hideWelcome = ref(localStorage.getItem(STORAGE_KEY) === '1');
 watch(hideWelcome, (v) => {
@@ -70,58 +72,58 @@ watch(hideWelcome, (v) => {
   else localStorage.removeItem(STORAGE_KEY);
 });
 
-const categorias = [
+const categorias = computed(() => [
   {
-    titulo: 'Carga de ensayos',
+    titulo: t('bienvenida.cats.ensayos'),
     items: [
-      { path: '/hvi',           icon: '🌿', bg: 'bg-emerald-50 text-emerald-600',
-        titulo: 'HVI',                descripcion: 'Carga de archivos HVI con calidad de fibra de algodón (Mic, Long, Resist, etc.).' },
-      { path: '/uster',         icon: '🧵', bg: 'bg-blue-50 text-blue-600',
-        titulo: 'Uster Hilo',         descripcion: 'Carga de ensayos USTER de hilo: CVm, neps, vellosidad, adelgazamientos y engrosamientos.' },
-      { path: '/uster-cardas',  icon: '🎛️', bg: 'bg-cyan-50 text-cyan-600',
-        titulo: 'Uster Cardas',       descripcion: 'Carga de ensayos USTER de cinta de carda (CVm, A%CV, U%, etc.).' },
-      { path: '/tensorapid',    icon: '💪', bg: 'bg-purple-50 text-purple-600',
-        titulo: 'TensoRapid',         descripcion: 'Carga de ensayos de resistencia: tenacidad, elongación, fuerza y trabajo de rotura.' },
+      { path: '/hvi',          icon: '🌿', bg: 'bg-emerald-50 text-emerald-600',
+        titulo: t('bienvenida.cards.hvi.titulo'),           descripcion: t('bienvenida.cards.hvi.desc') },
+      { path: '/uster',        icon: '🧵', bg: 'bg-blue-50 text-blue-600',
+        titulo: t('bienvenida.cards.usterHilo.titulo'),     descripcion: t('bienvenida.cards.usterHilo.desc') },
+      { path: '/uster-cardas', icon: '🎛️', bg: 'bg-cyan-50 text-cyan-600',
+        titulo: t('bienvenida.cards.usterCardas.titulo'),   descripcion: t('bienvenida.cards.usterCardas.desc') },
+      { path: '/tensorapid',   icon: '💪', bg: 'bg-purple-50 text-purple-600',
+        titulo: t('bienvenida.cards.tensorapid.titulo'),    descripcion: t('bienvenida.cards.tensorapid.desc') },
     ],
   },
   {
-    titulo: 'Configuración y maestros',
+    titulo: t('bienvenida.cats.config'),
     items: [
-      { path: '/inventario',                icon: '📦', bg: 'bg-indigo-50 text-indigo-600',
-        titulo: 'Inventario MP',            descripcion: 'Gestión del stock de fardos de algodón (materia prima) por lote y origen.' },
-      { path: '/configuracion-estandares',  icon: '⚙️', bg: 'bg-slate-50 text-slate-600',
-        titulo: 'Estándares y Mezclas',     descripcion: 'Definición de límites de calidad y composición de mezclas por título y producto.' },
+      { path: '/inventario',               icon: '📦', bg: 'bg-indigo-50 text-indigo-600',
+        titulo: t('bienvenida.cards.inventario.titulo'),    descripcion: t('bienvenida.cards.inventario.desc') },
+      { path: '/configuracion-estandares', icon: '⚙️', bg: 'bg-slate-50 text-slate-600',
+        titulo: t('bienvenida.cards.estandares.titulo'),    descripcion: t('bienvenida.cards.estandares.desc') },
     ],
   },
   {
-    titulo: 'Trazabilidad y producción',
+    titulo: t('bienvenida.cats.traz'),
     items: [
       { path: '/oe-trazabilidad', icon: '🎯', bg: 'bg-amber-50 text-amber-600',
-        titulo: 'Trazabilidad OE',  descripcion: 'Producción Open End por máquina/turno + USTER + TensoRapid + cardas alimentadoras + alertas y diagnóstico operativo IA.' },
+        titulo: t('bienvenida.cards.trazOE.titulo'),        descripcion: t('bienvenida.cards.trazOE.desc') },
       { path: '/dashboard-mezcla', icon: '🧪', bg: 'bg-rose-50 text-rose-600',
-        titulo: 'Dashboard Mezcla', descripcion: 'Tablero de mezcla de hilo: comparación entre títulos y máquinas con criterio Aprobado / Condicional / Rechazado.' },
+        titulo: t('bienvenida.cards.dashMezcla.titulo'),    descripcion: t('bienvenida.cards.dashMezcla.desc') },
       { path: '/stats',            icon: '📈', bg: 'bg-blue-50 text-blue-600',
-        titulo: 'Gráficos Ensayos', descripcion: 'Gráficos de control estadístico por título (LCL/UCL, media global, evolución diaria).' },
+        titulo: t('bienvenida.cards.graficos.titulo'),      descripcion: t('bienvenida.cards.graficos.desc') },
     ],
   },
   {
-    titulo: 'Reportes',
+    titulo: t('bienvenida.cats.reportes'),
     items: [
-      { path: '/resumen',                       icon: '📋', bg: 'bg-teal-50 text-teal-600',
-        titulo: 'Resumen Ensayos',              descripcion: 'Resumen consolidado de ensayos USTER de hilo en un rango de fechas.' },
-      { path: '/resumen-cardas',                icon: '🗂️', bg: 'bg-cyan-50 text-cyan-600',
-        titulo: 'Resumen Ensayos Cardas',       descripcion: 'Resumen de ensayos USTER de cinta de carda por máquina y alimentación.' },
-      { path: '/resumen-semanal-hilanderia',    icon: '📅', bg: 'bg-emerald-50 text-emerald-600',
-        titulo: 'Resumen Semanal Hilandería',   descripcion: 'Vista semanal con KPIs operativos y de calidad de toda la hilandería.' },
-      { path: '/resumen-diario',                icon: '☀️', bg: 'bg-amber-50 text-amber-600',
-        titulo: 'Resumen Diario',               descripcion: 'Vista diaria con producción, calidad y alertas del día seleccionado.' },
-      { path: '/analisis-calidad-fibra',        icon: '🔬', bg: 'bg-lime-50 text-lime-600',
-        titulo: 'Análisis Calidad Fibra',       descripcion: 'Análisis HVI con histogramas y métricas por origen del algodón.' },
-      { path: '/informe-auditoria-lote',        icon: '🧾', bg: 'bg-fuchsia-50 text-fuchsia-600',
-        titulo: 'Informe Auditoría Lote',       descripcion: 'Informe de auditoría completo de un lote: HVI + USTER + TensoRapid + producción + dictamen.' },
-      { path: '/relato-ia',                     icon: '✨', bg: 'bg-indigo-50 text-indigo-600',
-        titulo: 'Relato Integral IA',           descripcion: 'Narrativa generada por IA con interpretación de los indicadores del día/lote.' },
+      { path: '/resumen',                    icon: '📋', bg: 'bg-teal-50 text-teal-600',
+        titulo: t('bienvenida.cards.resumen.titulo'),        descripcion: t('bienvenida.cards.resumen.desc') },
+      { path: '/resumen-cardas',             icon: '🗂️', bg: 'bg-cyan-50 text-cyan-600',
+        titulo: t('bienvenida.cards.resumenCardas.titulo'),  descripcion: t('bienvenida.cards.resumenCardas.desc') },
+      { path: '/resumen-semanal-hilanderia', icon: '📅', bg: 'bg-emerald-50 text-emerald-600',
+        titulo: t('bienvenida.cards.resumenSemanal.titulo'), descripcion: t('bienvenida.cards.resumenSemanal.desc') },
+      { path: '/resumen-diario',             icon: '☀️', bg: 'bg-amber-50 text-amber-600',
+        titulo: t('bienvenida.cards.resumenDiario.titulo'),  descripcion: t('bienvenida.cards.resumenDiario.desc') },
+      { path: '/analisis-calidad-fibra',     icon: '🔬', bg: 'bg-lime-50 text-lime-600',
+        titulo: t('bienvenida.cards.calidadFibra.titulo'),   descripcion: t('bienvenida.cards.calidadFibra.desc') },
+      { path: '/informe-auditoria-lote',     icon: '🧾', bg: 'bg-fuchsia-50 text-fuchsia-600',
+        titulo: t('bienvenida.cards.auditoriaLote.titulo'),  descripcion: t('bienvenida.cards.auditoriaLote.desc') },
+      { path: '/relato-ia',                  icon: '✨', bg: 'bg-indigo-50 text-indigo-600',
+        titulo: t('bienvenida.cards.relatoIA.titulo'),       descripcion: t('bienvenida.cards.relatoIA.desc') },
     ],
   },
-];
+]);
 </script>
