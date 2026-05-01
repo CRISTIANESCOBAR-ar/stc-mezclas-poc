@@ -408,6 +408,7 @@ router.post('/narrativa-lotes', async (req, res) => {
 
     // ── Query producción OE — trazabilidad completa con KPIs de eficiencia ───
     const loteNums = [...new Set(rows.map(r => Number(r.mistura)))].filter(n => !isNaN(n) && n > 0);
+    console.log(`[narrativa-lotes] loteNums = [${loteNums.join(', ')}]`);
     let oeData = [];
     try {
       const oeResult = await pool.query(`
@@ -421,26 +422,57 @@ router.post('/narrativa-lotes', async (req, res) => {
           "DESC ITEM"                                                                                   AS desc_item,
           TRIM("TÍTULO")                                                                                AS titulo,
           -- Producción e eficiencia
-          ROUND(AVG(CASE WHEN "PROD INFORMADA" ~ '^[0-9]' THEN REPLACE("PROD INFORMADA", ',', '.')::numeric END)::numeric, 1) AS prod_informada_avg,
-          ROUND(AVG(CASE WHEN "EFIC INFORMADA" ~ '^[0-9]' THEN REPLACE("EFIC INFORMADA", ',', '.')::numeric END)::numeric, 1) AS efic_informada_avg,
-          ROUND(AVG(CASE WHEN "EFIC CALCULADA" ~ '^[0-9]' THEN REPLACE("EFIC CALCULADA", ',', '.')::numeric END)::numeric, 1) AS efic_avg,
-          ROUND(AVG(CASE WHEN rpm::text ~ '^[0-9]'        THEN rpm::numeric END)::numeric, 0)          AS rpm_avg,
-          ROUND(AVG(CASE WHEN "RPM CARD"::text ~ '^[0-9]' THEN "RPM CARD"::numeric END)::numeric, 0)  AS rpm_card_avg,
+          -- parse_num: maneja formato europeo con miles (1.497,30) y simple (80,7 / 80000)
+          -- Paso 1: si tiene patrón NNN.NNN,NN → quitar puntos de miles, luego reemplazar coma
+          -- Paso 2: si es simple NNN,NN o NNN.NN → solo reemplazar coma
+          ROUND(AVG(CASE
+            WHEN "PROD INFORMADA" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("PROD INFORMADA", '.', ''), ',', '.')::numeric
+            WHEN "PROD INFORMADA" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("PROD INFORMADA", ',', '.')::numeric
+          END)::numeric, 1) AS prod_informada_avg,
+          ROUND(AVG(CASE
+            WHEN "EFIC INFORMADA" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("EFIC INFORMADA", '.', ''), ',', '.')::numeric
+            WHEN "EFIC INFORMADA" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("EFIC INFORMADA", ',', '.')::numeric
+          END)::numeric, 1) AS efic_informada_avg,
+          ROUND(AVG(CASE
+            WHEN "EFIC CALCULADA" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("EFIC CALCULADA", '.', ''), ',', '.')::numeric
+            WHEN "EFIC CALCULADA" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("EFIC CALCULADA", ',', '.')::numeric
+          END)::numeric, 1) AS efic_avg,
+          ROUND(AVG(CASE
+            WHEN rpm::text ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE(rpm::text, '.', ''), ',', '.')::numeric
+            WHEN rpm::text ~ '^\d+([,.]\d+)?$'             THEN REPLACE(rpm::text, ',', '.')::numeric
+          END)::numeric, 0) AS rpm_avg,
+          ROUND(AVG(CASE
+            WHEN "RPM CARD"::text ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("RPM CARD"::text, '.', ''), ',', '.')::numeric
+            WHEN "RPM CARD"::text ~ '^\d+([,.]\d+)?$'             THEN REPLACE("RPM CARD"::text, ',', '.')::numeric
+          END)::numeric, 0) AS rpm_card_avg,
           -- Cortes naturales y mecánicos
-          SUM(CASE WHEN "CORT NAT" ~ '^[0-9]' THEN REPLACE("CORT NAT", ',', '.')::numeric ELSE 0 END) AS nat_total,
+          SUM(CASE
+            WHEN "CORT NAT" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("CORT NAT", '.', ''), ',', '.')::numeric
+            WHEN "CORT NAT" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("CORT NAT", ',', '.')::numeric
+            ELSE 0
+          END) AS nat_total,
           ROUND(
-            COALESCE(AVG(CASE WHEN "% ROB 01" ~ '^[0-9]' THEN REPLACE("% ROB 01", ',', '.')::numeric END), 0) +
-            COALESCE(AVG(CASE WHEN "% ROB 02" ~ '^[0-9]' THEN REPLACE("% ROB 02", ',', '.')::numeric END), 0) +
-            COALESCE(AVG(CASE WHEN "% ROB 03" ~ '^[0-9]' THEN REPLACE("% ROB 03", ',', '.')::numeric END), 0)
-          , 2)                                                                                          AS rob_mecanicos_pct,
+            COALESCE(AVG(CASE
+              WHEN "% ROB 01" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("% ROB 01", '.', ''), ',', '.')::numeric
+              WHEN "% ROB 01" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("% ROB 01", ',', '.')::numeric
+            END), 0) +
+            COALESCE(AVG(CASE
+              WHEN "% ROB 02" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("% ROB 02", '.', ''), ',', '.')::numeric
+              WHEN "% ROB 02" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("% ROB 02", ',', '.')::numeric
+            END), 0) +
+            COALESCE(AVG(CASE
+              WHEN "% ROB 03" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("% ROB 03", '.', ''), ',', '.')::numeric
+              WHEN "% ROB 03" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("% ROB 03", ',', '.')::numeric
+            END), 0)
+          , 2) AS rob_mecanicos_pct,
           -- Cortes de purga por tipo
-          SUM(CASE WHEN n        ~ '^[0-9]' THEN REPLACE(n,        ',', '.')::numeric ELSE 0 END)     AS n_total,
-          SUM(CASE WHEN s        ~ '^[0-9]' THEN REPLACE(s,        ',', '.')::numeric ELSE 0 END)     AS s_total,
-          SUM(CASE WHEN l        ~ '^[0-9]' THEN REPLACE(l,        ',', '.')::numeric ELSE 0 END)     AS l_total,
-          SUM(CASE WHEN t        ~ '^[0-9]' THEN REPLACE(t,        ',', '.')::numeric ELSE 0 END)     AS t_total,
-          SUM(CASE WHEN mo       ~ '^[0-9]' THEN REPLACE(mo,       ',', '.')::numeric ELSE 0 END)     AS mo_total,
-          SUM(CASE WHEN "JP (P+)" ~ '^[0-9]' THEN REPLACE("JP (P+)", ',', '.')::numeric ELSE 0 END)    AS jp_total,
-          SUM(CASE WHEN "JM (P-)" ~ '^[0-9]' THEN REPLACE("JM (P-)", ',', '.')::numeric ELSE 0 END)    AS jm_total,
+          SUM(CASE WHEN n        ~ '^\d+([,.]\d+)?$' THEN REPLACE(n,        ',', '.')::numeric ELSE 0 END) AS n_total,
+          SUM(CASE WHEN s        ~ '^\d+([,.]\d+)?$' THEN REPLACE(s,        ',', '.')::numeric ELSE 0 END) AS s_total,
+          SUM(CASE WHEN l        ~ '^\d+([,.]\d+)?$' THEN REPLACE(l,        ',', '.')::numeric ELSE 0 END) AS l_total,
+          SUM(CASE WHEN t        ~ '^\d+([,.]\d+)?$' THEN REPLACE(t,        ',', '.')::numeric ELSE 0 END) AS t_total,
+          SUM(CASE WHEN mo       ~ '^\d+([,.]\d+)?$' THEN REPLACE(mo,       ',', '.')::numeric ELSE 0 END) AS mo_total,
+          SUM(CASE WHEN "JP (P+)" ~ '^\d+([,.]\d+)?$' THEN REPLACE("JP (P+)", ',', '.')::numeric ELSE 0 END) AS jp_total,
+          SUM(CASE WHEN "JM (P-)" ~ '^\d+([,.]\d+)?$' THEN REPLACE("JM (P-)", ',', '.')::numeric ELSE 0 END) AS jm_total,
           COUNT(*)                                                                                      AS registros
         FROM tb_produccion_oe
         WHERE TRIM("LOTE PRODUC") ~ '^[0-9]+$'
@@ -449,6 +481,7 @@ router.post('/narrativa-lotes', async (req, res) => {
         ORDER BY TO_DATE(data_producao, 'DD/MM/YYYY') DESC NULLS LAST, TRIM("LOTE PRODUC")::bigint, maquina, LADO
       `, [loteNums]);
       oeData = oeResult.rows;
+      console.log(`[narrativa-lotes] oeData filas=${oeData.length}`, oeData.length > 0 ? `primer lote=${oeData[0].lote} maq=${oeData[0].maquina}` : '(vacío)');
     } catch (oeErr) {
       console.warn('OE data query failed (non-fatal):', oeErr.message);
     }
@@ -588,8 +621,18 @@ router.post('/narrativa-lotes', async (req, res) => {
         eficiencia_calculada_pct: r.efic_avg,
         prod_informada_kg_h: r.prod_informada_avg,
         rpm_oe: r.rpm_avg,
+        rpm_carda_oe: r.rpm_card_avg,
         cortes_naturales: r.nat_total,
         cortes_mecanicos_pct_rob: r.rob_mecanicos_pct,
+        cortes_purga: {
+          N:  r.n_total,
+          S:  r.s_total,
+          L:  r.l_total,
+          T:  r.t_total,
+          MO: r.mo_total,
+          JP: r.jp_total,
+          JM: r.jm_total
+        },
         cvm_uster: r.cvm_uster,
         pasador: r.pasador,
         estiraje: r.estiraje_avg,
@@ -675,7 +718,16 @@ Análisis comparativo Fibra ↔ Hilo
 _Veredicto en 2 oraciones citando el estado operativo (APROBADO / PRECAUCIÓN / CRÍTICO / DATOS PENDIENTES)._
 
 ## 📊 Comparativa Consolidada
-_Tabla Markdown con columnas: Métrica | Lote ref | Lote actual | Δ% | Impacto. Incluí STR, Tenacidad, CVm%, Neps+200%, Elongación._
+Tabla Markdown con columnas: **Grupo | Métrica | Lote ref | Lote actual | Δ% | Impacto**.
+- Columna Grupo: HVI (STR, SCI, MIC, UHML) y cada Ne presente (Tenacidad, Elongación, CVm%, Neps+200%). Solo en la primera fila del grupo; dejar vacío en las siguientes.
+- Ejemplo:
+
+| Grupo | Métrica | Lote ref | Lote actual | Δ% | Impacto |
+|---|---|---:|---:|---:|---|
+| HVI | STR (g/tex) | 27.32 | 26.98 | -1.24% | Menor resistencia |
+| | SCI | 107.8 | 105.3 | -2.32% | Menor uniformidad |
+| Ne 12.5/1 | Tenacidad (cN/tex) | 16.51 | 16.26 | -1.51% | CAÍDA CRÍTICA |
+| | Elongación (%) | 7.72 | 7.79 | +0.91% | BAJA |
 
 ## 📦 Proveedores Clave
 Para el Lote FIAC {actual} ({totalFardos} fardos):

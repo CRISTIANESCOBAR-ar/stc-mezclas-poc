@@ -213,11 +213,53 @@ const fuenteBanner = computed(() => {
   return ''
 })
 
+// ── Post-procesa tablas: aplica rowspan en col-0 cuando Gemini deja celdas vacías
+// Lógica top-down: celda vacía = sigue perteneciendo al grupo anterior.
+// Solo actúa en tablas cuya primera <th> sea "Grupo" (case-insensitive).
+function applyTableRowspan(html) {
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(`<div>${html}</div>`, 'text/html')
+  doc.querySelectorAll('table').forEach(table => {
+    const firstTh = table.querySelector('thead th')
+    if (!firstTh || !/^grupo$/i.test(firstTh.textContent.trim())) return
+
+    const rows = Array.from(table.querySelectorAll('tbody tr'))
+    if (!rows.length) return
+
+    let groupCell = null  // celda cabecera del grupo activo
+    let groupSpan = 0
+
+    function closeGroup() {
+      if (groupCell && groupSpan > 1) groupCell.rowSpan = groupSpan
+      if (groupCell) groupCell.classList.add('group-cell')
+    }
+
+    for (const row of rows) {
+      const cell = row.cells[0]
+      if (!cell) continue
+      const text = cell.textContent.trim()
+
+      if (text) {
+        // Nueva etiqueta de grupo → cerrar el anterior y abrir uno nuevo
+        closeGroup()
+        groupCell = cell
+        groupSpan = 1
+      } else {
+        // Celda vacía → pertenece al grupo anterior; ocultarla
+        cell.style.display = 'none'
+        groupSpan++
+      }
+    }
+    closeGroup() // cerrar el último grupo
+  })
+  return doc.body.querySelector('div').innerHTML
+}
+
 const narrativaHtml = computed(() => {
   if (!narrativa.value) return ''
   try {
-    const body = DOMPurify.sanitize(marked.parse(narrativa.value), { ADD_ATTR: ['role'] })
-    return fuenteBanner.value + body
+    const raw = DOMPurify.sanitize(marked.parse(narrativa.value), { ADD_ATTR: ['role'] })
+    return fuenteBanner.value + applyTableRowspan(raw)
   } catch { return '' }
 })
 
@@ -734,6 +776,17 @@ watch(() => route.query, (q) => {
 }
 .narrativa-prose :deep(tr:last-child td) { border-bottom: 0; }
 .narrativa-prose :deep(tr:nth-child(even) td) { background: #fafafa; }
+.narrativa-prose :deep(td.group-cell) {
+  background: #f8fafc;
+  font-weight: 700;
+  color: #1e40af;
+  text-align: center;
+  vertical-align: middle;
+  border-right: 2px solid #bfdbfe;
+  white-space: nowrap;
+  font-size: .8rem;
+  letter-spacing: .02em;
+}
 .narrativa-prose :deep(hr) { border: 0; border-top: 1px dashed #cbd5e1; margin: 1.2rem 0; }
 .narrativa-prose :deep(a) { color: #4f46e5; text-decoration: underline; text-decoration-color: rgba(99,102,241,.3); }
 </style>
