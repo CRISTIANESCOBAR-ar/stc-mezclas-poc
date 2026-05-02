@@ -875,10 +875,11 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
         return res.json({ success: true, narrativa: narrativaCompleta, fuente: 'gemini', modelo: mName, jsonAnalisisIA, tokenInfo, ...(modelUsado && { avisoModelo: `Gemini respondió con modelo alternativo: ${mName}` }), ...buildNarrativaStructuredFields(narrativaCompleta) });
       } catch (geminiErr) {
         const msg = geminiErr.message || String(geminiErr);
-        const esTransient = /503|502|overloaded|high demand|unavailable|try again/i.test(msg);
-        console.warn(`Gemini [${mName}] falló: ${msg.slice(0, 120)}`);
+        const esQuotaOAuth = /quota|429|resource.exhausted|api.?key|permission|auth/i.test(msg);
+        const esTransient  = !esQuotaOAuth; // Todo lo que no sea quota/auth se reintenta (503, fetch error, timeout, etc.)
+        console.warn(`Gemini [${mName}] falló (${esTransient ? 'transitorio' : 'fatal'}): ${msg.slice(0, 120)}`);
         lastGeminiErr = msg;
-        if (!esTransient) break; // Error no transitorio (quota, auth): no reintenta
+        if (!esTransient) break; // Error de quota o auth: no tiene sentido reintentar
         // 503 transitorio: espera 1s antes de probar el siguiente modelo
         await new Promise(r => setTimeout(r, 1000));
       }
