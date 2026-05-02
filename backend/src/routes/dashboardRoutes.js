@@ -14,7 +14,7 @@ function buildNarrativaStructuredFields(narrativaText) {
   };
 }
 
-// ─────────── Cache de narrativas (Postgres) ───────────
+// ─────────── Cache + Log de narrativas (Postgres) ───────────
 let cacheTableReady = false;
 async function ensureCacheTable() {
   if (cacheTableReady) return;
@@ -30,14 +30,33 @@ async function ensureCacheTable() {
         narrativa   TEXT NOT NULL,
         json_analisis_ia JSONB,
         modelo_usado VARCHAR(64),
+        token_info  JSONB,
         created_at  TIMESTAMPTZ DEFAULT NOW(),
         last_hit_at TIMESTAMPTZ DEFAULT NOW(),
         hits        INTEGER DEFAULT 0
       );
       CREATE INDEX IF NOT EXISTS idx_narrativa_cache_lotes ON tb_narrativa_cache(lotes, fecha);
+      ALTER TABLE tb_narrativa_cache ADD COLUMN IF NOT EXISTS token_info JSONB;
+
+      CREATE TABLE IF NOT EXISTS tb_narrativa_log (
+        id            SERIAL PRIMARY KEY,
+        lotes         TEXT NOT NULL,
+        fecha_corte   VARCHAR(20),
+        formato       VARCHAR(32),
+        idioma        VARCHAR(10) DEFAULT 'es',
+        modelo        VARCHAR(64),
+        tokens_entrada  INTEGER DEFAULT 0,
+        tokens_salida   INTEGER DEFAULT 0,
+        tokens_total    INTEGER DEFAULT 0,
+        costo_usd       NUMERIC(12,6) DEFAULT 0,
+        fuente        VARCHAR(16) DEFAULT 'gemini',
+        desde_cache   BOOLEAN DEFAULT FALSE,
+        created_at    TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS idx_narrativa_log_created ON tb_narrativa_log(created_at DESC);
     `);
     cacheTableReady = true;
-    console.log('✓ Tabla tb_narrativa_cache lista');
+    console.log('✓ Tablas tb_narrativa_cache / tb_narrativa_log listas');
   } catch (e) {
     console.warn('⚠️ No pude crear tb_narrativa_cache:', e.message);
   }
@@ -367,7 +386,7 @@ router.get('/mezcla-lotes', async (req, res) => {
 
 router.post('/narrativa-lotes', async (req, res) => {
   try {
-    const { rows, loteActual, model: modelReq, modo, proveedores, formato, fecha, forceRefresh } = req.body;
+    const { rows, loteActual, model: modelReq, modo, proveedores, formato, fecha, forceRefresh, idioma } = req.body;
     if (!rows || rows.length === 0) return res.status(400).json({ error: 'Sin datos para analizar' });
 
     await ensureCacheTable();
@@ -376,13 +395,14 @@ router.post('/narrativa-lotes', async (req, res) => {
     const lotesKey = [...new Set(rows.map(r => Number(r.mistura)))].sort((a, b) => a - b).join(',');
     const formatoKey = formato || 'actual';
     const modeloKey = modelReq || 'gemini-2.5-flash';
+    const idiomaKey = idioma === 'pt-BR' ? 'pt-BR' : 'es';
     const dataHash = hashRowsPayload(rows, proveedores || []);
-    const cacheKey = buildCacheKey({ lotes: lotesKey, fecha, formato: formatoKey, modelo: modeloKey, dataHash });
+    const cacheKey = buildCacheKey({ lotes: lotesKey, fecha, formato: `${formatoKey}-${idiomaKey}`, modelo: modeloKey, dataHash });
 
     if (modo !== 'local' && !forceRefresh) {
       try {
         const hit = await pool.query(
-          'SELECT narrativa, json_analisis_ia, modelo_usado FROM tb_narrativa_cache WHERE cache_key = $1',
+          'SELECT narrativa, json_analisis_ia, modelo_usado, token_info FROM tb_narrativa_cache WHERE cache_key = $1',
           [cacheKey]
         );
         if (hit.rows.length) {
@@ -398,6 +418,7 @@ router.post('/narrativa-lotes', async (req, res) => {
             fuente: 'cache',
             modelo: cached.modelo_usado,
             jsonAnalisisIA: cached.json_analisis_ia,
+            tokenInfo: cached.token_info || null,
             ...buildNarrativaStructuredFields(cached.narrativa),
           });
         }
@@ -426,53 +447,53 @@ router.post('/narrativa-lotes', async (req, res) => {
           -- Paso 1: si tiene patrón NNN.NNN,NN → quitar puntos de miles, luego reemplazar coma
           -- Paso 2: si es simple NNN,NN o NNN.NN → solo reemplazar coma
           ROUND(AVG(CASE
-            WHEN "PROD INFORMADA" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("PROD INFORMADA", '.', ''), ',', '.')::numeric
-            WHEN "PROD INFORMADA" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("PROD INFORMADA", ',', '.')::numeric
+            WHEN "PROD INFORMADA" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("PROD INFORMADA", '.', ''), ',', '.')::numeric
+            WHEN "PROD INFORMADA" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("PROD INFORMADA", ',', '.')::numeric
           END)::numeric, 1) AS prod_informada_avg,
           ROUND(AVG(CASE
-            WHEN "EFIC INFORMADA" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("EFIC INFORMADA", '.', ''), ',', '.')::numeric
-            WHEN "EFIC INFORMADA" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("EFIC INFORMADA", ',', '.')::numeric
+            WHEN "EFIC INFORMADA" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("EFIC INFORMADA", '.', ''), ',', '.')::numeric
+            WHEN "EFIC INFORMADA" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("EFIC INFORMADA", ',', '.')::numeric
           END)::numeric, 1) AS efic_informada_avg,
           ROUND(AVG(CASE
-            WHEN "EFIC CALCULADA" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("EFIC CALCULADA", '.', ''), ',', '.')::numeric
-            WHEN "EFIC CALCULADA" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("EFIC CALCULADA", ',', '.')::numeric
+            WHEN "EFIC CALCULADA" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("EFIC CALCULADA", '.', ''), ',', '.')::numeric
+            WHEN "EFIC CALCULADA" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("EFIC CALCULADA", ',', '.')::numeric
           END)::numeric, 1) AS efic_avg,
           ROUND(AVG(CASE
-            WHEN rpm::text ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE(rpm::text, '.', ''), ',', '.')::numeric
-            WHEN rpm::text ~ '^\d+([,.]\d+)?$'             THEN REPLACE(rpm::text, ',', '.')::numeric
+            WHEN rpm::text ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(rpm::text, '.', ''), ',', '.')::numeric
+            WHEN rpm::text ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE(rpm::text, ',', '.')::numeric
           END)::numeric, 0) AS rpm_avg,
           ROUND(AVG(CASE
-            WHEN "RPM CARD"::text ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("RPM CARD"::text, '.', ''), ',', '.')::numeric
-            WHEN "RPM CARD"::text ~ '^\d+([,.]\d+)?$'             THEN REPLACE("RPM CARD"::text, ',', '.')::numeric
+            WHEN "RPM CARD"::text ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("RPM CARD"::text, '.', ''), ',', '.')::numeric
+            WHEN "RPM CARD"::text ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("RPM CARD"::text, ',', '.')::numeric
           END)::numeric, 0) AS rpm_card_avg,
           -- Cortes naturales y mecánicos
           SUM(CASE
-            WHEN "CORT NAT" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("CORT NAT", '.', ''), ',', '.')::numeric
-            WHEN "CORT NAT" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("CORT NAT", ',', '.')::numeric
+            WHEN "CORT NAT" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("CORT NAT", '.', ''), ',', '.')::numeric
+            WHEN "CORT NAT" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("CORT NAT", ',', '.')::numeric
             ELSE 0
           END) AS nat_total,
           ROUND(
             COALESCE(AVG(CASE
-              WHEN "% ROB 01" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("% ROB 01", '.', ''), ',', '.')::numeric
-              WHEN "% ROB 01" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("% ROB 01", ',', '.')::numeric
+              WHEN "% ROB 01" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 01", '.', ''), ',', '.')::numeric
+              WHEN "% ROB 01" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 01", ',', '.')::numeric
             END), 0) +
             COALESCE(AVG(CASE
-              WHEN "% ROB 02" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("% ROB 02", '.', ''), ',', '.')::numeric
-              WHEN "% ROB 02" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("% ROB 02", ',', '.')::numeric
+              WHEN "% ROB 02" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 02", '.', ''), ',', '.')::numeric
+              WHEN "% ROB 02" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 02", ',', '.')::numeric
             END), 0) +
             COALESCE(AVG(CASE
-              WHEN "% ROB 03" ~ '^\d{1,3}(\.\d{3})+(,\d*)?$' THEN REPLACE(REPLACE("% ROB 03", '.', ''), ',', '.')::numeric
-              WHEN "% ROB 03" ~ '^\d+([,.]\d+)?$'             THEN REPLACE("% ROB 03", ',', '.')::numeric
+              WHEN "% ROB 03" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 03", '.', ''), ',', '.')::numeric
+              WHEN "% ROB 03" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 03", ',', '.')::numeric
             END), 0)
           , 2) AS rob_mecanicos_pct,
           -- Cortes de purga por tipo
-          SUM(CASE WHEN n        ~ '^\d+([,.]\d+)?$' THEN REPLACE(n,        ',', '.')::numeric ELSE 0 END) AS n_total,
-          SUM(CASE WHEN s        ~ '^\d+([,.]\d+)?$' THEN REPLACE(s,        ',', '.')::numeric ELSE 0 END) AS s_total,
-          SUM(CASE WHEN l        ~ '^\d+([,.]\d+)?$' THEN REPLACE(l,        ',', '.')::numeric ELSE 0 END) AS l_total,
-          SUM(CASE WHEN t        ~ '^\d+([,.]\d+)?$' THEN REPLACE(t,        ',', '.')::numeric ELSE 0 END) AS t_total,
-          SUM(CASE WHEN mo       ~ '^\d+([,.]\d+)?$' THEN REPLACE(mo,       ',', '.')::numeric ELSE 0 END) AS mo_total,
-          SUM(CASE WHEN "JP (P+)" ~ '^\d+([,.]\d+)?$' THEN REPLACE("JP (P+)", ',', '.')::numeric ELSE 0 END) AS jp_total,
-          SUM(CASE WHEN "JM (P-)" ~ '^\d+([,.]\d+)?$' THEN REPLACE("JM (P-)", ',', '.')::numeric ELSE 0 END) AS jm_total,
+          SUM(CASE WHEN n         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(n,         ',', '.')::numeric ELSE 0 END) AS n_total,
+          SUM(CASE WHEN s         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(s,         ',', '.')::numeric ELSE 0 END) AS s_total,
+          SUM(CASE WHEN l         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(l,         ',', '.')::numeric ELSE 0 END) AS l_total,
+          SUM(CASE WHEN t         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(t,         ',', '.')::numeric ELSE 0 END) AS t_total,
+          SUM(CASE WHEN mo        ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(mo,        ',', '.')::numeric ELSE 0 END) AS mo_total,
+          SUM(CASE WHEN "JP (P+)" ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE("JP (P+)", ',', '.')::numeric ELSE 0 END) AS jp_total,
+          SUM(CASE WHEN "JM (P-)" ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE("JM (P-)", ',', '.')::numeric ELSE 0 END) AS jm_total,
           COUNT(*)                                                                                      AS registros
         FROM tb_produccion_oe
         WHERE TRIM("LOTE PRODUC") ~ '^[0-9]+$'
@@ -678,17 +699,55 @@ router.post('/narrativa-lotes', async (req, res) => {
   Hilo:\n${hilos || '   (sin datos)'}${provStr}`;
     }).join('\n\n');
 
+    // ── Inventario de disponibilidad de datos (para contexto explícito al prompt) ──
+    const tieneOE            = oeData.length > 0;
+    const tieneEficiencia    = oeData.some(r => r.efic_avg != null || r.efic_informada_avg != null);
+    const tieneCortesPurga   = oeData.some(r => (r.n_total ?? 0) + (r.s_total ?? 0) + (r.l_total ?? 0) + (r.t_total ?? 0) > 0);
+    const tieneRpmOE         = oeData.some(r => r.rpm_avg != null);
+    const tieneRpmCardaOE    = oeData.some(r => r.rpm_card_avg != null);
+    const tieneUsterCvm      = oeData.some(r => r.cvm_uster != null);
+    const tienePasador       = oeData.some(r => r.pasador != null);
+    const tieneEstiraje      = oeData.some(r => r.estiraje_avg != null);
+    const tieneCardasPrep    = oeData.some(r => r.rpm_carda_preparacion != null);
+    const tieneTenacidad     = rows.some(r => r.tenacidad != null);
+    const tieneElongacion    = rows.some(r => r.elongacion != null);
+    const tieneProveedores   = (proveedores || []).length > 0;
+
+    const inventarioDatos = [
+      `- Registros OE (tb_produccion_oe): ${tieneOE ? `DISPONIBLE — ${oeData.length} filas` : `AUSENTE — ningún registro coincide con lotes [${loteNums.join(', ')}] en el período`}`,
+      `- Eficiencia OE (EFIC CALCULADA / EFIC INFORMADA): ${tieneEficiencia ? 'DISPONIBLE' : 'AUSENTE — campos de eficiencia vacíos en los registros del período'}`,
+      `- RPM Open End: ${tieneRpmOE ? 'DISPONIBLE' : 'AUSENTE — columna rpm vacía en los registros'}`,
+      `- RPM Carda col "RPM CARD" (dentro de OE): ${tieneRpmCardaOE ? 'DISPONIBLE' : 'AUSENTE — columna "RPM CARD" no completada en planilla OE'}`,
+      `- Cortes de purga (N / S / L / T / MO / JP / JM): ${tieneCortesPurga ? 'DISPONIBLE' : 'AUSENTE — columnas de purga vacías en el período'}`,
+      `- CVm% Uster hilo (tb_uster_tbl): ${tieneUsterCvm ? 'DISPONIBLE' : 'AUSENTE — sin ensayos Uster cargados para estos lotes'}`,
+      `- Pasador (Sí/No) (tb_uster_par): ${tienePasador ? 'DISPONIBLE' : 'AUSENTE — sin parámetros Uster para estos lotes'}`,
+      `- Estiraje OE (tb_uster_par): ${tieneEstiraje ? 'DISPONIBLE' : 'AUSENTE — sin datos de estiraje en tb_uster_par'}`,
+      `- RPM Carda preparación (tb_produccion_carda): ${tieneCardasPrep ? 'DISPONIBLE' : 'AUSENTE — sin registros en tb_produccion_carda que coincidan con las fechas de producción OE'}`,
+      `- Tenacidad (Tensorapid): ${tieneTenacidad ? 'DISPONIBLE' : 'AUSENTE — ensayo pendiente (requiere ~24 h de humectación de la muestra)'}`,
+      `- Elongación (Tensorapid): ${tieneElongacion ? 'DISPONIBLE' : 'AUSENTE — ensayo pendiente (requiere ~24 h de humectación de la muestra)'}`,
+      `- Proveedores: ${tieneProveedores ? `DISPONIBLE — ${(proveedores||[]).length} entradas` : 'AUSENTE'}`,
+    ].join('\n');
+
     const modelName = modelReq || 'gemini-2.5-flash';
     const FALLBACK_MODELS = [modelName, 'gemini-2.0-flash', 'gemini-1.5-flash'];
     const genAI  = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 
-    const prompt = `Actuá como **Auditor de Calidad Textil** y **Experto en Hilandería Open End** de denim de alta velocidad.
+    const idiomaHeader = idiomaKey === 'pt-BR'
+      ? 'INSTRUÇÃO DE IDIOMA: Você DEVE responder INTEGRALMENTE em Português do Brasil (pt-BR). Todo o texto, títulos, seções, análises e recomendações devem estar em português. Use terminologia técnica têxtil: Lote, Passador, Estiragem, Urdume, Trama, Cortes, Eficiência, Tenacidade, Alongamento. NÃO use espanhol em nenhuma parte da resposta.'
+      : 'INSTRUCCIÓN DE IDIOMA: Respondé íntegramente en Español rioplatense técnico de hilandería.';
+
+    const prompt = `${idiomaHeader}
+
+Actuá como **Auditor de Calidad Textil** y **Experto en Hilandería Open End** de denim de alta velocidad.
 
 DATOS COMPARATIVOS:
 ${resumenLotes}${formatOEParaPrompt(oeData, lotesSorted) ? '\n\n' + formatOEParaPrompt(oeData, lotesSorted) : ''}
 
 JSON ESTRUCTURADO DE TRAZABILIDAD HILO (usar este bloque como fuente principal para correlacionar Proceso+Calidad):
 ${JSON.stringify(jsonAnalisisIA, null, 2)}
+
+INVENTARIO DE DATOS DISPONIBLES (verificá esto antes de redactar cada sección):
+${inventarioDatos}
 
 UMBRALES: Tenacidad hilo >16.0=APTO, 14.5-16.0=PRECAUCIÓN, <14.5=CRÍTICO | Elongación <7.5%=RIESGO URDIDORA | Neps+200% >700=RIESGO ÍNDIGO | CVm% >13=IRREGULAR | STR fibra >27=ÓPTIMO
 
@@ -705,6 +764,7 @@ REGLAS DE AUDITORÍA:
 - Si MIC > 4.7: advertir "cargado al grueso". Si STR supera la matriz por mucho: decir "va sobrado de fuerza".
 - Usar vocabulario natural de hilandería.
 - Si **tenacidad o elongación vienen como null**, NO marques el lote como Rechazado por eso solo. Aclará: "Datos de Tensorapid pendientes — ensayo tarda 24 h por humectación." y mantener PRECAUCIÓN hasta que lleguen.
+- **REGLA CRÍTICA — DATOS FALTANTES**: Cuando una fuente figure como AUSENTE en el INVENTARIO DE DATOS, mencioná **exactamente cuál falta y la causa probable** indicada en el inventario. PROHIBIDO usar frases vagas como "ausencia de datos cruciales" o "datos insuficientes". Usá siempre el nombre concreto, por ejemplo: «Sin registros OE para el período → lotes fuera del rango de fecha seleccionado» / «CVm% Uster ausente → ensayo Uster no cargado aún» / «Tensorapid pendiente → ensayo de 24 h por humectación de la muestra» / «RPM Carda (OE) ausente → columna "RPM CARD" sin completar en planilla OE».
 
 === FORMATO DE SALIDA (Markdown profesional) ===
 Devolvé **Markdown bien estructurado**: usá encabezados (\`#\`, \`##\`, \`###\`), listas con \`-\`, **negritas** para destacar valores y veredictos, tablas Markdown cuando compares lotes, y emojis al inicio de cada sección. NO escribas HTML. NO envuelvas en \`\`\`markdown.
@@ -794,13 +854,23 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
         // Persistir en caché (best-effort)
         try {
           await pool.query(
-            `INSERT INTO tb_narrativa_cache (cache_key, lotes, fecha, formato, modelo, data_hash, narrativa, json_analisis_ia, modelo_usado)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-             ON CONFLICT (cache_key) DO UPDATE SET narrativa=EXCLUDED.narrativa, json_analisis_ia=EXCLUDED.json_analisis_ia, modelo_usado=EXCLUDED.modelo_usado, last_hit_at=NOW()`,
-            [cacheKey, lotesKey, fecha || null, formatoKey, modeloKey, dataHash, narrativaCompleta, jsonAnalisisIA, mName]
+            `INSERT INTO tb_narrativa_cache (cache_key, lotes, fecha, formato, modelo, data_hash, narrativa, json_analisis_ia, modelo_usado, token_info)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+             ON CONFLICT (cache_key) DO UPDATE SET narrativa=EXCLUDED.narrativa, json_analisis_ia=EXCLUDED.json_analisis_ia, modelo_usado=EXCLUDED.modelo_usado, token_info=EXCLUDED.token_info, last_hit_at=NOW()`,
+            [cacheKey, lotesKey, fecha || null, formatoKey, modeloKey, dataHash, narrativaCompleta, jsonAnalisisIA, mName, JSON.stringify(tokenInfo)]
           );
         } catch (e) {
           console.warn('No pude guardar en cache:', e.message);
+        }
+        // Registrar en historial de costos (best-effort)
+        try {
+          await pool.query(
+            `INSERT INTO tb_narrativa_log (lotes, fecha_corte, formato, idioma, modelo, tokens_entrada, tokens_salida, tokens_total, costo_usd, fuente, desde_cache)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'gemini',FALSE)`,
+            [lotesKey, fecha || null, formatoKey, idiomaKey, mName, tokensEntrada, tokensSalida, tokensTotal, costoUSD.toFixed(6)]
+          );
+        } catch (e) {
+          console.warn('No pude registrar en log de costos:', e.message);
         }
         return res.json({ success: true, narrativa: narrativaCompleta, fuente: 'gemini', modelo: mName, jsonAnalisisIA, tokenInfo, ...(modelUsado && { avisoModelo: `Gemini respondió con modelo alternativo: ${mName}` }), ...buildNarrativaStructuredFields(narrativaCompleta) });
       } catch (geminiErr) {
@@ -825,6 +895,70 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
 
   } catch (err) {
     console.error('Error narrativa-lotes:', err.message);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ─────────── Historial de costos IA ───────────
+router.get('/narrativa-costos', async (req, res) => {
+  try {
+    // Resumen por día
+    const resumenDia = await pool.query(`
+      SELECT
+        DATE(created_at) AS dia,
+        COUNT(*)         AS llamadas,
+        SUM(tokens_entrada) AS total_tokens_entrada,
+        SUM(tokens_salida)  AS total_tokens_salida,
+        SUM(tokens_total)   AS total_tokens,
+        SUM(costo_usd)      AS costo_usd
+      FROM tb_narrativa_log
+      GROUP BY DATE(created_at)
+      ORDER BY dia DESC
+      LIMIT 90
+    `);
+
+    // Resumen por modelo
+    const resumenModelo = await pool.query(`
+      SELECT
+        modelo,
+        COUNT(*)         AS llamadas,
+        SUM(tokens_entrada) AS total_tokens_entrada,
+        SUM(tokens_salida)  AS total_tokens_salida,
+        SUM(tokens_total)   AS total_tokens,
+        SUM(costo_usd)      AS costo_usd
+      FROM tb_narrativa_log
+      GROUP BY modelo
+      ORDER BY costo_usd DESC
+    `);
+
+    // Totales globales
+    const totales = await pool.query(`
+      SELECT
+        COUNT(*)         AS llamadas_totales,
+        SUM(tokens_total)   AS tokens_totales,
+        SUM(costo_usd)      AS costo_total_usd,
+        MIN(created_at)     AS primera_llamada,
+        MAX(created_at)     AS ultima_llamada
+      FROM tb_narrativa_log
+    `);
+
+    // Detalle últimas 200 llamadas
+    const detalle = await pool.query(`
+      SELECT id, lotes, fecha_corte, formato, idioma, modelo,
+             tokens_entrada, tokens_salida, tokens_total, costo_usd, fuente, desde_cache, created_at
+      FROM tb_narrativa_log
+      ORDER BY created_at DESC
+      LIMIT 200
+    `);
+
+    res.json({
+      totales: totales.rows[0],
+      resumenPorDia: resumenDia.rows,
+      resumenPorModelo: resumenModelo.rows,
+      detalle: detalle.rows,
+    });
+  } catch (err) {
+    console.error('Error narrativa-costos:', err.message);
     res.status(500).json({ success: false, error: err.message });
   }
 });

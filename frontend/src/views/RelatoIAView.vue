@@ -265,7 +265,7 @@ const narrativaHtml = computed(() => {
 
 // ── TOC: extrae H1/H2 después de renderizar ──
 const toc = ref([])
-let scrollEl = null // contenedor con scroll real (main.overflow-auto) o window
+let scrollEl = null // contenedor con scroll real (para highlight activo en TOC)
 
 function findScrollParent(el) {
   let p = el?.parentElement
@@ -279,7 +279,7 @@ function findScrollParent(el) {
 
 function buildToc() {
   if (!docRef.value) return
-  // (Re)detectar el contenedor con scroll real ahora que el artículo existe
+  // Detectar scroll container DESPUÉS de que docRef existe
   const newScrollEl = findScrollParent(docRef.value)
   if (newScrollEl !== scrollEl) {
     if (scrollEl) scrollEl.removeEventListener('scroll', onScroll)
@@ -296,20 +296,13 @@ function buildToc() {
 function scrollTo(id) {
   const el = document.getElementById(id)
   if (!el) return
-  if (scrollEl && scrollEl !== window) {
-    const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop - 80
-    scrollEl.scrollTo({ top, behavior: 'smooth' })
-  } else {
-    const top = el.getBoundingClientRect().top + window.scrollY - 80
-    window.scrollTo({ top, behavior: 'smooth' })
-  }
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   activeId.value = id
 }
 
 function onScroll() {
-  if (!toc.value.length || !scrollEl) return
-  const containerTop = scrollEl === window ? 0 : scrollEl.getBoundingClientRect().top
-  const threshold = containerTop + 130
+  if (!toc.value.length) return
+  const threshold = 140
   let current = toc.value[0].id
   for (const t of toc.value) {
     const el = document.getElementById(t.id)
@@ -405,28 +398,25 @@ async function exportarPDF() {
     const scale = usableW / imgW
     const scaledH = imgH * scale
 
-    // Recopilar posiciones (en puntos PDF) de todos los elementos bloque
-    // para cortar ENTRE elementos, nunca a través de ellos
-    function offsetTopRelative(el) {
-      let top = 0
-      let node = el
-      while (node && node !== docRef.value) {
-        top += node.offsetTop
-        node = node.offsetParent
-      }
-      return top
-    }
-
-    const blockEls = docRef.value.querySelectorAll('h1,h2,h3,h4,h5,p,li,tr,pre,blockquote,thead,tbody')
-    const elementTops = new Set()
+    // Recopilar el BOTTOM (en puntos PDF) de cada elemento bloque.
+    // Cortamos DESPUÉS del último elemento que cabe completo → nunca partimos
+    // a través de una fila de tabla ni de un párrafo.
+    // getBoundingClientRect() funciona correctamente con <tr>/<td> (offsetTop no).
+    const parentRect = docRef.value.getBoundingClientRect()
+    const blockEls = docRef.value.querySelectorAll(
+      'h1,h2,h3,h4,h5,p,li,tr,pre,blockquote'
+    )
+    const elementBottoms = []
     blockEls.forEach(el => {
-      const topCSS = offsetTopRelative(el)
-      const topPDF = topCSS * PIX_RATIO * scale
-      if (topPDF > 10) elementTops.add(Math.round(topPDF))
+      const r = el.getBoundingClientRect()
+      const bottomCSS = r.bottom - parentRect.top
+      const bottomPDF = bottomCSS * PIX_RATIO * scale
+      if (bottomPDF > 10) elementBottoms.push(Math.round(bottomPDF))
     })
-    const sortedTops = [...elementTops].sort((a, b) => a - b)
+    elementBottoms.sort((a, b) => a - b)
 
-    // Construir cortes de página respetando límites de elementos
+    // Construir cortes de página: el corte cae en el bottom del último elemento
+    // que cabe completo antes de idealEnd (margen mínimo 40pt desde inicio de página).
     const pageSlices = []
     let pageStart = 0
 
@@ -436,8 +426,7 @@ async function exportarPDF() {
         pageSlices.push({ startPt: pageStart, endPt: scaledH })
         break
       }
-      // Último elemento que empieza antes del límite de página (margen mínimo 40pt desde inicio)
-      const candidates = sortedTops.filter(t => t > pageStart + 40 && t <= idealEnd)
+      const candidates = elementBottoms.filter(b => b > pageStart + 40 && b <= idealEnd)
       const breakAt = candidates.length > 0 ? candidates[candidates.length - 1] : idealEnd
       pageSlices.push({ startPt: pageStart, endPt: breakAt })
       pageStart = breakAt
@@ -685,6 +674,7 @@ async function cargar(force = false) {
         fecha: fechaInput.value,
         formato: formato.value,
         forceRefresh: force,
+        idioma: localStorage.getItem('stc_locale') || 'es',
       })
     })
     const narrData = await narrRes.json()
@@ -707,9 +697,6 @@ async function cargar(force = false) {
 
 // ── Auto-cargar si vienen query params ──
 onMounted(() => {
-  // Detectar contenedor con scroll real (en este shell es <main class="overflow-auto">)
-  scrollEl = findScrollParent(docRef.value)
-  scrollEl.addEventListener('scroll', onScroll, { passive: true })
   if (lotesInput.value.trim() && fechaInput.value) {
     cargar(false)
   }
@@ -739,7 +726,7 @@ watch(() => route.query, (q) => {
 .narrativa-prose :deep(.fuente-local)  { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
 .narrativa-prose :deep(h1) {
   font-size: 1.65rem; font-weight: 800; color: #0f172a; margin: 0 0 .8rem;
-  letter-spacing: -.01em; padding-bottom: .5rem; border-bottom: 2px solid #e2e8f0;
+  letter-spacing: -.01em; padding-bottom: .5rem; border-bottom: 2px solid #e2e8f0; scroll-margin-top: 100px;
 }
 .narrativa-prose :deep(h2) {
   font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 1.6rem 0 .7rem;

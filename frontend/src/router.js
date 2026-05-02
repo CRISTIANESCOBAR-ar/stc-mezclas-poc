@@ -107,6 +107,12 @@ const routes = [
     name: 'stats',
     component: () => import('./components/UsterStatsPage.vue'),
     meta: { title: 'Gráficos Ensayos' }
+  },
+  {
+    path: '/narrativa-costos',
+    name: 'narrativa-costos',
+    component: () => import('./views/NarrativaCostosView.vue'),
+    meta: { title: 'Reporte Costos IA' }
   }
 ]
 

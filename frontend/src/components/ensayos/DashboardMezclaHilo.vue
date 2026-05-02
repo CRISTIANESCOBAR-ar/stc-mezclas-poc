@@ -984,6 +984,7 @@ async function copiarPayloadNarrativa() {
 }
 
 function buildNarrativaPayload(modo) {
+  const idioma = localStorage.getItem('stc_locale') || 'es'
   return {
     rows: rows.value,
     proveedores: proveedores.value,
@@ -993,6 +994,7 @@ function buildNarrativaPayload(modo) {
     fechaCorte: fechaCorte.value,
     fecha: fechaCorte.value,
     formato: narrativaFormato.value,
+    idioma,
     modo,
   }
 }
