@@ -194,6 +194,7 @@
           <!-- Dropdown Reportes -->
                       <div
               v-if="reportsOpen"
+              ref="reportsDropdown"
               class="reports-dropdown fixed bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-[130] w-64 flex flex-col py-1"
               :style="reportsDropdownStyle"
             >
@@ -249,7 +250,7 @@
       <div class="flex-1"></div>
 
       <!-- Selector de idioma -->
-      <div class="group relative w-full flex items-center justify-center px-1.5 mb-1">
+      <div class="group relative w-full flex items-center justify-center px-1.5 mb-1" ref="langAnchor">
         <button
           @click="langOpen = !langOpen"
           class="w-full flex items-center justify-center h-10 rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-700 transition-all"
@@ -261,6 +262,7 @@
         <!-- Dropdown idiomas -->
         <div
           v-if="langOpen"
+          ref="langDropdown"
           class="absolute left-full bottom-0 ml-3 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-[130] min-w-[150px]"
         >
           <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
@@ -283,7 +285,7 @@
     </aside>
 
     <!-- Contenido principal -->
-    <main class="flex-1 overflow-auto" @click="langOpen = false">
+    <main class="flex-1 overflow-auto" @click="langOpen = false; reportsOpen = false">
       <router-view />
     </main>
 
@@ -302,7 +304,10 @@ const currentLocale = locale;
 const langOpen = ref(false);
   const reportsOpen = ref(false);
   const reportsAnchor = ref(null);
+  const reportsDropdown = ref(null);
   const reportsDropdownStyle = ref({});
+  const langAnchor = ref(null);
+  const langDropdown = ref(null);
   const reportRoutes = ['/resumen', '/resumen-cardas', '/resumen-semanal-hilanderia', '/analisis-calidad-fibra', '/informe-auditoria-lote', '/resumen-diario', '/dashboard-mezcla', '/stats'];
   const isReportRoute = computed(() => reportRoutes.includes($route.path));
 
@@ -337,13 +342,33 @@ const langOpen = ref(false);
   function onWindowResize() {
     if (reportsOpen.value) computeReportsPosition();
   }
+  function onDocumentClick(e) {
+    if (reportsOpen.value) {
+      const anchor = reportsAnchor.value;
+      const drop = reportsDropdown.value;
+      if (
+        !(anchor && anchor.contains(e.target)) &&
+        !(drop && drop.contains(e.target))
+      ) reportsOpen.value = false;
+    }
+    if (langOpen.value) {
+      const anchor = langAnchor.value;
+      const drop = langDropdown.value;
+      if (
+        !(anchor && anchor.contains(e.target)) &&
+        !(drop && drop.contains(e.target))
+      ) langOpen.value = false;
+    }
+  }
   onMounted(() => {
     window.addEventListener('resize', onWindowResize);
     window.addEventListener('scroll', onWindowResize, true);
+    document.addEventListener('click', onDocumentClick, true);
   });
   onBeforeUnmount(() => {
     window.removeEventListener('resize', onWindowResize);
     window.removeEventListener('scroll', onWindowResize, true);
+    document.removeEventListener('click', onDocumentClick, true);
   });
 
   const LANG_OPTIONS = [

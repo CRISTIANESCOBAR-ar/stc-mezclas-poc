@@ -12,7 +12,8 @@ router.get('/', async (req, res) => {
     const { rows } = await pool.query(`
       SELECT "LOTE_FIAC", "PESO", "MISTURA", "SEQ", "DT_ENTRADA_PROD", "HR_ENTRADA_PROD",
              "SCI", "MST", "MIC", "MAT", "UHML", "UI", "SF", 
-             "STR", "ELG", "RD", "PLUS_B", "TIPO", "TrCNT", "TrAR", "TRID"
+             "STR", "ELG", "RD", "PLUS_B", "TIPO",
+             "TrCNT" AS "TRCNT", "TrAR" AS "TRAR", "TRID"
       FROM tb_calidad_fibra
       WHERE "LOTE_FIAC" IS NOT NULL AND "LOTE_FIAC" != ''
         AND "TIPO_MOV" = 'MIST'
@@ -48,8 +49,8 @@ router.get('/mistura', async (req, res) => {
         ${sqlParseNumber('"ELG"')} AS ELG,
         ${sqlParseNumber('"RD"')} AS RD,
         ${sqlParseNumber('"PLUS_B"')} AS PLUS_B,
-        ${sqlParseNumber('"TrCNT"')} AS "TrCNT",
-        ${sqlParseNumber('"TrAR"')} AS "TrAR",
+        ${sqlParseNumber('"TrCNT"')} AS "TRCNT",
+        ${sqlParseNumber('"TrAR"')} AS "TRAR",
         ${sqlParseNumber('"TRID"')} AS "TRID",
         ${sqlParseNumber('"PESO"')} AS PESO
       FROM tb_calidad_fibra

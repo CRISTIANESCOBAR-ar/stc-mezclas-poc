@@ -155,7 +155,7 @@
 										<td class="px-2 py-[0.3rem] border border-slate-200 text-center text-xs"
 											@click.stop>
 											<input v-if="item.testnr" type="text" v-model="item.usterTestnr"
-												:placeholder="item.saved ? '05410' : ''" maxlength="5"
+												:placeholder="''" maxlength="5"
 												inputmode="numeric" :readonly="item.saved && !item.isEditing"
 												:ref="el => setInputRef(el, item.testnr)"
 												@focus="handleUsterInputFocus(item)"
@@ -202,7 +202,7 @@
 													</button>
 												</div>
 												<!-- Botones Guardar y Cancelar (si está editando o no está guardado) -->
-												<div v-else-if="item.testnr && item.usterTestnr"
+												<div v-else-if="item.testnr && (item.isEditing || item.usterTestnr)"
 													class="flex gap-1 justify-center">
 													<button @click="saveToOracle(item)" :disabled="isSaving"
 														:ref="el => setSaveButtonRef(el, item.testnr)"
@@ -240,6 +240,13 @@
 									</tr>
 								</tbody>
 							</table>
+						</div>
+						<!-- Ver más -->
+						<div v-if="filteredTotal > displayLimit" class="flex justify-center mt-1">
+							<button @click="loadMore"
+								class="text-xs text-indigo-600 hover:text-indigo-800 px-3 py-1 rounded border border-indigo-200 hover:border-indigo-400 transition-colors">
+								Ver más ({{ displayLimit }} / {{ filteredTotal }})
+							</button>
 						</div>
 						<div class="flex-shrink-0 flex items-center gap-2 mt-3">
 							<div class="text-sm font-medium text-slate-600">{{ tensoScanStatus }}</div>
@@ -351,7 +358,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import Swal from 'sweetalert2'
 
 // UI state
@@ -365,6 +372,11 @@ const isScanning = ref(false)
 const isSaving = ref(false)
 const isDeleting = ref(false)
 const maxRows = 10
+const PAGE_SIZE = 100
+const displayLimit = ref(PAGE_SIZE)
+
+// Bandera de ciclo de vida para cancelar operaciones async al desmontar
+let _mounted = true
 
 // filtro UI: 'all' | 'saved' | 'not'
 // Por defecto enfocamos en los ensayos no guardados para que el usuario cargue/guarde rápidamente
@@ -406,11 +418,25 @@ const tensoDisplayList = computed(() => {
 		return out
 	}
 
-	if (filtered.length >= maxRows) return filtered
-	out.push(...filtered)
+	// Limitar a displayLimit para no renderizar cientos de filas a la vez
+	const limited = filtered.slice(0, displayLimit.value)
+	if (limited.length >= maxRows) return limited
+	out.push(...limited)
 	while (out.length < maxRows) out.push({ testnr: '', hasPar: false, hasTbl: false, nomcount: '', maschnr: '' })
 	return out
 })
+
+// Total de items filtrados (para saber si hay más que cargar)
+const filteredTotal = computed(() => {
+	const src = Array.isArray(tensoScanList.value) ? tensoScanList.value : []
+	if (filterMode.value === 'all') return src.length
+	const showSaved = filterMode.value === 'saved'
+	return src.filter(item => showSaved ? !!item.saved : !item.saved).length
+})
+
+function loadMore() {
+	displayLimit.value += PAGE_SIZE
+}
 
 // Handlers para mantener comportamiento de filtros
 // filtros manejados por filterMode (radio)
@@ -441,9 +467,9 @@ function recalcStatus() {
 	tensoScanStatus.value = formatScanStatus(total, savedCount, filterMode.value)
 }
 
-// Cuando cambia el modo de filtro o la lista de ensayos, actualizar el label inmediatamente
-watch(filterMode, () => recalcStatus())
-watch(tensoScanList, () => recalcStatus(), { deep: true })
+// Cuando cambia el modo de filtro o el tamaño de la lista, actualizar el label y resetear paginación
+watch(filterMode, () => { displayLimit.value = PAGE_SIZE; recalcStatus() })
+watch(() => tensoScanList.value.length, () => recalcStatus())
 
 // **VALIDACIÓN 1: Verificar que el ensayo Uster existe en la base de datos**
 async function validateUsterExists(usterTestnr) {
@@ -1328,9 +1354,19 @@ function extractTsvCell(text, rowIndex, colIndex) {
 // scan directory handle for .PAR/.TBL files
 async function scanTensoDirectory(dirHandle) {
 	const map = {}
+	let _scanCount = 0
 	try {
 		isScanning.value = true
 		for await (const [name, handle] of dirHandle.entries()) {
+			if (!_mounted) return  // componente desmontado: abortar scan
+			_scanCount++
+			// Cada 50 archivos cedemos el hilo principal al navegador (macrotask).
+			// Esto permite que los clicks de navegación se procesen sin esperar
+			// a que terminen todas las microtasks del loop.
+			if (_scanCount % 50 === 0) {
+				await new Promise(r => setTimeout(r, 0))
+				if (!_mounted) return  // re-verificar tras ceder
+			}
 			if (!handle || handle.kind !== 'file') continue
 			const ln = String(name || '').toLowerCase()
 			if (!(ln.endsWith('.par') || ln.endsWith('.tbl'))) continue
@@ -1359,10 +1395,11 @@ async function scanTensoDirectory(dirHandle) {
 			}
 			if (ln.endsWith('.tbl')) { map[t].hasTbl = true; map[t].tblHandle = handle }
 		}
-	} catch (err) { console.warn('scanTensoDirectory error', err) }
-	finally { isScanning.value = false }
-
+  } catch (err) { console.warn('scanTensoDirectory error', err) }
+  finally { if (_mounted) isScanning.value = false }
 	const totalFound = Object.values(map).length
+
+  if (!_mounted) return  // navegó a otra vista antes de terminar
 	// Consultar BD inmediatamente para obtener estado guardado antes de renderizar la lista
 	try {
 		const backendUrl = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
@@ -1395,49 +1432,13 @@ async function scanTensoDirectory(dirHandle) {
 
 	// ahora asignar la lista ya con flags de "saved"
 	tensoScanList.value = Object.values(map).sort((a, b) => a.testnr.localeCompare(b.testnr))
+	displayLimit.value = PAGE_SIZE  // resetear paginación al escanear
 	// estado inicial con números si están disponibles
 	const savedCnt = Object.values(map).reduce((acc, it) => acc + (it.saved ? 1 : 0), 0)
 	tensoScanStatus.value = formatScanStatus(totalFound, savedCnt, filterMode.value)
 
-	// Verificar cuáles ensayos ya están guardados en la BD
-	if (tensoScanList.value.length > 0) {
-		try {
-			const backendUrl = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
-				? 'http://localhost:3001'
-				: ''
-			const endpoint = '/api/tensorapid/status'
-			const testnrs = tensoScanList.value.map(item => item.testnr)
-
-			const response = await fetch(endpoint, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ testnrs }),
-				credentials: 'include'
-			})
-
-			if (response.ok) {
-				const data = await response.json()
-				const existingSet = new Set(data.existing || [])
-				const details = data.details || {}
-
-				// Marcar ensayos guardados y cargar USTER_TESTNR desde BD
-				tensoScanList.value.forEach(item => {
-					item.saved = existingSet.has(item.testnr)
-					item.isEditing = false // Asegurar que no esté en modo edición
-					item.usterTestnr = padUsterTestnr(details[item.testnr]?.usterTestnr || '')
-				})
-
-				// Actualizar texto de estado con números exactos después de consultar BD
-				const total = tensoScanList.value.length
-				const savedCount = tensoScanList.value.reduce((acc, it) => acc + (it.saved ? 1 : 0), 0)
-				tensoScanStatus.value = formatScanStatus(total, savedCount, filterMode.value)
-			}
-		} catch (err) {
-			console.warn('Error checking tensorapid status:', err)
-		}
-	}
-
-	try { localStorage.setItem('tenso.scanSnapshot', JSON.stringify(tensoScanList.value)) } catch (err) { console.warn('persist snapshot failed', err) }
+  if (!_mounted) return
+  setTimeout(() => { try { localStorage.setItem('tenso.scanSnapshot', JSON.stringify(tensoScanList.value)) } catch (err) { console.warn('persist snapshot failed', err) } }, 0)
 }
 
 // Select folder (File System Access API) or fallback to hidden input
@@ -1523,55 +1524,27 @@ async function onTensoFolderInputChangeLocal(e) {
 		const savedCntIn = tensoScanList.value.reduce((acc, it) => acc + (it.saved ? 1 : 0), 0)
 		tensoScanStatus.value = formatScanStatus(totalIn, savedCntIn, filterMode.value)
 
-		// Verificar cuáles ensayos ya están guardados en la BD
-		if (tensoScanList.value.length > 0) {
-			try {
-				const backendUrl = (typeof window !== 'undefined' && window.location.hostname === 'localhost')
-					? 'http://localhost:3001'
-					: ''
-				const endpoint = '/api/tensorapid/status'
-				const testnrs = tensoScanList.value.map(item => item.testnr)
-
-				const response = await fetch(endpoint, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ testnrs }),
-					credentials: 'include'
-				})
-
-				if (response.ok) {
-					const data = await response.json()
-					const existingSet = new Set(data.existing || [])
-
-					// Marcar ensayos guardados y agregar campo usterTestnr vacío
-					tensoScanList.value.forEach(item => {
-						item.saved = existingSet.has(item.testnr)
-						item.isEditing = false // Asegurar que no esté en modo edición
-						item.usterTestnr = ''
-					})
-				}
-			} catch (err) {
-				console.warn('Error checking tensorapid status:', err)
-			}
-		}
-
 		try { localStorage.setItem('tenso.scanSnapshot', JSON.stringify(tensoScanList.value)) } catch (err) { console.warn('persist snapshot failed', err) }
 	} catch (err) { console.warn('onTensoFolderInputChangeLocal error', err) }
 }
 
 onMounted(() => {
 	if (typeof window !== 'undefined' && typeof window.document !== 'undefined') window.document.title = 'TensoRapid'
-	// try to load existing snapshot from localStorage
-	try {
-		const raw = localStorage.getItem('tenso.scanSnapshot')
-		if (raw) {
-			const parsed = JSON.parse(raw)
-			if (Array.isArray(parsed)) {
-				tensoScanList.value = parsed
-				tensoScanStatus.value = formatScanStatus(parsed.length, null, filterMode.value)
+	// Cargar snapshot de localStorage de forma diferida (setTimeout) para no bloquear
+	// el hilo principal durante el primer render y permitir que la navegación responda.
+	setTimeout(() => {
+		if (!_mounted) return
+		try {
+			const raw = localStorage.getItem('tenso.scanSnapshot')
+			if (raw) {
+				const parsed = JSON.parse(raw)
+				if (Array.isArray(parsed)) {
+					tensoScanList.value = parsed
+					tensoScanStatus.value = formatScanStatus(parsed.length, null, filterMode.value)
+				}
 			}
-		}
-	} catch { /* ignore */ }
+		} catch { /* ignore */ }
+	}, 0)
 
 	// Ensure preview pane is empty on first render (no preloaded file/tbl data)
 	try {
@@ -1600,6 +1573,10 @@ onMounted(() => {
 		}
 	})()
 })
+onUnmounted(() => {
+  _mounted = false
+})
+
 </script>
 
 <style scoped>

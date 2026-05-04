@@ -1310,6 +1310,13 @@ async function updateTblFileWithTitulos() {
     // Reconstruir el contenido completo del archivo
     const newContent = lines.join(lineEnding)
 
+    // Asegurar permiso de escritura una sola vez por sesión (evita el diálogo nativo en cada guardado)
+    const hasWritePermission = await verifyPermission(handle, 'readwrite')
+    if (!hasWritePermission) {
+      console.warn('No se pudo obtener permiso de escritura para el archivo .TBL')
+      return false
+    }
+
     // Escribir de vuelta al archivo usando File System Access API
     const writable = await handle.createWritable()
     await writable.write(newContent)

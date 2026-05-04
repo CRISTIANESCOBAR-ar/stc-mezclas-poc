@@ -66,12 +66,16 @@ router.post('/status', async (req, res) => {
     return res.status(400).json({ error: 'testnrs required' })
   }
   try {
-    const placeholders = testnrs.map((_, i) => `$${i + 1}`).join(',')
     const result = await query(
-      `SELECT testnr FROM tb_tensorapid_par WHERE testnr IN (${placeholders})`,
-      testnrs
+      `SELECT testnr, uster_testnr FROM tb_tensorapid_par WHERE testnr = ANY($1::text[])`,
+      [testnrs]
     )
-    res.json({ existing: result.rows.map(r => r.testnr) })
+    const existing = result.rows.map(r => r.testnr)
+    const details = {}
+    result.rows.forEach(r => {
+      details[r.testnr] = { usterTestnr: r.uster_testnr || '' }
+    })
+    res.json({ existing, details })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

@@ -43,7 +43,7 @@ export function formatOEParaPrompt(oeData, lotesSorted) {
         `  RPM: ${f0(refRow.rpm_avg)}→${f0(actRow.rpm_avg)}` +
         `  RPM-Card: ${f0(refRow.rpm_card_avg)}→${f0(actRow.rpm_card_avg)}\n` +
         `    Nat: ${n(refRow.nat_total)}→${n(actRow.nat_total)}(${pctStr(refRow.nat_total, actRow.nat_total)})` +
-        `  Mec%: ${f1(refRow.rob_mecanicos_pct)}→${f1(actRow.rob_mecanicos_pct)}` +
+        `  ROB%: ${f1(refRow.rob_mecanicos_pct)}→${f1(actRow.rob_mecanicos_pct)}` +
         `  N: ${n(refRow.n_total)}→${n(actRow.n_total)}` +
         `  S: ${n(refRow.s_total)}→${n(actRow.s_total)}` +
         `  L: ${n(refRow.l_total)}→${n(actRow.l_total)}` +
@@ -60,7 +60,7 @@ export function formatOEParaPrompt(oeData, lotesSorted) {
         `  EficInf: ${f1(r.efic_informada_avg)}%` +
         `  EficCalc: ${f1(r.efic_avg)}%` +
         `  RPM: ${f0(r.rpm_avg)}  RPM-Card: ${f0(r.rpm_card_avg)}\n` +
-        `    Nat: ${n(r.nat_total)}  Mec%: ${f1(r.rob_mecanicos_pct)}` +
+        `    Nat: ${n(r.nat_total)}  ROB%: ${f1(r.rob_mecanicos_pct)}` +
         `  N: ${n(r.n_total)} S: ${n(r.s_total)} L: ${n(r.l_total)}` +
         `  T: ${n(r.t_total)} MO: ${n(r.mo_total)} JP: ${n(r.jp_total)} JM: ${n(r.jm_total)}`
       );

@@ -473,18 +473,20 @@ router.post('/narrativa-lotes', async (req, res) => {
             ELSE 0
           END) AS nat_total,
           ROUND(
-            COALESCE(AVG(CASE
-              WHEN "% ROB 01" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 01", '.', ''), ',', '.')::numeric
-              WHEN "% ROB 01" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 01", ',', '.')::numeric
-            END), 0) +
-            COALESCE(AVG(CASE
-              WHEN "% ROB 02" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 02", '.', ''), ',', '.')::numeric
-              WHEN "% ROB 02" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 02", ',', '.')::numeric
-            END), 0) +
-            COALESCE(AVG(CASE
-              WHEN "% ROB 03" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 03", '.', ''), ',', '.')::numeric
-              WHEN "% ROB 03" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 03", ',', '.')::numeric
-            END), 0)
+            (
+              COALESCE(AVG(CASE
+                WHEN "% ROB 01" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 01", '.', ''), ',', '.')::numeric
+                WHEN "% ROB 01" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 01", ',', '.')::numeric
+              END), 0) +
+              COALESCE(AVG(CASE
+                WHEN "% ROB 02" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 02", '.', ''), ',', '.')::numeric
+                WHEN "% ROB 02" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 02", ',', '.')::numeric
+              END), 0) +
+              COALESCE(AVG(CASE
+                WHEN "% ROB 03" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 03", '.', ''), ',', '.')::numeric
+                WHEN "% ROB 03" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 03", ',', '.')::numeric
+              END), 0)
+            ) / 3.0
           , 2) AS rob_mecanicos_pct,
           -- Cortes de purga por tipo
           SUM(CASE WHEN n         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(n,         ',', '.')::numeric ELSE 0 END) AS n_total,
@@ -812,7 +814,9 @@ OBLIGATORIO: Renderizá los datos de proveedores **EXACTAMENTE** como tabla Mark
 _Para cada Ne (## Ne X — [Aplicación]): proceso por etapa con ✅/⚠️, estado (Aprobado / Precaución / Rechazado), desvíos. Indicá Pasador (SÍ/NO) y Estiraje cuando estén. Cerrá con \`> 💬\` comentario de planta._
 
 ## 🔗 Correlación con Producción OE
-_Por cada máquina: Título (Ne), Pasador, Estiraje. Eficiencia EficInf vs EficCalc, RPM OE y RPM Carda. Cortes Naturales ref→actual con %. %ROB mecánicos. Cortes de purga (N/S/L/T/MO/JP/JM) identificando dominante y causa probable._
+_Por cada máquina: Título (Ne), Pasador, Estiraje. Eficiencia EficInf vs EficCalc, RPM OE y RPM Carda. Cortes Naturales ref→actual con %._
+_ROB% es el promedio de los 3 robots empalmadores Rieter R60 en escala 0–100%. Umbrales de desempeño: EXCELENTE ≥90% | BUENO 80–89% | ACEPTABLE 70–79% | BAJO 60–69% | CRÍTICO <60%. Indicar si el valor es promedio de los 3 turnos del día y valorar el desempeño con la escala anterior._
+_Cortes de purga (N/S/L/T/MO/JP/JM) identificando dominante y causa probable._
 
 ## 🛠 Plan de Acción Priorizado (24 h)
 - ...
