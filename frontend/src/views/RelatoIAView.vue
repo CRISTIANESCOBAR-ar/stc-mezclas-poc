@@ -381,10 +381,10 @@ async function exportarPDF() {
     const FOOTER_H = 22       // espacio reservado para pie de página
     const usableW = A4_W - MARGIN * 2
     const usableH = A4_H - MARGIN * 2 - FOOTER_H
-    const PIX_RATIO = 2
+    const PIX_RATIO = 1.5
 
     const dataUrl = await toPng(docRef.value, {
-      quality: 1,
+      quality: 0.92,
       pixelRatio: PIX_RATIO,
       backgroundColor: '#ffffff',
       style: { borderRadius: '0' },
@@ -451,7 +451,7 @@ async function exportarPDF() {
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(img, 0, -srcY)
 
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', MARGIN, MARGIN, usableW, sliceHPt)
+      pdf.addImage(canvas.toDataURL('image/jpeg', 0.85), 'JPEG', MARGIN, MARGIN, usableW, sliceHPt)
 
       // Pie de página: línea separadora + "Página X de Y"
       const lineY  = A4_H - MARGIN - 10   // línea separadora

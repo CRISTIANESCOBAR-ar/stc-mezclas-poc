@@ -535,9 +535,10 @@ function onTituloInput(srcIndex, ev) {
 async function selectFolder() {
   try {
     if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
-      // use File System Access API
+      // use File System Access API — pedir readwrite desde el inicio para evitar
+      // el diálogo de confirmación nativo del navegador al guardar archivos PAR/TBL
       // @ts-ignore
-      const dirHandle = await window.showDirectoryPicker()
+      const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' })
       // save handle for persistence
       try { await saveDirHandleToIDB(dirHandle); hasPersistedHandle.value = true } catch (err) { console.warn('saveDirHandleToIDB failed', err) }
       selectedFolderName.value = dirHandle.name || 'Carpeta seleccionada'
@@ -636,13 +637,17 @@ async function refreshFolder() {
   try {
     const dirHandle = await getDirHandleFromIDB()
     if (!dirHandle) return
-    const ok = await verifyPermission(dirHandle, 'read')
+    // Pedir readwrite directamente: si el usuario ya lo concedió en esta sesión,
+    // queryPermission lo devuelve 'granted' sin mostrar ningún diálogo.
+    // Solo mostrará el diálogo nativo una vez por sesión del navegador (primera vez
+    // que se abre la app tras reiniciar el browser).
+    const ok = await verifyPermission(dirHandle, 'readwrite')
     if (!ok) {
       try {
         const res = await Swal.fire({
           icon: 'warning',
           title: 'Permisos insuficientes',
-          text: 'No se concedieron permisos de lectura para la carpeta almacenada. Debes seleccionar la carpeta de nuevo para otorgar permisos.',
+          text: 'No se concedieron permisos de acceso para la carpeta almacenada. Debes seleccionar la carpeta de nuevo para otorgar permisos.',
           confirmButtonText: 'Seleccionar carpeta',
           showCancelButton: true,
           cancelButtonText: 'Cancelar'
