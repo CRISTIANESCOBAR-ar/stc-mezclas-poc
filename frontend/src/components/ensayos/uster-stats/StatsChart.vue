@@ -62,6 +62,47 @@ function computeOptimalXLabelRotate(labels) {
     }
 }
 
+/**
+ * Calcula el interval óptimo para el eje X de ECharts.
+ * interval=0 → mostrar todos; interval=N → mostrar uno de cada N+1.
+ * Se basa en el ancho del contenedor y el ancho máximo de etiqueta.
+ */
+function computeXLabelInterval(labels, rotateDeg) {
+    try {
+        if (!chartRef.value || !labels || labels.length <= 1) return 0
+        const container = chartRef.value
+        const cw = container.clientWidth || container.offsetWidth || 600
+        const style = window.getComputedStyle(container)
+        const font = style && style.font ? style.font : '12px sans-serif'
+        const fontSizeMatch = style && style.fontSize ? style.fontSize.match(/(\d+)(px)?/) : null
+        const fontSizePx = fontSizeMatch ? parseInt(fontSizeMatch[1], 10) : 12
+
+        const canvas = document.createElement('canvas')
+        const ctx = canvas.getContext('2d')
+        ctx.font = font
+        let maxW = 0
+        labels.forEach(l => {
+            const w = ctx.measureText(String(l)).width
+            if (w > maxW) maxW = w
+        })
+
+        // Ancho efectivo de cada etiqueta según rotación
+        const rad = (rotateDeg || 0) * Math.PI / 180
+        // Proyección horizontal de la etiqueta rotada
+        const effectiveW = Math.abs(Math.cos(rad)) * maxW + Math.abs(Math.sin(rad)) * fontSizePx
+        const minSpacing = effectiveW + 6 // 6px de holgura entre etiquetas
+
+        // Cuántas etiquetas caben
+        const maxVisible = Math.max(1, Math.floor(cw / minSpacing))
+        if (maxVisible >= labels.length) return 0 // Todas caben
+
+        // interval N → se muestra etiqueta cada N+1 posiciones
+        return Math.ceil(labels.length / maxVisible) - 1
+    } catch {
+        return 0
+    }
+}
+
 function computeRequiredBottomPx(labels, rotateDeg) {
     try {
         if (!chartRef.value) return 60
@@ -119,7 +160,7 @@ function computeRequiredBottomPx(labels, rotateDeg) {
     }
 }
 
-function buildOption(data, xLabelRotate = 0, bottomPx = 25, selectedLegend = null) {
+function buildOption(data, xLabelRotate = 0, bottomPx = 25, selectedLegend = null, xLabelInterval = 0) {
     // Use formatted timestamp (dd/mm/yy) as x axis label when available; fallback to TESTNR
     const x = data.map(d => (d.timestampFmt ? d.timestampFmt : d.testnr))
     const y = data.map(d => d.mean)
@@ -245,7 +286,7 @@ function buildOption(data, xLabelRotate = 0, bottomPx = 25, selectedLegend = nul
             data: x,
             axisLabel: { 
                 rotate: xLabelRotate, 
-                interval: 0, 
+                interval: xLabelInterval, 
                 align: isVertical ? 'right' : 'center', 
                 margin: 10,
                 color: '#64748b',
@@ -371,12 +412,13 @@ function render() {
     // compute labels and optimal rotation
     const labels = props.stats.map(d => (d.timestampFmt ? d.timestampFmt : d.testnr))
     const rotate = computeOptimalXLabelRotate(labels)
+    const xInterval = computeXLabelInterval(labels, rotate)
     // initial estimate (may be refined by chart.finished handler)
     const bottomPx = computeRequiredBottomPx(labels, rotate)
     console.log('StatsChart bottomPx calculated:', bottomPx)
     
     // Pass current legend state to buildOption
-    const opt = buildOption(props.stats, rotate, bottomPx, legendState.value)
+    const opt = buildOption(props.stats, rotate, bottomPx, legendState.value, xInterval)
     
     // Solo en el primer render, establecer LCL y UCL como desactivados
     // En renders posteriores, usar el legendState almacenado
@@ -513,7 +555,8 @@ onMounted(() => {
             // note: chart.getOption().grid may return px or percent; we compare numerically when possible
             if (!currentBottom || Math.abs(refinedBottom - (Number(currentBottom) || 0)) > 6) {
                 _isUpdatingFromFinished = true
-                const opt2 = buildOption(props.stats, rotate, refinedBottom, legendState.value)
+                const xInterval2 = computeXLabelInterval(labels, rotate)
+                const opt2 = buildOption(props.stats, rotate, refinedBottom, legendState.value, xInterval2)
                 if (legendState.value) {
                     opt2.legend.selected = legendState.value
                 }

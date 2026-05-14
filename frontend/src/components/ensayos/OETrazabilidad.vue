@@ -549,8 +549,14 @@ import CustomDatepicker from '../CustomDatepicker.vue';
 
 const { t: $t } = useI18n();
 
+function ayer() {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
 const filtros = reactive({
-  fecha: new Date().toISOString().slice(0, 10),
+  fecha: ayer(),
   lote: '',
   ne: ''
 });
@@ -587,7 +593,10 @@ function onKeyDownDiag(e) {
     cerrarDiagnostico();
   }
 }
-onMounted(() => window.addEventListener('keydown', onKeyDownDiag));
+onMounted(() => {
+  window.addEventListener('keydown', onKeyDownDiag);
+  cargar();
+});
 onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDownDiag));
 async function generarDiagnosticoIA() {
   if (!diagFila.value) return;
