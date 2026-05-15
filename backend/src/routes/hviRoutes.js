@@ -21,6 +21,7 @@ router.post('/save', async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
+    const savedFiles = [];
 
     await client.query(`
       CREATE TABLE IF NOT EXISTS tb_hvi_ensayos (
@@ -111,6 +112,7 @@ router.post('/save', async (req, res) => {
       );
 
       const ensayoId = headerRes.rows[0].id;
+      savedFiles.push({ id: ensayoId, fileName: metadata.fileName, lote: metadata.loteEntrada });
 
       for (const row of details) {
         const toNum = (v) => {
@@ -139,7 +141,7 @@ router.post('/save', async (req, res) => {
     }
 
     await client.query('COMMIT');
-    res.json({ success: true, message: 'Se han guardado los datos correctamente.' });
+    res.json({ success: true, message: 'Se han guardado los datos correctamente.', savedFiles });
   } catch (err) {
     await client.query('ROLLBACK');
     console.error('Error guardando datos HVI:', err);

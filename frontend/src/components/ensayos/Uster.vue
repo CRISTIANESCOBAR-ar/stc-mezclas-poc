@@ -112,6 +112,18 @@
             </div>
           </div>
 
+          <div v-if="initialLoadBanner" :class="initialLoadBanner.containerClass" class="rounded-xl px-4 py-3 text-sm shadow-sm">
+            <div class="flex items-center gap-3">
+              <svg xmlns="http://www.w3.org/2000/svg" :class="initialLoadBanner.iconClass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-6.219-8.56" />
+              </svg>
+              <div>
+                <div class="font-semibold">{{ initialLoadBanner.title }}</div>
+                <div :class="initialLoadBanner.messageClass">{{ initialLoadBanner.message }}</div>
+              </div>
+            </div>
+          </div>
+
           <div class="scan-container rounded-xl border border-slate-200 overflow-hidden bg-white">
             <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs scan-table">
               <colgroup>
@@ -399,6 +411,7 @@ const selectedFolderName = ref('')
 const scanList = ref([])
 const selectedTestnr = ref('')
 const scanStatus = ref('')
+const initialLoadBannerState = ref('loading')
 
 const fileText = ref('')
 const folderPath = ref('')
@@ -535,6 +548,7 @@ function onTituloInput(srcIndex, ev) {
 async function selectFolder() {
   try {
     if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
+      initialLoadBannerState.value = 'loading'
       // use File System Access API — pedir readwrite desde el inicio para evitar
       // el diálogo de confirmación nativo del navegador al guardar archivos PAR/TBL
       // @ts-ignore
@@ -549,6 +563,7 @@ async function selectFolder() {
       // scan directory and populate list
       try {
         await scanDirectory(dirHandle)
+        initialLoadBannerState.value = 'hidden'
       } catch (err) { console.warn('scanDirectory error', err) }
       // no snapshot persistence: we persist only the DirectoryHandle in IDB
       return
@@ -635,14 +650,19 @@ async function verifyPermission(handle, mode = 'read') {
 
 async function refreshFolder() {
   try {
+    initialLoadBannerState.value = 'loading'
     const dirHandle = await getDirHandleFromIDB()
-    if (!dirHandle) return
+    if (!dirHandle) {
+      initialLoadBannerState.value = 'needs-folder'
+      return
+    }
     // Pedir readwrite directamente: si el usuario ya lo concedió en esta sesión,
     // queryPermission lo devuelve 'granted' sin mostrar ningún diálogo.
     // Solo mostrará el diálogo nativo una vez por sesión del navegador (primera vez
     // que se abre la app tras reiniciar el browser).
     const ok = await verifyPermission(dirHandle, 'readwrite')
     if (!ok) {
+      initialLoadBannerState.value = 'needs-permission'
       try {
         const res = await Swal.fire({
           icon: 'warning',
@@ -657,6 +677,7 @@ async function refreshFolder() {
       return
     }
     await scanDirectory(dirHandle)
+    initialLoadBannerState.value = 'hidden'
   } catch (err) { console.warn('refreshFolder error', err) }
 }
 
@@ -798,6 +819,7 @@ async function checkExistingTests(testnrs) {
 
 async function onFolderInputChange(e) {
   try {
+    initialLoadBannerState.value = 'loading'
     const files = (e && e.target && e.target.files) || []
     const map = {}
     const rejectedTestnrs = new Set()
@@ -854,6 +876,7 @@ async function onFolderInputChange(e) {
     // when using fallback, set folderPathFull to the derived relative path
     folderPathFull.value = folderPath.value || ''
     isAbsolutePath.value = false
+    initialLoadBannerState.value = 'hidden'
   } catch (err) { console.warn('onFolderInputChange error', err) }
 }
 
@@ -878,6 +901,7 @@ onMounted(() => {
           return
         }
         // have handle but no permission: prompt user to re-select so browser can grant permissions
+        initialLoadBannerState.value = 'needs-permission'
         selectedFolderName.value = dirHandle.name || 'Carpeta (sin permisos)'
         try {
           const r = await Swal.fire({
@@ -892,7 +916,11 @@ onMounted(() => {
         } catch (err) { console.warn('Swal error', err) }
         return
       }
+      initialLoadBannerState.value = 'needs-folder'
     } catch (err) { console.warn('onMounted load snapshot error', err) }
+    finally {
+      if (initialLoadBannerState.value === 'loading') initialLoadBannerState.value = 'hidden'
+    }
   })()
 })
 
@@ -1042,6 +1070,40 @@ const scanDisplayList = computed(() => {
 
   return items;
 });
+
+const initialLoadBanner = computed(() => {
+  if (initialLoadBannerState.value === 'loading') {
+    return {
+      title: 'Recopilando datos de Uster...',
+      message: 'Se está validando la carpeta guardada y cargando los ensayos pendientes.',
+      containerClass: 'border border-blue-200 bg-blue-50 text-blue-900',
+      messageClass: 'text-blue-800/80',
+      iconClass: 'h-5 w-5 animate-spin text-blue-600'
+    }
+  }
+
+  if (initialLoadBannerState.value === 'needs-permission') {
+    return {
+      title: 'Se requiere reautorizar la carpeta de Uster',
+      message: 'La carpeta guardada existe, pero el navegador ya no tiene permisos de lectura. Vuelve a seleccionarla para cargar los ensayos pendientes.',
+      containerClass: 'border border-amber-200 bg-amber-50 text-amber-900',
+      messageClass: 'text-amber-800/80',
+      iconClass: 'h-5 w-5 text-amber-600'
+    }
+  }
+
+  if (initialLoadBannerState.value === 'needs-folder') {
+    return {
+      title: 'Selecciona una carpeta para cargar Uster',
+      message: 'Aún no hay una carpeta autorizada en esta sesión. Cuando la selecciones, la vista recopilará automáticamente los ensayos no guardados.',
+      containerClass: 'border border-slate-200 bg-slate-50 text-slate-900',
+      messageClass: 'text-slate-700/80',
+      iconClass: 'h-5 w-5 text-slate-500'
+    }
+  }
+
+  return null
+})
 
 // Computed para mostrar el estado de la lista según el filtro activo
 const scanStatusDisplay = computed(() => {

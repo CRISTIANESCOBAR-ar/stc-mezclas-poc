@@ -203,6 +203,13 @@ router.get('/trazabilidad', async (req, res) => {
     );
     const oeColSet = new Set(oeColsResult.rows.map((row) => row.column_name));
 
+    const cardaColsResult = await query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'tb_produccion_carda'`
+    );
+    const cardaColSet = new Set(cardaColsResult.rows.map((row) => row.column_name));
+
     const cData = findColumn(oeColSet, ['DATA_PRODUCAO', 'data_producao', 'DATA PRODUCAO', 'data']);
     const cLote = findColumn(oeColSet, ['LOTE PRODUC', 'lote produc', 'lote_produc', 'lote']);
     const cTitulo = findColumn(oeColSet, ['TÍTULO', 'titulo', 'TITULO']);
@@ -237,6 +244,17 @@ router.get('/trazabilidad', async (req, res) => {
     const cClmS = findColumn(oeColSet, ['s', 'S']);
     const cClmL = findColumn(oeColSet, ['l', 'L']);
     const cClmT = findColumn(oeColSet, ['t', 'T']);
+
+    const cCardaFecha = findColumn(cardaColSet, ['DATA', 'data', 'fecha']);
+    const cCardaTurno = findColumn(cardaColSet, ['T', 't', 'TURNO', 'turno']);
+    const cCardaLf = findColumn(cardaColSet, ['LF', 'lf']);
+    const cCardaMaquina = findColumn(cardaColSet, ['MAQUINA', 'maquina']);
+    const cCardaTitulo = findColumn(cardaColSet, ['TITULO', 'titulo', 'TÍTULO']);
+    const cCardaProdKgh = findColumn(cardaColSet, ['PROD KG/H', 'prod kg/h', 'PROD KG/HR', 'prod kg/hr', 'prod_kg_h', 'prod_kg_hr']);
+    const cCardaProdInform = findColumn(cardaColSet, ['PROD INFORM', 'prod inform', 'PROD INFORMADA', 'prod informada', 'prod_inform', 'prod_informada']);
+    const cCardaEficInfor = findColumn(cardaColSet, ['EFIC INFOR', 'efic infor', 'EFIC INFORMADA', 'efic informada', 'efic_infor', 'efic_informada']);
+
+    const cCardaNumSource = cCardaLf || cCardaMaquina;
 
     if (!cData || !cLote || !cTitulo) {
       return res.status(500).json({
@@ -285,6 +303,15 @@ router.get('/trazabilidad', async (req, res) => {
     const exprClmL = col(cClmL);
     const exprClmT = col(cClmT);
 
+    const cardaCol = (alias, name) => (name ? `${alias}.${quoteIdent(name)}` : 'NULL');
+    const exprCardaFecha = cardaCol('c', cCardaFecha);
+    const exprCardaTurno = cardaCol('c', cCardaTurno);
+    const exprCardaNum = cardaCol('c', cCardaNumSource);
+    const exprCardaTitulo = cardaCol('c', cCardaTitulo);
+    const exprCardaProdKgh = cardaCol('c', cCardaProdKgh);
+    const exprCardaProdInform = cardaCol('c', cCardaProdInform);
+    const exprCardaEficInfor = cardaCol('c', cCardaEficInfor);
+
     const oeSql = `
       WITH oe_base AS (
         SELECT
@@ -302,6 +329,12 @@ router.get('/trazabilidad', async (req, res) => {
             ELSE NULL
           END AS maquina_num,
           TRIM(COALESCE(${exprLado}::text, '')) AS lado,
+          CASE
+            WHEN UPPER(TRIM(COALESCE(${exprLado}::text, ''))) = 'A' THEN 'LP'
+            WHEN UPPER(TRIM(COALESCE(${exprLado}::text, ''))) = 'B' THEN 'LI'
+            WHEN TRIM(COALESCE(${exprLado}::text, '')) = '' THEN NULL
+            ELSE UPPER(TRIM(COALESCE(${exprLado}::text, '')))
+          END AS lado_norm,
           TRIM(COALESCE(${exprItem}::text, '')) AS item,
           TRIM(COALESCE(${exprDescItem}::text, '')) AS desc_item,
           ${sqlParseDate(`${exprData}::text`)} AS fecha_prod,
@@ -354,7 +387,13 @@ router.get('/trazabilidad', async (req, res) => {
             WHEN regexp_replace(TRIM(COALESCE(u.maschnr, '')), '[^0-9]', '', 'g') ~ '^[0-9]+$'
               THEN regexp_replace(TRIM(COALESCE(u.maschnr, '')), '[^0-9]', '', 'g')::int
             ELSE NULL
-          END AS maquina_uster_num
+          END AS maquina_uster_num,
+          CASE
+            WHEN UPPER(COALESCE(u.maschnr, '')) ~ '(^|[^A-Z])LI(M)?([^A-Z]|$)' THEN 'LI'
+            WHEN UPPER(COALESCE(u.maschnr, '')) ~ '(^|[^A-Z])LP([^A-Z]|$)' THEN 'LP'
+            WHEN UPPER(COALESCE(u.maschnr, '')) ~ '(^|[^A-Z])U([^A-Z]|$)' THEN 'U'
+            ELSE NULL
+          END AS maquina_uster_side
         FROM tb_uster_par u
         WHERE u.time_stamp IS NOT NULL
           AND (
@@ -393,6 +432,7 @@ router.get('/trazabilidad', async (req, res) => {
       ),
       uster_agg_machine AS (
         SELECT
+          ul.lote,
           ul.ne,
           ul.maquina_uster_num,
           CASE
@@ -414,7 +454,35 @@ router.get('/trazabilidad', async (req, res) => {
         FROM uster_lotes ul
         JOIN tb_uster_tbl t ON t.testnr = ul.testnr
         WHERE ul.maquina_uster_num IS NOT NULL
-        GROUP BY ul.ne, ul.maquina_uster_num
+        GROUP BY ul.lote, ul.ne, ul.maquina_uster_num
+      ),
+      uster_agg_machine_side AS (
+        SELECT
+          ul.lote,
+          ul.ne,
+          ul.maquina_uster_num,
+          ul.maquina_uster_side,
+          CASE
+            WHEN COUNT(DISTINCT ul.passador) FILTER (WHERE ul.passador IS NOT NULL) = 1 THEN MAX(ul.passador)
+            WHEN COUNT(DISTINCT ul.passador) FILTER (WHERE ul.passador IS NOT NULL) > 1 THEN 'mixto'
+            ELSE NULL
+          END AS passador,
+          STRING_AGG(DISTINCT ul.maquina_uster, ', ') FILTER (WHERE ul.maquina_uster IS NOT NULL) AS maquinas_uster,
+          ROUND(AVG(t.cvm_percent)::numeric, 2) AS cvm,
+          ROUND(AVG(t.h)::numeric, 2) AS vellosidad,
+          ROUND(AVG(t.neps_140_km)::numeric, 1) AS neps_140,
+          ROUND(AVG(t.neps_200_km)::numeric, 1) AS neps_200,
+          ROUND(AVG(t.delg_minus30_km)::numeric, 1) AS thin_30,
+          ROUND(AVG(t.delg_minus40_km)::numeric, 1) AS thin_40,
+          ROUND(AVG(t.delg_minus50_km)::numeric, 1) AS thin_50,
+          ROUND(AVG(t.grue_35_km)::numeric, 1) AS thick_35,
+          ROUND(AVG(t.grue_50_km)::numeric, 1) AS thick_50,
+          COUNT(DISTINCT ul.testnr) AS ensayos_uster
+        FROM uster_lotes ul
+        JOIN tb_uster_tbl t ON t.testnr = ul.testnr
+        WHERE ul.maquina_uster_num IS NOT NULL
+          AND ul.maquina_uster_side IS NOT NULL
+        GROUP BY ul.lote, ul.ne, ul.maquina_uster_num, ul.maquina_uster_side
       ),
       tensor_agg_lote AS (
         SELECT
@@ -432,6 +500,7 @@ router.get('/trazabilidad', async (req, res) => {
       ),
       tensor_agg_machine AS (
         SELECT
+          ul.lote,
           ul.ne,
           ul.maquina_uster_num,
           ROUND(AVG(tt.tenacidad)::numeric, 2) AS tenacidad,
@@ -443,7 +512,25 @@ router.get('/trazabilidad', async (req, res) => {
         JOIN tb_tensorapid_par tp ON tp.uster_testnr = ul.testnr
         JOIN tb_tensorapid_tbl tt ON tt.testnr = tp.testnr
         WHERE ul.maquina_uster_num IS NOT NULL
-        GROUP BY ul.ne, ul.maquina_uster_num
+        GROUP BY ul.lote, ul.ne, ul.maquina_uster_num
+      ),
+      tensor_agg_machine_side AS (
+        SELECT
+          ul.lote,
+          ul.ne,
+          ul.maquina_uster_num,
+          ul.maquina_uster_side,
+          ROUND(AVG(tt.tenacidad)::numeric, 2) AS tenacidad,
+          ROUND(AVG(tt.elongacion)::numeric, 2) AS elongacion,
+          ROUND(AVG(tt.fuerza_b)::numeric, 2) AS fuerza_b,
+          ROUND(AVG(tt.trabajo)::numeric, 2) AS trabajo_b,
+          STRING_AGG(DISTINCT NULLIF(TRIM(COALESCE(tp.comment, tp.comment_text, '')), ''), ' | ') AS obs
+        FROM uster_lotes ul
+        JOIN tb_tensorapid_par tp ON tp.uster_testnr = ul.testnr
+        JOIN tb_tensorapid_tbl tt ON tt.testnr = tp.testnr
+        WHERE ul.maquina_uster_num IS NOT NULL
+          AND ul.maquina_uster_side IS NOT NULL
+        GROUP BY ul.lote, ul.ne, ul.maquina_uster_num, ul.maquina_uster_side
       )
       SELECT
         oe.fecha_prod,
@@ -481,24 +568,35 @@ router.get('/trazabilidad', async (req, res) => {
         oe.clm_s,
         oe.clm_l,
         oe.clm_t,
-        COALESCE(ua_l.passador, ua_m.passador) AS passador,
-        COALESCE(ua_l.maquinas_uster, ua_m.maquinas_uster) AS maquinas_uster,
-        COALESCE(ua_l.cvm, ua_m.cvm) AS cvm,
-        COALESCE(ua_l.vellosidad, ua_m.vellosidad) AS vellosidad,
-        COALESCE(ua_l.neps_140, ua_m.neps_140) AS neps_140,
-        COALESCE(ua_l.neps_200, ua_m.neps_200) AS neps_200,
-        COALESCE(ua_l.thin_30, ua_m.thin_30) AS thin_30,
-        COALESCE(ua_l.thin_40, ua_m.thin_40) AS thin_40,
-        COALESCE(ua_l.thin_50, ua_m.thin_50) AS thin_50,
-        COALESCE(ua_l.thick_35, ua_m.thick_35) AS thick_35,
-        COALESCE(ua_l.thick_50, ua_m.thick_50) AS thick_50,
-        COALESCE(ua_l.ensayos_uster, ua_m.ensayos_uster) AS ensayos_uster,
-        COALESCE(ta_l.tenacidad, ta_m.tenacidad) AS tenacidad,
-        COALESCE(ta_l.elongacion, ta_m.elongacion) AS elongacion,
-        COALESCE(ta_l.fuerza_b, ta_m.fuerza_b) AS fuerza_b,
-        COALESCE(ta_l.trabajo_b, ta_m.trabajo_b) AS trabajo_b,
-        COALESCE(ta_l.obs, ta_m.obs) AS tensor_obs
+        COALESCE(ua_ms.passador, ua_m.passador, ua_l.passador) AS passador,
+        COALESCE(ua_ms.maquinas_uster, ua_m.maquinas_uster, ua_l.maquinas_uster) AS maquinas_uster,
+        COALESCE(ua_ms.cvm, ua_m.cvm, ua_l.cvm) AS cvm,
+        COALESCE(ua_ms.vellosidad, ua_m.vellosidad, ua_l.vellosidad) AS vellosidad,
+        COALESCE(ua_ms.neps_140, ua_m.neps_140, ua_l.neps_140) AS neps_140,
+        COALESCE(ua_ms.neps_200, ua_m.neps_200, ua_l.neps_200) AS neps_200,
+        COALESCE(ua_ms.thin_30, ua_m.thin_30, ua_l.thin_30) AS thin_30,
+        COALESCE(ua_ms.thin_40, ua_m.thin_40, ua_l.thin_40) AS thin_40,
+        COALESCE(ua_ms.thin_50, ua_m.thin_50, ua_l.thin_50) AS thin_50,
+        COALESCE(ua_ms.thick_35, ua_m.thick_35, ua_l.thick_35) AS thick_35,
+        COALESCE(ua_ms.thick_50, ua_m.thick_50, ua_l.thick_50) AS thick_50,
+        COALESCE(ua_ms.ensayos_uster, ua_m.ensayos_uster, ua_l.ensayos_uster) AS ensayos_uster,
+        COALESCE(ta_ms.tenacidad, ta_m.tenacidad, ta_l.tenacidad) AS tenacidad,
+        COALESCE(ta_ms.elongacion, ta_m.elongacion, ta_l.elongacion) AS elongacion,
+        COALESCE(ta_ms.fuerza_b, ta_m.fuerza_b, ta_l.fuerza_b) AS fuerza_b,
+        COALESCE(ta_ms.trabajo_b, ta_m.trabajo_b, ta_l.trabajo_b) AS trabajo_b,
+        COALESCE(ta_ms.obs, ta_m.obs, ta_l.obs) AS tensor_obs
       FROM oe_base oe
+      LEFT JOIN uster_agg_machine_side ua_ms
+        ON ua_ms.lote::bigint = oe.lote_num
+       AND ua_ms.maquina_uster_num = oe.maquina_num
+       AND ua_ms.maquina_uster_side = oe.lado_norm
+       AND (
+         CASE
+           WHEN ua_ms.ne ~ '^[0-9]+([.,][0-9]+)?$' AND oe.ne ~ '^[0-9]+([.,][0-9]+)?$'
+           THEN replace(ua_ms.ne, ',', '.')::numeric = replace(oe.ne, ',', '.')::numeric
+           ELSE ua_ms.ne = oe.ne
+         END
+       )
       LEFT JOIN uster_agg_lote ua_l
         ON ua_l.lote::bigint = oe.lote_num
        AND (
@@ -509,12 +607,24 @@ router.get('/trazabilidad', async (req, res) => {
          END
        )
       LEFT JOIN uster_agg_machine ua_m
-        ON ua_m.maquina_uster_num = oe.maquina_num
+        ON ua_m.lote::bigint = oe.lote_num
+       AND ua_m.maquina_uster_num = oe.maquina_num
        AND (
          CASE
            WHEN ua_m.ne ~ '^[0-9]+([.,][0-9]+)?$' AND oe.ne ~ '^[0-9]+([.,][0-9]+)?$'
            THEN replace(ua_m.ne, ',', '.')::numeric = replace(oe.ne, ',', '.')::numeric
            ELSE ua_m.ne = oe.ne
+         END
+       )
+      LEFT JOIN tensor_agg_machine_side ta_ms
+        ON ta_ms.lote::bigint = oe.lote_num
+       AND ta_ms.maquina_uster_num = oe.maquina_num
+       AND ta_ms.maquina_uster_side = oe.lado_norm
+       AND (
+         CASE
+           WHEN ta_ms.ne ~ '^[0-9]+([.,][0-9]+)?$' AND oe.ne ~ '^[0-9]+([.,][0-9]+)?$'
+           THEN replace(ta_ms.ne, ',', '.')::numeric = replace(oe.ne, ',', '.')::numeric
+           ELSE ta_ms.ne = oe.ne
          END
        )
       LEFT JOIN tensor_agg_lote ta_l
@@ -527,7 +637,8 @@ router.get('/trazabilidad', async (req, res) => {
          END
        )
       LEFT JOIN tensor_agg_machine ta_m
-        ON ta_m.maquina_uster_num = oe.maquina_num
+        ON ta_m.lote::bigint = oe.lote_num
+       AND ta_m.maquina_uster_num = oe.maquina_num
        AND (
          CASE
            WHEN ta_m.ne ~ '^[0-9]+([.,][0-9]+)?$' AND oe.ne ~ '^[0-9]+([.,][0-9]+)?$'
@@ -614,16 +725,16 @@ router.get('/trazabilidad', async (req, res) => {
       const cardaProdTurnoSql = `
         WITH base AS (
           SELECT
-            ${sqlParseDate('data')} AS fecha_prod,
-            UPPER(TRIM(COALESCE(t::text, ''))) AS turno,
+            ${sqlParseDate(`${exprCardaFecha}::text`)} AS fecha_prod,
+            UPPER(TRIM(COALESCE(${exprCardaTurno}::text, ''))) AS turno,
             CASE
-              WHEN TRIM(COALESCE(lf::text, '')) ~ '^[0-9]{1,3}$'
-                THEN TRIM(lf::text)::int
+              WHEN TRIM(COALESCE(${exprCardaNum}::text, '')) ~ '^[0-9]{1,3}$'
+                THEN TRIM(${exprCardaNum}::text)::int
               ELSE NULL
             END AS carda_num,
-            ${sqlParseNumberIntl('"PROD KG/H"')} AS prod_kgh
-          FROM tb_produccion_carda
-          WHERE ${sqlParseDate('data')} = $1::date
+            ${sqlParseNumberIntl(`${exprCardaProdKgh}::text`)} AS prod_kgh
+          FROM tb_produccion_carda c
+          WHERE ${sqlParseDate(`${exprCardaFecha}::text`)} = $1::date
         )
         SELECT
           fecha_prod,
@@ -658,19 +769,19 @@ router.get('/trazabilidad', async (req, res) => {
       const cardaSql = `
         WITH carda_prod AS (
           SELECT
-            ${sqlParseDate('data')} AS fecha_prod,
-            TRIM(COALESCE(t::text, '')) AS turno,
+            ${sqlParseDate(`${exprCardaFecha}::text`)} AS fecha_prod,
+            TRIM(COALESCE(${exprCardaTurno}::text, '')) AS turno,
             CASE
-              WHEN RIGHT(regexp_replace(COALESCE(maquina::text, ''), '[^0-9]', '', 'g'), 2) ~ '^[0-9]{1,2}$'
-                THEN RIGHT(regexp_replace(COALESCE(maquina::text, ''), '[^0-9]', '', 'g'), 2)::int
+              WHEN RIGHT(regexp_replace(COALESCE(${exprCardaNum}::text, ''), '[^0-9]', '', 'g'), 2) ~ '^[0-9]{1,2}$'
+                THEN RIGHT(regexp_replace(COALESCE(${exprCardaNum}::text, ''), '[^0-9]', '', 'g'), 2)::int
               ELSE NULL
             END AS carda_num,
-            ${sqlParseNumberIntl('titulo::text')} AS titulo_cinta,
-            ${sqlParseNumberIntl('"PROD KG/H"')} AS prod_kgh,
-            ${sqlParseNumberIntl('"PROD INFORM"')} AS prod_inform,
-            ${sqlParseNumberIntl('"EFIC INFOR"')} AS efic_infor
-          FROM tb_produccion_carda
-          WHERE ${sqlParseDate('data')} = $1::date
+            ${sqlParseNumberIntl(`${exprCardaTitulo}::text`)} AS titulo_cinta,
+            ${sqlParseNumberIntl(`${exprCardaProdKgh}::text`)} AS prod_kgh,
+            ${sqlParseNumberIntl(`${exprCardaProdInform}::text`)} AS prod_inform,
+            ${sqlParseNumberIntl(`${exprCardaEficInfor}::text`)} AS efic_infor
+          FROM tb_produccion_carda c
+          WHERE ${sqlParseDate(`${exprCardaFecha}::text`)} = $1::date
         ),
         carda_lab AS (
           SELECT

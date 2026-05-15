@@ -1921,8 +1921,26 @@ const handleDeleteFromRow = async (item) => {
 
   try {
     if (item.estado === 'Procesado' && item.id) {
-      const resp = await fetch(`/api/hvi/saved/${item.id}`, { method: 'DELETE' });
-      const json = await resp.json();
+      let resp = await fetch(`/api/hvi/saved/${item.id}`, { method: 'DELETE' });
+      let json = await resp.json();
+
+      if (resp.status === 404 && item.fileName) {
+        const savedResp = await fetch('/api/hvi/saved');
+        const savedJson = await savedResp.json();
+        const current = savedJson?.success
+          ? savedJson.data.find((row) => row.archivo_fuente === item.fileName)
+          : null;
+
+        if (current?.id) {
+          item.id = current.id;
+          if (selectedFileItem.value?.fileName === item.fileName) {
+            selectedFileItem.value.id = current.id;
+          }
+          resp = await fetch(`/api/hvi/saved/${item.id}`, { method: 'DELETE' });
+          json = await resp.json();
+        }
+      }
+
       if (!resp.ok || !json.success) {
         throw new Error(json.error || t('hvi.delete.error'));
       }
@@ -2364,6 +2382,13 @@ const processFiles = async () => {
     Swal.close();
 
     if (result.success) {
+      const savedEntry = result.savedFiles?.find((file) => file.fileName === selectedFileItem.value.fileName);
+      if (savedEntry?.id) {
+        selectedFileItem.value.id = savedEntry.id;
+        const currentRow = parsedFiles.value.find((file) => file.fileName === selectedFileItem.value.fileName);
+        if (currentRow) currentRow.id = savedEntry.id;
+      }
+
       Swal.fire({
         toast: true,
         position: 'top-end',

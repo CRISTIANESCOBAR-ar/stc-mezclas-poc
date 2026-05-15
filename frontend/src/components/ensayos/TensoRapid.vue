@@ -77,6 +77,18 @@
 					</div>
 				</div>
 
+				<div v-if="initialLoadBanner" :class="initialLoadBanner.containerClass" class="mt-4 rounded-xl px-4 py-3 text-sm shadow-sm">
+					<div class="flex items-center gap-3">
+						<svg xmlns="http://www.w3.org/2000/svg" :class="initialLoadBanner.iconClass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 11-6.219-8.56" />
+						</svg>
+						<div>
+							<div class="font-semibold">{{ initialLoadBanner.title }}</div>
+							<div :class="initialLoadBanner.messageClass">{{ initialLoadBanner.message }}</div>
+						</div>
+					</div>
+				</div>
+
 				<!-- Grid de dos columnas: tabla de ensayos a la izquierda y datos TBL a la derecha -->
 				<!-- Left column fixed, right column flexible to avoid TBL dropping below -->
 				<div class="flex-1 min-h-0 mt-4 flex flex-col xl:flex-row gap-4 tenso-grid">
@@ -368,6 +380,7 @@ const tensoHasPersistedHandle = ref(false)
 const tensoScanList = ref([])
 const selectedTensoTestnr = ref('')
 const tensoScanStatus = ref('')
+const initialLoadBannerState = ref('loading')
 const isScanning = ref(false)
 const isSaving = ref(false)
 const isDeleting = ref(false)
@@ -466,6 +479,40 @@ function recalcStatus() {
 	const savedCount = hasSavedInfo ? tensoScanList.value.reduce((acc, it) => acc + (it.saved ? 1 : 0), 0) : null
 	tensoScanStatus.value = formatScanStatus(total, savedCount, filterMode.value)
 }
+
+const initialLoadBanner = computed(() => {
+	if (initialLoadBannerState.value === 'loading') {
+		return {
+			title: 'Recopilando datos de TensoRapid...',
+			message: 'Se está validando la carpeta guardada y cargando los ensayos pendientes.',
+			containerClass: 'border border-blue-200 bg-blue-50 text-blue-900',
+			messageClass: 'text-blue-800/80',
+			iconClass: 'h-5 w-5 animate-spin text-blue-600'
+		}
+	}
+
+	if (initialLoadBannerState.value === 'needs-permission') {
+		return {
+			title: 'Se requiere reautorizar la carpeta de TensoRapid',
+			message: 'La carpeta guardada existe, pero el navegador ya no tiene permisos de lectura. Vuelve a seleccionarla para cargar los ensayos pendientes.',
+			containerClass: 'border border-amber-200 bg-amber-50 text-amber-900',
+			messageClass: 'text-amber-800/80',
+			iconClass: 'h-5 w-5 text-amber-600'
+		}
+	}
+
+	if (initialLoadBannerState.value === 'needs-folder') {
+		return {
+			title: 'Selecciona una carpeta para cargar TensoRapid',
+			message: 'Aún no hay una carpeta autorizada en esta sesión. Cuando la selecciones, la vista recopilará automáticamente los ensayos no guardados.',
+			containerClass: 'border border-slate-200 bg-slate-50 text-slate-900',
+			messageClass: 'text-slate-700/80',
+			iconClass: 'h-5 w-5 text-slate-500'
+		}
+	}
+
+	return null
+})
 
 // Cuando cambia el modo de filtro o el tamaño de la lista, actualizar el label y resetear paginación
 watch(filterMode, () => { displayLimit.value = PAGE_SIZE; recalcStatus() })
@@ -1445,12 +1492,14 @@ async function scanTensoDirectory(dirHandle) {
 async function selectTensoFolder() {
 	try {
 		if (typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function') {
+			initialLoadBannerState.value = 'loading'
 			const dh = await window.showDirectoryPicker()
 			if (!dh) return
 			await saveDirHandleToIDB(dh, 'dir-tenso')
 			tensoHasPersistedHandle.value = true
 			tensoFolderPathFull.value = dh.name || ''
 			await scanTensoDirectory(dh)
+			initialLoadBannerState.value = 'hidden'
 			return
 		}
 		// fallback to input (scan only, do not persist files)
@@ -1460,18 +1509,27 @@ async function selectTensoFolder() {
 
 async function refreshTensoFolder() {
 	try {
+		initialLoadBannerState.value = 'loading'
 		const dh = await getDirHandleFromIDB('dir-tenso')
-		if (!dh) return selectTensoFolder()
+		if (!dh) {
+			initialLoadBannerState.value = 'needs-folder'
+			return selectTensoFolder()
+		}
 		const ok = await verifyPermission(dh, 'read')
-		if (!ok) return selectTensoFolder()
+		if (!ok) {
+			initialLoadBannerState.value = 'needs-permission'
+			return selectTensoFolder()
+		}
 		tensoHasPersistedHandle.value = true
 		tensoFolderPathFull.value = dh.name || ''
 		await scanTensoDirectory(dh)
+		initialLoadBannerState.value = 'hidden'
 	} catch (err) { console.warn('refreshTensoFolder error', err) }
 }
 
 async function onTensoFolderInputChangeLocal(e) {
 	try {
+		initialLoadBannerState.value = 'loading'
 		const files = e && e.target && e.target.files ? Array.from(e.target.files) : []
 		const map = {}
 		for (const f of files) {
@@ -1523,6 +1581,7 @@ async function onTensoFolderInputChangeLocal(e) {
 		const totalIn = tensoScanList.value.length
 		const savedCntIn = tensoScanList.value.reduce((acc, it) => acc + (it.saved ? 1 : 0), 0)
 		tensoScanStatus.value = formatScanStatus(totalIn, savedCntIn, filterMode.value)
+		initialLoadBannerState.value = 'hidden'
 
 		try { localStorage.setItem('tenso.scanSnapshot', JSON.stringify(tensoScanList.value)) } catch (err) { console.warn('persist snapshot failed', err) }
 	} catch (err) { console.warn('onTensoFolderInputChangeLocal error', err) }
@@ -1559,17 +1618,24 @@ onMounted(() => {
 	; (async () => {
 		try {
 			const dh = await getDirHandleFromIDB('dir-tenso')
-			if (!dh) return
+			if (!dh) {
+				initialLoadBannerState.value = 'needs-folder'
+				return
+			}
 			const ok = await verifyPermission(dh, 'read')
 			if (!ok) {
 				console.warn('No permission to access persisted dir-tenso')
+				initialLoadBannerState.value = 'needs-permission'
 				return
 			}
 			tensoHasPersistedHandle.value = true
 			tensoFolderPathFull.value = dh.name || ''
 			await scanTensoDirectory(dh)
+			initialLoadBannerState.value = 'hidden'
 		} catch (err) {
 			console.warn('auto-load dir-tenso failed', err)
+		} finally {
+			if (initialLoadBannerState.value === 'loading') initialLoadBannerState.value = 'hidden'
 		}
 	})()
 })
