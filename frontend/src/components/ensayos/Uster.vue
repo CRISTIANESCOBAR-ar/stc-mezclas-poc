@@ -82,7 +82,7 @@
       <!-- scanStatus moved below the left list as per UX request -->
 
       <!-- Middle: three columns (left: list, middle: compact preview, right: Nro/Titulo) -->
-      <div class="grid uster-grid" style="grid-template-columns: 440px 160px 270px;">
+      <div class="grid uster-grid" style="grid-template-columns: 440px 220px 270px;">
         <!-- Columna 1: Lista de Ensayos, Botones y Estado -->
         <div class="flex flex-col gap-3">
           <!-- Filtros de visualización -->
@@ -135,7 +135,7 @@
                 <col class="col-maq" />
               </colgroup>
               <thead>
-                <tr class="bg-gradient-to-r from-slate-50 to-slate-100">
+                <tr class="bg-linear-to-r from-slate-50 to-slate-100">
                   <th
                     class="px-3 py-3 text-center font-semibold text-slate-700 border-b border-slate-200 text-xs col-ensayo">
                     Ensayo</th>
@@ -200,7 +200,7 @@
         </div>
 
         <!-- Columna 2: Nro / Titulo (ahora en el medio) -->
-        <div style="width:160px;">
+        <div style="width:220px;">
           <!-- Input para ESTIRAJE -->
           <div class="mb-2 rounded-xl border border-slate-200 bg-white p-2">
             <div class="flex items-center justify-between gap-2">
@@ -266,32 +266,44 @@
           <div class="titulo-container rounded-xl border border-slate-200 overflow-hidden bg-white">
             <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs titulo-table">
               <thead>
-                <tr class="bg-gradient-to-r from-slate-50 to-slate-100">
+                <tr class="bg-linear-to-r from-slate-50 to-slate-100">
                   <th class="px-3 py-3 text-center font-semibold text-slate-700 border-b border-slate-200 text-xs"
-                    style="width:70px">Huso</th>
+                    style="width:68px">Huso</th>
                   <th class="px-3 py-3 text-center font-semibold text-slate-700 border-b border-slate-200 text-xs"
-                    style="width:90px">Titulo</th>
+                    style="width:152px">Titulo</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(r, idx) in tituloList" :key="idx"
                   class="hover:bg-blue-50/30 transition-colors duration-150">
-                  <td class="px-3 py-2 border-b border-slate-200 text-xs text-center text-slate-700 font-mono" style="width:70px">
+                  <td class="px-3 py-2 border-b border-slate-200 text-xs text-center text-slate-700 font-mono" style="width:68px">
                     <div v-if="r.srcIndex !== null">
                       {{ r.nro }}
                     </div>
                     <div v-else class="text-xs text-slate-400">—</div>
                   </td>
-                  <td class="px-1 py-0 border-b border-slate-200 text-xs text-center" style="width:90px">
+                  <td class="px-2 py-0 border-b border-slate-200 text-xs text-center" style="width:152px">
                     <div v-if="r.srcIndex !== null">
-                      <input :id="'titulo-input-' + r.srcIndex" v-model="tblData[r.srcIndex].TITULO" inputmode="decimal"
-                        maxlength="5" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-                        @focus="onTituloFocus(r.srcIndex)" @blur="onTituloBlur(r.srcIndex)"
-                        @input="onTituloInput(r.srcIndex, $event)" @keydown.enter.prevent="focusNextTitulo(r.srcIndex)"
-                        @keydown.up.prevent="focusPrevTitulo(r.srcIndex)"
-                        @keydown.down.prevent="focusNextTituloWrap(r.srcIndex)"
-                        :class="['w-full box-border px-1 py-0.5 text-sm text-center border border-slate-300 text-slate-900 focus:outline-none focus:ring-2 focus:border-blue-500 transition-all', isFocusedIndex === r.srcIndex ? 'bg-yellow-50 ring-2 ring-yellow-400' : 'bg-white hover:bg-slate-50']"
-                        style="box-sizing: border-box; margin:0; border-radius:0;" />
+                      <div class="flex items-center gap-2">
+                        <input :id="'titulo-input-' + r.srcIndex" v-model="tblData[r.srcIndex].TITULO" inputmode="decimal"
+                          maxlength="5" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                          @focus="onTituloFocus(r.srcIndex)" @blur="onTituloBlur(r.srcIndex)"
+                          @input="onTituloInput(r.srcIndex, $event)" @keydown.enter.prevent="focusNextTitulo(r.srcIndex)"
+                          @keydown.up.prevent="focusPrevTitulo(r.srcIndex)"
+                          @keydown.down.prevent="focusNextTituloWrap(r.srcIndex)"
+                          :class="[
+                            'min-w-0 flex-1 box-border px-1 py-0.5 text-sm text-center border text-slate-900 focus:outline-none focus:ring-2 focus:border-blue-500 transition-all',
+                            getTituloToleranceClasses(r.srcIndex),
+                            isFocusedIndex === r.srcIndex ? 'ring-2 ring-yellow-400' : ''
+                          ]"
+                          :title="getTituloToleranceMessage(r.srcIndex)"
+                          style="box-sizing: border-box; margin:0; border-radius:0;" />
+                        <span
+                          :class="['w-14 shrink-0 text-[11px] text-right font-semibold tabular-nums', getTituloDeviationTextClasses(r.srcIndex)]"
+                          :title="getTituloToleranceMessage(r.srcIndex)">
+                          {{ getTituloDeviationLabel(r.srcIndex) }}
+                        </span>
+                      </div>
                     </div>
                     <div v-else class="text-xs text-slate-400">—</div>
                   </td>
@@ -310,7 +322,7 @@
                 <col class="col-valor" />
               </colgroup>
               <thead>
-                <tr class="bg-gradient-to-r from-slate-50 to-slate-100">
+                <tr class="bg-linear-to-r from-slate-50 to-slate-100">
                   <th
                     class="px-3 py-3 text-left font-semibold text-slate-700 border-b border-slate-200 text-xs col-dato">
                     Dato</th>
@@ -376,7 +388,7 @@
               <col v-for="(c, ci) in tblColumns" :key="ci" :style="{ width: getColWidth(c) + 'px' }" />
             </colgroup>
             <thead>
-              <tr class="bg-gradient-to-r from-slate-50 to-slate-100 sticky top-0">
+              <tr class="bg-linear-to-r from-slate-50 to-slate-100 sticky top-0">
                 <th class="px-3 py-3 text-center font-semibold text-slate-700 border-b border-slate-200 text-xs">#</th>
                 <th v-for="c in tblColumns" :key="c"
                   class="px-3 py-3 text-center font-semibold text-slate-700 border-b border-slate-200 text-xs">{{ c }}
@@ -412,6 +424,7 @@ const scanList = ref([])
 const selectedTestnr = ref('')
 const scanStatus = ref('')
 const initialLoadBannerState = ref('loading')
+const tblWriteWarning = ref('')
 
 const fileText = ref('')
 const folderPath = ref('')
@@ -1312,18 +1325,21 @@ async function loadSelectedFiles() {
 
 async function updateTblFileWithTitulos() {
   try {
+    tblWriteWarning.value = ''
     // Encontrar el handle del archivo .TBL actual
     const it = scanList.value.find(x => String(x.testnr) === String(selectedTestnr.value))
     // Preferir el handle encontrado en la lista mapeada; si no existe, usar el handle actualmente cargado (tblFile)
     const handle = (it && it.tblHandle) || tblFile.value || null
     if (!handle) {
       console.warn('No se encontró ningún handle para el archivo .TBL (ni en scanList ni en tblFile)')
+      tblWriteWarning.value = 'No se encontro el archivo .TBL asociado al ensayo seleccionado.'
       return false
     }
 
     // Verificar si es un FileSystemFileHandle con capacidad de escritura (createWritable)
     if (typeof handle.createWritable !== 'function') {
       console.warn('El archivo .TBL no soporta escritura (modo fallback). handle:', handle)
+      tblWriteWarning.value = 'El .TBL fue cargado en modo solo lectura. Usa Seleccionar carpeta para poder escribir los titulos en el archivo.'
       try {
         // Mostrar al usuario un aviso para re-seleccionar la carpeta si quiere guardar cambios en disco
         await Swal.fire({
@@ -1381,6 +1397,7 @@ async function updateTblFileWithTitulos() {
     const hasWritePermission = await verifyPermission(handle, 'readwrite')
     if (!hasWritePermission) {
       console.warn('No se pudo obtener permiso de escritura para el archivo .TBL')
+      tblWriteWarning.value = 'No se concedio permiso de escritura para el archivo .TBL. Reautoriza la carpeta e intenta de nuevo.'
       return false
     }
 
@@ -1393,6 +1410,7 @@ async function updateTblFileWithTitulos() {
     return true
   } catch (err) {
     console.error('Error al actualizar el archivo .TBL:', err)
+    tblWriteWarning.value = `No se pudo escribir el archivo .TBL: ${String(err && err.message ? err.message : err)}`
     return false
   }
 }
@@ -1598,6 +1616,14 @@ async function saveCurrentTest() {
       const tblUpdated = await updateTblFileWithTitulos()
       if (tblUpdated) {
         console.log('Archivo .TBL actualizado con éxito')
+      } else if (tblWriteWarning.value) {
+        scanStatus.value = tblWriteWarning.value
+        await Swal.fire({
+          icon: 'warning',
+          title: 'Guardado parcial',
+          text: `${tblWriteWarning.value} Los datos si se guardaron en la base de datos.`,
+          confirmButtonText: 'Entendido'
+        })
       }
     } catch (err) {
       console.warn('No se pudo actualizar el archivo .TBL (esto es normal en modo fallback):', err)
@@ -1808,6 +1834,83 @@ async function deleteCurrentTest() {
 
 function onTituloFocus(srcIndex) {
   isFocusedIndex.value = srcIndex
+}
+
+function parseNeValue(value) {
+  const normalized = String(value ?? '').trim().replace(',', '.')
+  if (!normalized) return null
+  const parsed = Number.parseFloat(normalized)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null
+}
+
+function neToTex(neValue) {
+  if (!Number.isFinite(neValue) || neValue <= 0) return null
+  return 590.5 / neValue
+}
+
+function getNominalTituloNe() {
+  return parseNeValue(getFieldValueByCode('NOMCOUNT'))
+}
+
+function getTituloToleranceState(srcIndex) {
+  const nominalNe = getNominalTituloNe()
+  if (!nominalNe) return 'none'
+
+  const currentNe = parseNeValue(tblData.value?.[srcIndex]?.['TITULO'])
+  if (!currentNe) return 'none'
+
+  const nominalTex = neToTex(nominalNe)
+  const currentTex = neToTex(currentNe)
+  if (!nominalTex || !currentTex) return 'none'
+
+  if (currentTex > nominalTex * 1.015) return 'thicker'
+  if (currentTex < nominalTex * 0.985) return 'thinner'
+  return 'ok'
+}
+
+function getTituloDeviationPercent(srcIndex) {
+  const nominalNe = getNominalTituloNe()
+  const currentNe = parseNeValue(tblData.value?.[srcIndex]?.['TITULO'])
+  if (!nominalNe || !currentNe) return null
+
+  const nominalTex = neToTex(nominalNe)
+  const currentTex = neToTex(currentNe)
+  if (!nominalTex || !currentTex) return null
+
+  return ((currentTex - nominalTex) / nominalTex) * 100
+}
+
+function getTituloToleranceClasses(srcIndex) {
+  const state = getTituloToleranceState(srcIndex)
+  if (state === 'thicker') return 'border-rose-400 bg-rose-50 text-rose-900 hover:bg-rose-100 focus:bg-rose-50'
+  if (state === 'thinner') return 'border-sky-400 bg-sky-50 text-sky-900 hover:bg-sky-100 focus:bg-sky-50'
+  return 'border-slate-300 bg-white text-slate-900 hover:bg-slate-50'
+}
+
+function getTituloDeviationTextClasses(srcIndex) {
+  const state = getTituloToleranceState(srcIndex)
+  if (state === 'thicker') return 'text-rose-700'
+  if (state === 'thinner') return 'text-sky-700'
+  return 'text-slate-400'
+}
+
+function getTituloDeviationLabel(srcIndex) {
+  const deviation = getTituloDeviationPercent(srcIndex)
+  if (deviation == null) return ''
+  const sign = deviation > 0 ? '+' : ''
+  return `${sign}${deviation.toFixed(1)}%`
+}
+
+function getTituloToleranceMessage(srcIndex) {
+  const nominalNe = getNominalTituloNe()
+  if (!nominalNe) return 'Sin titulo nominal disponible en Hilo'
+
+  const deviation = getTituloDeviationPercent(srcIndex)
+  const state = getTituloToleranceState(srcIndex)
+  if (state === 'thicker') return `Fuera de rango: el titulo esta mas grueso que el nominal (${deviation.toFixed(2)}% en TEX)`
+  if (state === 'thinner') return `Fuera de rango: el titulo esta mas fino que el nominal (${deviation.toFixed(2)}% en TEX)`
+  if (deviation != null) return `Dentro del rango aceptable: ${deviation.toFixed(2)}% respecto al titulo nominal en TEX`
+  return `Titulo nominal Hilo: NE ${nominalNe}`
 }
 
 function validateAndNormalizeTitulo(srcIndex) {

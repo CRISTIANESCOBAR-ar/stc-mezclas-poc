@@ -1,5 +1,6 @@
 import express from 'express';
 import pool, { query } from '../db/pg.js';
+import { scheduleDatabaseBackup } from '../services/backupTrigger.js';
 
 const router = express.Router();
 
@@ -241,6 +242,7 @@ router.post('/upload', async (req, res) => {
     }
 
     await client.query('COMMIT');
+    scheduleDatabaseBackup(`uster:${par.TESTNR}`);
     return res.json({ success: true, testnr: par.TESTNR, tblRows: tbl?.length || 0 });
   } catch (err) {
     await client.query('ROLLBACK');

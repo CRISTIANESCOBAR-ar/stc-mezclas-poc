@@ -113,6 +113,12 @@ const routes = [
     name: 'narrativa-costos',
     component: () => import('./views/NarrativaCostosView.vue'),
     meta: { title: 'Reporte Costos IA' }
+  },
+  {
+    path: '/backups',
+    name: 'backups',
+    component: () => import('./views/BackupsView.vue'),
+    meta: { title: 'Visibilidad de Backups' }
   }
 ]
 

@@ -10,6 +10,7 @@ import tensorapidRoutes from './routes/tensorapidRoutes.js'
 import usterCardasRoutes from './routes/usterCardasRoutes.js'
 import calidadFibraRoutes from './routes/calidadFibraRoutes.js'
 import dashboardRoutes from './routes/dashboardRoutes.js'
+import { backupTrigger } from './services/backupTrigger.js'
 
 const app = express()
 const PORT = process.env.PORT || 3006
@@ -30,7 +31,11 @@ app.use('/api/dashboard', dashboardRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ ok: true, timestamp: new Date().toISOString() })
+  res.json({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    backupTrigger: backupTrigger.getStatus(),
+  })
 })
 
 app.listen(PORT, '0.0.0.0', () => {

@@ -140,7 +140,7 @@ export function generarNarrativaLocal(rows, loteActual, proveedores = [], oeData
     return v >= vd.buenos ? '✅' : v >= vd.bad ? '⚠️' : '🔴';
   };
 
-  const compHeader = ['Métrica', ...refs.map(r => `Lote ${r}`), `Lote ${actual} (actual)`, 'Δ%', 'Estado'];
+  const compHeader = ['Métrica', ...refs.map(r => `Lote FIAC ${r} (ref)`), `Lote FIAC ${actual} (actual)`, 'Δ%', 'Estado'];
   const compAlign  = ['---', ...refs.map(() => '---:'), '---:', '---:', ':---:'];
   const compRows   = [];
   for (const vd of varDefs) {
@@ -307,6 +307,7 @@ export function generarNarrativaLocal(rows, loteActual, proveedores = [], oeData
     conclusionBase,
     '',
     '## 📊 Comparativa Consolidada',
+    `Lotes involucrados en esta comparativa: **Lote actual FIAC ${actual}** vs **Lote${refs.length > 1 ? 's' : ''} de referencia FIAC ${refStr}**.`,
     '',
     ...tablaComparativa,
     '',

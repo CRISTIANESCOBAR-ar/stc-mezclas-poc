@@ -2,7 +2,7 @@
   <div class="h-screen flex flex-row bg-gray-100 overflow-hidden font-sans">
 
     <!-- Sidebar izquierdo -->
-    <aside class="relative z-[120] flex-none w-12 flex flex-col items-center bg-gray-100 border-r border-gray-200 py-3 shadow-sm select-none">
+    <aside class="relative z-120 flex-none w-12 flex flex-col items-center bg-gray-100 border-r border-gray-200 py-3 shadow-sm select-none">
 
       <!-- Separador -->
       <div class="w-5 h-px bg-gray-300 mb-2"></div>
@@ -195,7 +195,7 @@
                       <div
               v-if="reportsOpen"
               ref="reportsDropdown"
-              class="reports-dropdown fixed bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-[130] w-64 flex flex-col py-1"
+              class="reports-dropdown fixed bg-white border border-gray-200 rounded-lg shadow-xl overflow-hidden z-130 w-64 flex flex-col py-1"
               :style="reportsDropdownStyle"
             >
               <div class="px-3 py-2 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1" style="display:flex; justify-content: space-between; align-items: center;">
@@ -241,6 +241,10 @@
                 <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 Costos Análisis IA
               </router-link>
+              <router-link to="/backups" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+                <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M6 11h12a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5a2 2 0 012-2zm3 4h6"></path></svg>
+                Visibilidad Backups
+              </router-link>
             </div>
           </div>
 
@@ -263,7 +267,7 @@
         <div
           v-if="langOpen"
           ref="langDropdown"
-          class="absolute left-full bottom-0 ml-3 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-[130] min-w-[150px]"
+          class="absolute left-full bottom-0 ml-3 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden z-130 min-w-37.5"
         >
           <div class="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
             {{ t('lang.select') }}

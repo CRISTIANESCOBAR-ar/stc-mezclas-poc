@@ -1,10 +1,56 @@
 import express from 'express';
+import { existsSync } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
+import path from 'node:path';
 import pool, { query } from '../db/pg.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import crypto from 'crypto';
 import { formatOEParaPrompt, generarNarrativaLocal, buildBloqueOE } from '../helpers/narrativaHelpers.js';
 import { parseNarrativaStructure } from '../helpers/narrativaSections.js';
+import { backupTrigger } from '../services/backupTrigger.js';
 const router = express.Router();
+
+const BACKUP_LOCATIONS = [
+  { disk: 'C', dir: 'C:\\stc-produccion-v2\\backups' },
+  { disk: 'D', dir: 'D:\\Backups-STC' },
+];
+
+function classifyBackupFile(fileName) {
+  if (/^stc_produccion_.*\.sql$/i.test(fileName)) return 'full';
+  if (/^ensayos_criticos_.*\.sql$/i.test(fileName)) return 'focused';
+  if (/^uster_ensayos_.*\.sql$/i.test(fileName)) return 'legacy-uster';
+  return 'other';
+}
+
+async function readBackupDirectory(location) {
+  if (!existsSync(location.dir)) {
+    return { ...location, available: false, files: [] };
+  }
+
+  try {
+    const entries = await readdir(location.dir, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      if (!entry.isFile()) continue;
+      if (!/\.sql$/i.test(entry.name)) continue;
+      const fullPath = path.join(location.dir, entry.name);
+      const info = await stat(fullPath);
+      files.push({
+        name: entry.name,
+        fullPath,
+        disk: location.disk,
+        category: classifyBackupFile(entry.name),
+        sizeBytes: info.size,
+        modifiedAt: info.mtime.toISOString(),
+      });
+    }
+
+    files.sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt));
+    return { ...location, available: true, files };
+  } catch (err) {
+    return { ...location, available: false, files: [], error: err.message };
+  }
+}
 
 function buildNarrativaStructuredFields(narrativaText) {
   const parsed = parseNarrativaStructure(narrativaText);
@@ -12,6 +58,34 @@ function buildNarrativaStructuredFields(narrativaText) {
     narrativaIntro: parsed.intro || '',
     narrativaSections: Array.isArray(parsed.sections) ? parsed.sections : [],
   };
+}
+
+function normalizeComparativaConsolidada(narrativaText, actual, refs) {
+  if (!narrativaText) return narrativaText;
+
+  const refStr = refs.length ? refs.join(' / ') : 'sin referencia';
+  const refLabel = `Lote FIAC ${refStr} (ref)`;
+  const actualLabel = `Lote FIAC ${actual} (actual)`;
+  const lotesLine = `Lotes involucrados en esta comparativa: **Lote actual FIAC ${actual}** vs **Lote${refs.length > 1 ? 's' : ''} de referencia FIAC ${refStr}**.`;
+
+  let out = String(narrativaText);
+
+  out = out.replace(
+    /(##\s*📊\s*Comparativa Consolidada\s*\n)(?!Lotes involucrados en esta comparativa:)/i,
+    `$1${lotesLine}\n\n`
+  );
+
+  out = out.replace(
+    /^\|\s*Grupo\s*\|\s*M[ée]trica\s*\|\s*Lote\s*ref\s*\|\s*Lote\s*actual\s*\|\s*Δ%\s*\|\s*Impacto\s*\|$/im,
+    `| Grupo | Métrica | ${refLabel} | ${actualLabel} | Δ% | Impacto |`
+  );
+
+  out = out.replace(
+    /^\|\s*Grupo\s*\|\s*M[ée]trica\s*\|\s*Lote\s+FIAC\s+[^|]+\(ref\)\s*\|\s*Lote\s+FIAC\s+[^|]+\(actual\)\s*\|\s*Δ%\s*\|\s*Impacto\s*\|$/im,
+    `| Grupo | Métrica | ${refLabel} | ${actualLabel} | Δ% | Impacto |`
+  );
+
+  return out;
 }
 
 // ─────────── Cache + Log de narrativas (Postgres) ───────────
@@ -780,11 +854,13 @@ Análisis comparativo Fibra ↔ Hilo
 _Veredicto en 2 oraciones citando el estado operativo (APROBADO / PRECAUCIÓN / CRÍTICO / DATOS PENDIENTES)._
 
 ## 📊 Comparativa Consolidada
-Tabla Markdown con columnas: **Grupo | Métrica | Lote ref | Lote actual | Δ% | Impacto**.
+Antes de la tabla, escribí una línea obligatoria con este formato: **Lotes involucrados en esta comparativa: Lote actual FIAC ${actual} vs Lote${refs.length > 1 ? 's' : ''} de referencia FIAC ${refs.join(' / ') || 'sin referencia'}**.
+
+Tabla Markdown con columnas: **Grupo | Métrica | Lote FIAC ${refs[0] || 'ref'} (ref) | Lote FIAC ${actual} (actual) | Δ% | Impacto**.
 - Columna Grupo: HVI (STR, SCI, MIC, UHML) y cada Ne presente (Tenacidad, Elongación, CVm%, Neps+200%). Solo en la primera fila del grupo; dejar vacío en las siguientes.
 - Ejemplo:
 
-| Grupo | Métrica | Lote ref | Lote actual | Δ% | Impacto |
+| Grupo | Métrica | Lote FIAC ${refs[0] || '117'} (ref) | Lote FIAC ${actual || '119'} (actual) | Δ% | Impacto |
 |---|---|---:|---:|---:|---|
 | HVI | STR (g/tex) | 27.32 | 26.98 | -1.24% | Menor resistencia |
 | | SCI | 107.8 | 105.3 | -2.32% | Menor uniformidad |
@@ -835,7 +911,8 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
       try {
         const model = genAI.getGenerativeModel({ model: mName });
         const result = await model.generateContent(prompt);
-        const narrativaCompleta = result.response.text();
+        const narrativaCompletaRaw = result.response.text();
+        const narrativaCompleta = normalizeComparativaConsolidada(narrativaCompletaRaw, actual, refs);
         const modelUsado = mName !== modelName ? mName : undefined;
 
         // ── Tokens y costo ──
@@ -965,6 +1042,28 @@ router.get('/narrativa-costos', async (req, res) => {
   } catch (err) {
     console.error('Error narrativa-costos:', err.message);
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+router.get('/backups', async (req, res) => {
+  try {
+    const directories = await Promise.all(BACKUP_LOCATIONS.map(readBackupDirectory));
+    const allFiles = directories.flatMap((item) => item.files || [])
+      .sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt));
+
+    const latestByCategory = (category) => allFiles.find((file) => file.category === category) || null;
+
+    return res.json({
+      ok: true,
+      trigger: backupTrigger.getStatus(),
+      directories,
+      latestFull: latestByCategory('full'),
+      latestFocused: latestByCategory('focused'),
+      recent: allFiles.slice(0, 100),
+    });
+  } catch (err) {
+    console.error('Error backup visibility:', err.message);
+    return res.status(500).json({ ok: false, error: err.message });
   }
 });
 

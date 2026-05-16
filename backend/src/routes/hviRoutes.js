@@ -2,6 +2,7 @@ import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import pool, { query } from '../db/pg.js';
 import crypto from 'crypto';
+import { scheduleDatabaseBackup } from '../services/backupTrigger.js';
 
 const router = express.Router();
 
@@ -141,6 +142,7 @@ router.post('/save', async (req, res) => {
     }
 
     await client.query('COMMIT');
+    scheduleDatabaseBackup(`hvi:${savedFiles.length}`);
     res.json({ success: true, message: 'Se han guardado los datos correctamente.', savedFiles });
   } catch (err) {
     await client.query('ROLLBACK');
