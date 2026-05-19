@@ -755,7 +755,15 @@ router.post('/narrativa-lotes', async (req, res) => {
       const hvi = filas[0] || {};
       const hilos = filas
         .filter(r => r.ne != null)
-        .map(r => `   • Ne ${r.ne}/1${r.maquinas_uster ? ` (Máq. ${r.maquinas_uster})` : ''}: Tenacidad=${r.tenacidad ?? '-'} cN/tex | Elongación=${r.elongacion ?? '-'}% | CVm%=${r.cvm ?? '-'} | Neps+200%=${r.neps_200 ?? '-'}/km`)
+        .map(r => {
+          const neKey = String(r.ne).replace(/\/.*/, '').trim();
+          const up = usterParData.find(u =>
+            Number(u.lote_num) === mistura && isSameNe(u.ne, neKey)
+          );
+          const pasadorStr = up?.pasador ? ` | Pasador=${up.pasador}` : '';
+          const estirajStr = up?.estiraje_avg != null ? ` | Estiraje=${up.estiraje_avg}` : '';
+          return `   • Ne ${r.ne}/1${r.maquinas_uster ? ` (Máq. ${r.maquinas_uster})` : ''}: Tenacidad=${r.tenacidad ?? '-'} cN/tex | Elongación=${r.elongacion ?? '-'}% | CVm%=${r.cvm ?? '-'} | Neps+200%=${r.neps_200 ?? '-'}/km${pasadorStr}${estirajStr}`;
+        })
         .join('\n');
       const misturaLabel = hvi.mistura_real ? `${mistura} (Mistura ${hvi.mistura_real})` : `${mistura}`;
       // Proveedores del lote
@@ -782,8 +790,8 @@ router.post('/narrativa-lotes', async (req, res) => {
     const tieneRpmOE         = oeData.some(r => r.rpm_avg != null);
     const tieneRpmCardaOE    = oeData.some(r => r.rpm_card_avg != null);
     const tieneUsterCvm      = oeData.some(r => r.cvm_uster != null);
-    const tienePasador       = oeData.some(r => r.pasador != null);
-    const tieneEstiraje      = oeData.some(r => r.estiraje_avg != null);
+    const tienePasador       = oeData.some(r => r.pasador != null) || usterParData.some(u => u.pasador);
+    const tieneEstiraje      = oeData.some(r => r.estiraje_avg != null) || usterParData.some(u => u.estiraje_avg != null);
     const tieneCardasPrep    = oeData.some(r => r.rpm_carda_preparacion != null);
     const tieneTenacidad     = rows.some(r => r.tenacidad != null);
     const tieneElongacion    = rows.some(r => r.elongacion != null);
