@@ -792,7 +792,13 @@ router.post('/narrativa-lotes', async (req, res) => {
           );
           const pasadorStr = up?.pasador ? ` | Pasador=${up.pasador}` : '';
           const estirajStr = up?.estiraje_avg != null ? ` | Estiraje=${up.estiraje_avg}` : '';
-          return `   • Ne ${r.ne}/1${r.maquinas_uster ? ` (Máq. ${r.maquinas_uster})` : ''}: Tenacidad=${r.tenacidad ?? '-'} cN/tex | Elongación=${r.elongacion ?? '-'}% | CVm%=${r.cvm ?? '-'} | Neps+200%=${r.neps_200 ?? '-'}/km${pasadorStr}${estirajStr}`;
+          // Formato Ne: base/1 para liso, base/1Flame para fantasía
+          const neRaw = String(r.ne || '');
+          const isFlameNe = /flame/i.test(neRaw);
+          const neBasePrompt = neRaw.replace(/flame/gi, '').trim();
+          const withDenomPrompt = neBasePrompt.includes('/') ? neBasePrompt : `${neBasePrompt}/1`;
+          const neForPrompt = isFlameNe ? `${withDenomPrompt}Flame` : withDenomPrompt;
+          return `   • Ne ${neForPrompt}${r.maquinas_uster ? ` (Máq. ${r.maquinas_uster})` : ''}: Tenacidad=${r.tenacidad ?? '-'} cN/tex | Elongación=${r.elongacion ?? '-'}% | CVm%=${r.cvm ?? '-'} | Neps+200%=${r.neps_200 ?? '-'}/km${pasadorStr}${estirajStr}`;
         })
         .join('\n');
       const misturaLabel = hvi.mistura_real ? `${mistura} (Mistura ${hvi.mistura_real})` : `${mistura}`;
@@ -866,11 +872,12 @@ ${inventarioDatos}
 UMBRALES: Tenacidad hilo >16.0=APTO, 14.5-16.0=PRECAUCIÓN, <14.5=CRÍTICO | Elongación <7.5%=RIESGO URDIDORA | Neps+200% >700=RIESGO ÍNDIGO | CVm% >13=IRREGULAR | STR fibra >27=ÓPTIMO
 
 MATRIZ DE REQUISITOS MÍNIMOS POR TÍTULO:
-Ne 7 (Trama):  Tenac≥14.0, CVm≤13.5%, Neps≤700/km    → solo TELAR
-Ne 9 (Trama):  Tenac≥14.5, CVm≤13.0%, Neps≤600/km    → solo TELAR
-Ne 10 (Urdimbre): Tenac≥16.0, Elong≥8.0%, CVm≤12.0%, Neps≤500/km → URDIDORA→ÍNDIGO→TELAR
-Ne 12.5 (Urdimbre): Tenac≥16.5, Elong≥8.0%, CVm≤11.5%, Neps≤450/km → URDIDORA→ÍNDIGO→TELAR
-Ne 14 (Urdimbre): Tenac≥17.0, Elong≥8.5%, CVm≤11.0%, Neps≤400/km → URDIDORA→ÍNDIGO→TELAR
+Ne 7/1 (Trama):  Tenac≥14.0, CVm≤13.5%, Neps≤700/km    → solo TELAR
+Ne 9/1 (Trama):  Tenac≥14.5, CVm≤13.0%, Neps≤600/km    → solo TELAR
+Ne 10/1 (Urdimbre): Tenac≥16.0, Elong≥8.0%, CVm≤12.0%, Neps≤500/km → URDIDORA→ÍNDIGO→TELAR
+Ne 12.5/1 (Urdimbre): Tenac≥16.5, Elong≥8.0%, CVm≤11.5%, Neps≤450/km → URDIDORA→ÍNDIGO→TELAR
+Ne 14/1 (Urdimbre): Tenac≥17.0, Elong≥8.5%, CVm≤11.0%, Neps≤400/km → URDIDORA→ÍNDIGO→TELAR
+Ne X/1Flame (Urdimbre Fantasía, aplica a Ne≥9.5): hereda Tenac y Elong del Ne base; CVm≤18.0% y Neps≤700/km (umbrales FLAME permisivos) → URDIDORA→ÍNDIGO→TELAR
 
 REGLAS DE AUDITORÍA:
 - Si es Urdimbre (Ne≥10): ser implacable con Elongación y CVm% (pasa por Urdidora + Índigo).
@@ -925,7 +932,7 @@ OBLIGATORIO: Renderizá los datos de proveedores **EXACTAMENTE** como tabla Mark
 - ⚠️ Peor en cada variable con impacto práctico.
 
 ## 🧵 Detalle Técnico por Ne
-_Para cada Ne (## Ne X — [Aplicación]): proceso por etapa con ✅/⚠️, estado (Aprobado / Precaución / Rechazado), desvíos. Indicá Pasador (SÍ/NO) y Estiraje cuando estén. Cerrá con \`> 💬\` comentario de planta._
+_Para cada Ne, usá el título EXACTAMENTE como aparece en los datos (ej: \`## Ne 9.5/1Flame — [Urdimbre Flame]\`, \`## Ne 10/1 — [Urdimbre]\`). NUNCA reordenes el sufijo Flame: siempre va después del denominador \`/1\`. Listá proceso por etapa con ✅/⚠️, estado (Aprobado / Precaución / Rechazado), desvíos. Indicá Pasador (SÍ/NO) y Estiraje cuando estén. Cerrá con \`> 💬\` comentario de planta._
 
 ## 🔗 Correlación con Producción OE
 _Por cada máquina: Título (Ne), Pasador, Estiraje. Eficiencia EficInf vs EficCalc, RPM OE y RPM Carda. Cortes Naturales ref→actual con %._
