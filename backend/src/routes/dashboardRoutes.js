@@ -260,6 +260,8 @@ router.get('/mezcla-lotes', async (req, res) => {
           u.testnr,
           u.nomcount AS ne,
           u.maschnr,
+          u.matclass,
+          u.obs,
           COALESCE(
             (regexp_match(u.lote, '[A-Za-z]+[-\\s]+(\\d+)'))[1],
             (regexp_match(u.lote, '(\\d+)'))[1]
@@ -272,7 +274,7 @@ router.get('/mezcla-lotes', async (req, res) => {
           AND ($2::text IS NULL OR u.nomcount = SPLIT_PART($2, '/', 1) OR u.nomcount::text ILIKE $2)
       ),
       uster_lotes AS (
-        SELECT testnr, ne, maschnr, mistura_str::integer AS mistura
+        SELECT testnr, ne, maschnr, matclass, obs, mistura_str::integer AS mistura
         FROM uster_base
         WHERE mistura_str ~ '^\\d+$'
           AND mistura_str::integer = ANY($1::integer[])
@@ -281,6 +283,8 @@ router.get('/mezcla-lotes', async (req, res) => {
         SELECT
           ul.mistura,
           ul.ne,
+          BOOL_OR(LOWER(ul.matclass) = 'hilo de fantasia') AS is_flame_matclass,
+          BOOL_OR(ul.obs ILIKE '%flame%') AS is_flame_obs,
           STRING_AGG(DISTINCT TRIM(LEADING '0' FROM ul.maschnr), ', ') AS maquinas_uster,
           ROUND(AVG(t.cvm_percent)::numeric,    2) AS cvm,
           ROUND(AVG(t.h)::numeric,              2) AS vellosidad,
@@ -323,7 +327,7 @@ router.get('/mezcla-lotes', async (req, res) => {
           h.corteza_porcentaje,
         h.n_fardos,
         h.n_secuencias,
-        ua.ne,
+        CASE WHEN ua.is_flame_matclass OR ua.is_flame_obs THEN ua.ne || 'Flame' ELSE ua.ne END AS ne,
         ua.maquinas_uster,
         ua.cvm,
         ua.vellosidad,
@@ -506,7 +510,28 @@ router.post('/narrativa-lotes', async (req, res) => {
     console.log(`[narrativa-lotes] loteNums = [${loteNums.join(', ')}]`);
     let oeData = [];
     try {
-      const oeResult = await pool.query(`
+      // Detectar nombre de columna de fecha en tb_produccion_oe para tolerar variantes (data_producao, DATA_PRODUCAO, data, fecha, etc.)
+      const oeColsRes = await pool.query(`
+        SELECT column_name
+        FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'tb_produccion_oe'
+      `);
+      const oeColSet = new Set(oeColsRes.rows.map(r => r.column_name));
+      const findColumn = (columnSet, candidates) => {
+        for (const c of candidates) if (columnSet.has(c)) return c;
+        const lowered = new Map([...columnSet].map(name => [name.toLowerCase(), name]));
+        for (const c of candidates) {
+          const found = lowered.get(String(c).toLowerCase());
+          if (found) return found;
+        }
+        return null;
+      };
+      const cData = findColumn(oeColSet, ['DATA_PRODUCAO', 'data_producao', 'DATA PRODUCAO', 'data', 'DATA_PRODUCCION', 'data_produccion', 'FECHA_PRODUCCION', 'fecha_produccion', 'fecha']);
+      const quoteIdent = (ident) => `"${String(ident).replace(/"/g, '""')}"`;
+      const dataExpr = cData ? quoteIdent(cData) : 'data_producao';
+
+      // Usamos el SQL original pero reemplazamos las ocurrencias literales de data_producao
+      const baseSql = `
         SELECT
           TO_DATE(data_producao, 'DD/MM/YYYY')                                                          AS fecha_oe,
           TO_CHAR(TO_DATE(data_producao, 'DD/MM/YYYY'), 'YYYY-MM-DD')                                  AS fecha_oe_key,
@@ -517,9 +542,6 @@ router.post('/narrativa-lotes', async (req, res) => {
           "DESC ITEM"                                                                                   AS desc_item,
           TRIM("TÍTULO")                                                                                AS titulo,
           -- Producción e eficiencia
-          -- parse_num: maneja formato europeo con miles (1.497,30) y simple (80,7 / 80000)
-          -- Paso 1: si tiene patrón NNN.NNN,NN → quitar puntos de miles, luego reemplazar coma
-          -- Paso 2: si es simple NNN,NN o NNN.NN → solo reemplazar coma
           ROUND(AVG(CASE
             WHEN "PROD INFORMADA" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("PROD INFORMADA", '.', ''), ',', '.')::numeric
             WHEN "PROD INFORMADA" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("PROD INFORMADA", ',', '.')::numeric
@@ -576,7 +598,10 @@ router.post('/narrativa-lotes', async (req, res) => {
           AND TRIM("LOTE PRODUC")::bigint = ANY(\$1)
         GROUP BY TO_DATE(data_producao, 'DD/MM/YYYY'), TRIM("LOTE PRODUC")::bigint, maquina, LADO, item, "DESC ITEM", TRIM("TÍTULO")
         ORDER BY TO_DATE(data_producao, 'DD/MM/YYYY') DESC NULLS LAST, TRIM("LOTE PRODUC")::bigint, maquina, LADO
-      `, [loteNums]);
+      `;
+
+      const oeSql = baseSql.replace(/data_producao/g, dataExpr);
+      const oeResult = await pool.query(oeSql, [loteNums]);
       oeData = oeResult.rows;
       console.log(`[narrativa-lotes] oeData filas=${oeData.length}`, oeData.length > 0 ? `primer lote=${oeData[0].lote} maq=${oeData[0].maquina}` : '(vacío)');
     } catch (oeErr) {
