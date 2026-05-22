@@ -279,12 +279,16 @@ router.get('/mezcla-lotes', async (req, res) => {
         WHERE mistura_str ~ '^\\d+$'
           AND mistura_str::integer = ANY($1::integer[])
       ),
+      uster_lotes_flagged AS (
+        SELECT *,
+          (LOWER(matclass) = 'hilo de fantasia' OR obs ILIKE '%flame%') AS is_flame
+        FROM uster_lotes
+      ),
       uster_agg AS (
         SELECT
           ul.mistura,
           ul.ne,
-          BOOL_OR(LOWER(ul.matclass) = 'hilo de fantasia') AS is_flame_matclass,
-          BOOL_OR(ul.obs ILIKE '%flame%') AS is_flame_obs,
+          ul.is_flame,
           STRING_AGG(DISTINCT TRIM(LEADING '0' FROM ul.maschnr), ', ') AS maquinas_uster,
           ROUND(AVG(t.cvm_percent)::numeric,    2) AS cvm,
           ROUND(AVG(t.h)::numeric,              2) AS vellosidad,
@@ -297,22 +301,23 @@ router.get('/mezcla-lotes', async (req, res) => {
           ROUND(AVG(t.neps_140_km)::numeric,    1) AS neps_140,
           ROUND(AVG(t.neps_280_km)::numeric,    1) AS neps_280,
           COUNT(DISTINCT ul.testnr)               AS n_uster
-        FROM uster_lotes ul
+        FROM uster_lotes_flagged ul
         JOIN tb_uster_tbl t ON t.testnr = ul.testnr
-        GROUP BY ul.mistura, ul.ne
+        GROUP BY ul.mistura, ul.ne, ul.is_flame
       ),
       tenso_agg AS (
         SELECT
           ul.mistura,
           ul.ne,
+          ul.is_flame,
           ROUND(AVG(tt.tenacidad)::numeric,  2) AS tenacidad,
           ROUND(AVG(tt.elongacion)::numeric, 2) AS elongacion,
           ROUND(AVG(tt.fuerza_b)::numeric,   2) AS fuerza_b,
           ROUND(AVG(tt.trabajo)::numeric,    2) AS trabajo_b
-        FROM uster_lotes ul
+        FROM uster_lotes_flagged ul
         JOIN tb_tensorapid_par tp ON tp.uster_testnr = ul.testnr
         JOIN tb_tensorapid_tbl tt ON tt.testnr = tp.testnr
-        GROUP BY ul.mistura, ul.ne
+        GROUP BY ul.mistura, ul.ne, ul.is_flame
       )
       SELECT
         h.mistura,
@@ -327,7 +332,7 @@ router.get('/mezcla-lotes', async (req, res) => {
           h.corteza_porcentaje,
         h.n_fardos,
         h.n_secuencias,
-        CASE WHEN ua.is_flame_matclass OR ua.is_flame_obs THEN ua.ne || 'Flame' ELSE ua.ne END AS ne,
+        CASE WHEN ua.is_flame THEN ua.ne || 'Flame' ELSE ua.ne END AS ne,
         ua.maquinas_uster,
         ua.cvm,
         ua.vellosidad,
@@ -347,7 +352,7 @@ router.get('/mezcla-lotes', async (req, res) => {
         ck.cardas_kgh
       FROM hvi_agg h
       LEFT JOIN uster_agg  ua ON ua.mistura = h.mistura
-      LEFT JOIN tenso_agg  ta ON ta.mistura = h.mistura AND ta.ne = ua.ne
+      LEFT JOIN tenso_agg  ta ON ta.mistura = h.mistura AND ta.ne = ua.ne AND ta.is_flame = ua.is_flame
       LEFT JOIN carda_kgh_agg ck ON ck.mistura = h.mistura
       ORDER BY h.mistura ASC, ua.ne::numeric ASC NULLS LAST
     `;
