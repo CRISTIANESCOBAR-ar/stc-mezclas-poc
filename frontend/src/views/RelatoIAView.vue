@@ -14,8 +14,15 @@
         <div class="flex flex-wrap items-end gap-2">
           <div>
             <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{{ $t('relatoIA.lots') }}</label>
-            <input v-model="lotesInput" placeholder="113, 114, 115"
-              class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm w-44 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+            <div class="flex items-center gap-2">
+              <input v-model="lotesInput" placeholder="113, 114, 115"
+                class="rounded-lg border border-gray-200 px-3 py-1.5 text-sm w-44 focus:outline-none focus:ring-2 focus:ring-indigo-300" />
+              <button @click="clearLotes" type="button"
+                class="text-xs px-2 py-1 rounded bg-red-50 text-red-600 border border-red-100 hover:bg-red-100 transition-colors"
+                title="Borrar lotes guardados">
+                Borrar
+              </button>
+            </div>
           </div>
           <div>
             <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{{ $t('relatoIA.date') }}</label>
@@ -342,6 +349,22 @@ function descargarMarkdown() {
   a.download = `informe-${lotesInput.value.replace(/\s+/g, '')}-${fechaInput.value}.md`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function clearLotes() {
+  try {
+    localStorage.removeItem('relatoIA.lotes')
+  } catch (e) {
+    // ignore
+  }
+  lotesInput.value = ''
+  try {
+    const newQ = Object.assign({}, route.query)
+    if (newQ.lotes) delete newQ.lotes
+    router.replace({ query: newQ }).catch(() => {})
+  } catch (e) {
+    // ignore
+  }
 }
 
 const exporting = ref('')  // '' | 'png' | 'pdf' | 'docx'
