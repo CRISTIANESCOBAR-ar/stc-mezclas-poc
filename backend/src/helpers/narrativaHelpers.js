@@ -255,11 +255,14 @@ export function generarNarrativaLocal(rows, loteActual, proveedores = [], oeData
       const matclass = String(h.MATCLASS ?? h.matclass ?? h.MAT_CLASS ?? '')
       const isFlame = /flame/i.test(ne) || /flame/i.test(obsText) || /hilo\s*de\s*fantasia/i.test(matclass)
       const neBase = ne.replace(/flame/gi, '').trim();
+      // neLabel: reconstruye el Ne con 'Flame' siempre AL FINAL (ej: '9.5/1Flame', '10Flame')
+      const neLabel = isFlame ? `${neBase}Flame` : neBase;
       const nN = parseFloat(neBase);
       const mK = Object.keys(MATRIZ).find(k => Math.abs(parseFloat(k) - nN) < 0.1);
       const m = mK ? MATRIZ[mK] : null;
       const baseApp = m?.app || (nN <= 9 ? 'Trama' : 'Urdimbre');
-      const app = isFlame && nN >= 9 ? 'Urdimbre Flame' : baseApp;
+      // Flame >= 9.5: siempre Urdimbre (hilo fantasía va a urdimbre/trama especial, no trama estándar)
+      const app = isFlame && nN >= 9.5 ? 'Urdimbre Flame' : baseApp;
       const dest = m?.dest || (nN <= 9 ? ['TELAR'] : ['URDIDORA','INDIGO','TELAR']);
       // Para FLAME: sobreescribir CVm y Neps; conservar tenacidad y elongación del Ne base
       const umbEfectivo = isFlame && nN >= 9 ? { ...m?.umb, ...FLAME_UMB } : m?.umb;
@@ -275,7 +278,7 @@ export function generarNarrativaLocal(rows, loteActual, proveedores = [], oeData
       const estado = desvios.length ? '🔴 **Rechazado**' : '✅ **Aprobado**';
       const procs = dest.map(p => `${p}${desvios.length ? ' ⚠️' : ' ✅'}`).join(' → ');
       const maqStr = h.maquinas_uster ? ` _(${h.maquinas_uster})_` : '';
-      bloqueAuditoria.push(`### Ne ${ne}${isFlame ? ' 🔥' : ''} — ${app}${maqStr}`);
+      bloqueAuditoria.push(`### Ne ${neLabel}${isFlame ? ' 🔥' : ''} — ${app}${maqStr}`);
       bloqueAuditoria.push(`Ruta: ${procs} — ${estado}${desvios.length ? ` — Desvío: ${desvios.join(', ')}` : ''}`);
       if (isFlame) bloqueAuditoria.push(`> ℹ️ Hilo fantasía — CVm% y Neps evaluados con umbrales FLAME (CVm ≤ ${FLAME_UMB.cvm.ok}, Neps ≤ ${FLAME_UMB.neps_200.ok}/km); tenacidad y elongación según Ne ${neBase} base.`);
       const ten = h.tenacidad != null ? parseFloat(h.tenacidad) : null;
