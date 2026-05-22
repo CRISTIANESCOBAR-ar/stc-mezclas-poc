@@ -697,6 +697,16 @@ async function cargar(force = false) {
 
 // ── Auto-cargar si vienen query params ──
 onMounted(() => {
+  // Si no vienen `lotes` por query, intentar cargar desde localStorage
+  try {
+    if (!route.query.lotes) {
+      const saved = localStorage.getItem('relatoIA.lotes')
+      if (saved) lotesInput.value = saved
+    }
+  } catch (e) {
+    // ignore (e.g., SSR or storage disabled)
+  }
+
   if (lotesInput.value.trim() && fechaInput.value) {
     cargar(false)
   }
@@ -710,6 +720,16 @@ watch(() => route.query, (q) => {
   if (q.lotes && q.lotes !== lotesInput.value) lotesInput.value = String(q.lotes)
   if (q.fecha && q.fecha !== fechaInput.value) fechaInput.value = String(q.fecha)
   if (q.formato && q.formato !== formato.value) formato.value = String(q.formato)
+})
+
+// Persistir números de lotes en localStorage cuando cambien
+watch(lotesInput, (val) => {
+  try {
+    if (val && val.toString().trim()) localStorage.setItem('relatoIA.lotes', String(val))
+    else localStorage.removeItem('relatoIA.lotes')
+  } catch (e) {
+    // ignore
+  }
 })
 </script>
 
