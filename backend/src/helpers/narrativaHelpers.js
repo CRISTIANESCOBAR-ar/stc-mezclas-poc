@@ -240,19 +240,32 @@ export function generarNarrativaLocal(rows, loteActual, proveedores = [], oeData
     '12.5': { app: 'Urdimbre', dest: ['URDIDORA','INDIGO','TELAR'],      sciMin: 135, strMin: 27, umb: { tenacidad: { ok: 16.5, t: 'min' }, elongacion: { ok: 8.0, t: 'min' }, cvm: { ok: 11.5, t: 'max' }, neps_200: { ok: 450, t: 'max' } } },
     '14':   { app: 'Urdimbre', dest: ['URDIDORA','INDIGO','TELAR'],      sciMin: 140, strMin: 28, umb: { tenacidad: { ok: 17.0, t: 'min' }, elongacion: { ok: 8.5, t: 'min' }, cvm: { ok: 11.0, t: 'max' }, neps_200: { ok: 400, t: 'max' } } },
   };
+  // Hilos FLAME/fantasía: CVm y Neps con umbrales más permisivos; tenacidad/elongación hereda del Ne base
+  const FLAME_UMB = { cvm: { ok: 18.0, t: 'max' }, neps_200: { ok: 700, t: 'max' } };
+
   const bloqueAuditoria = [];
   if (HilosActual.length > 0) {
     bloqueAuditoria.push('## 🧵 Detalle Técnico por Ne', '');
     for (const h of HilosActual) {
-      const ne = String(h.ne);
-      const nN = parseFloat(ne);
+      const ne = String(h.ne || '')
+      // Detectar FLAME usando varios orígenes: 1) el propio campo Ne (ej: '10Flame'),
+      // 2) las observaciones/OBS (algunos datasets indican 'FLAME' allí),
+      // 3) el campo MATCLASS/MAT_CLASS que en la vista ResumenEnsayos.vue se marca como 'Hilo de fantasia'.
+      const obsText = String(h.OBS ?? h.Obs ?? h.obs ?? h.observaciones ?? '')
+      const matclass = String(h.MATCLASS ?? h.matclass ?? h.MAT_CLASS ?? '')
+      const isFlame = /flame/i.test(ne) || /flame/i.test(obsText) || /hilo\s*de\s*fantasia/i.test(matclass)
+      const neBase = ne.replace(/flame/gi, '').trim();
+      const nN = parseFloat(neBase);
       const mK = Object.keys(MATRIZ).find(k => Math.abs(parseFloat(k) - nN) < 0.1);
       const m = mK ? MATRIZ[mK] : null;
-      const app = m?.app || (nN <= 9 ? 'Trama' : 'Urdimbre');
+      const baseApp = m?.app || (nN <= 9 ? 'Trama' : 'Urdimbre');
+      const app = isFlame && nN >= 9 ? 'Urdimbre Flame' : baseApp;
       const dest = m?.dest || (nN <= 9 ? ['TELAR'] : ['URDIDORA','INDIGO','TELAR']);
+      // Para FLAME: sobreescribir CVm y Neps; conservar tenacidad y elongación del Ne base
+      const umbEfectivo = isFlame && nN >= 9 ? { ...m?.umb, ...FLAME_UMB } : m?.umb;
       const desvios = [];
-      if (m?.umb) {
-        for (const [k, u] of Object.entries(m.umb)) {
+      if (umbEfectivo) {
+        for (const [k, u] of Object.entries(umbEfectivo)) {
           const v = h[k] != null ? parseFloat(h[k]) : null;
           if (v == null) continue;
           const fail = u.t === 'min' ? v < u.ok : v > u.ok;
@@ -262,8 +275,9 @@ export function generarNarrativaLocal(rows, loteActual, proveedores = [], oeData
       const estado = desvios.length ? '🔴 **Rechazado**' : '✅ **Aprobado**';
       const procs = dest.map(p => `${p}${desvios.length ? ' ⚠️' : ' ✅'}`).join(' → ');
       const maqStr = h.maquinas_uster ? ` _(${h.maquinas_uster})_` : '';
-      bloqueAuditoria.push(`### Ne ${ne} — ${app}${maqStr}`);
+      bloqueAuditoria.push(`### Ne ${ne}${isFlame ? ' 🔥' : ''} — ${app}${maqStr}`);
       bloqueAuditoria.push(`Ruta: ${procs} — ${estado}${desvios.length ? ` — Desvío: ${desvios.join(', ')}` : ''}`);
+      if (isFlame) bloqueAuditoria.push(`> ℹ️ Hilo fantasía — CVm% y Neps evaluados con umbrales FLAME (CVm ≤ ${FLAME_UMB.cvm.ok}, Neps ≤ ${FLAME_UMB.neps_200.ok}/km); tenacidad y elongación según Ne ${neBase} base.`);
       const ten = h.tenacidad != null ? parseFloat(h.tenacidad) : null;
       const cvm = h.cvm != null ? parseFloat(h.cvm) : null;
       const elo = h.elongacion != null ? parseFloat(h.elongacion) : null;
@@ -271,7 +285,8 @@ export function generarNarrativaLocal(rows, loteActual, proveedores = [], oeData
         if (ten >= 18) bloqueAuditoria.push(`> 💬 "Va sobrado de fuerza (${f(ten)} cN/tex). Sin drama en ningún proceso."`);
         else if (ten < 14.5) bloqueAuditoria.push(`> 💬 "Tenacidad crítica. Alta probabilidad de rotura."`);
       }
-      if (app === 'Trama' && cvm != null && cvm > 13) bloqueAuditoria.push(`> 💬 "La masa viene bailando (CVm ${f(cvm)}%). Riesgo de barras en tela."`);
+      if (!isFlame && app === 'Trama' && cvm != null && cvm > 13) bloqueAuditoria.push(`> 💬 "La masa viene bailando (CVm ${f(cvm)}%). Riesgo de barras en tela."`);
+      if (isFlame && cvm != null && cvm > FLAME_UMB.cvm.ok) bloqueAuditoria.push(`> 💬 "CVm% elevado incluso para fantasía (${f(cvm)}%). Controlar estabilidad visual del efecto flame."`);
       if (app === 'Urdimbre' && elo != null && elo < 7.5) bloqueAuditoria.push(`> 💬 "Elongación baja. El hilo no perdona en la Urdidora."`);
       bloqueAuditoria.push('');
     }
