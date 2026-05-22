@@ -446,9 +446,9 @@ router.get('/mezcla-lotes', async (req, res) => {
         ROUND(AVG(CASE WHEN "SCI"  ~ '^[0-9][0-9,\\.]*$' THEN REPLACE("SCI",  ',', '.')::numeric END), 1) AS sci,
         ROUND(AVG(CASE WHEN "MIC"  ~ '^[0-9][0-9,\\.]*$' THEN REPLACE("MIC",  ',', '.')::numeric END), 3) AS mic,
         ROUND(AVG(CASE WHEN "UHML" ~ '^[0-9][0-9,\\.]*$' THEN REPLACE("UHML", ',', '.')::numeric END), 2) AS uhml,
-        SUM(CASE WHEN "DT_ENTRADA_PROD" IS NOT NULL AND "DT_ENTRADA_PROD" <> ''
+        SUM(CASE WHEN "QTDE" IS NOT NULL AND REPLACE("QTDE"::text, ',', '.') ~ '^[0-9][0-9.]*$'
                  THEN ROUND(REPLACE("QTDE"::text, ',', '.')::numeric)::integer
-                 ELSE 0 END) AS fardos_consumidos,
+                 ELSE 1 END) AS fardos_consumidos,
         COUNT(DISTINCT CASE WHEN "DT_ENTRADA_PROD" IS NOT NULL AND "DT_ENTRADA_PROD" <> '' THEN "SEQ" END) AS secuencias
       FROM tb_calidad_fibra
       WHERE "TIPO_MOV" = 'MIST'
