@@ -113,7 +113,7 @@
                   <td class="px-2 py-2 text-center whitespace-nowrap">{{ row.Fecha }}</td>
                   <td class="px-2 py-2 text-center whitespace-nowrap">{{ row.Hora }}</td>
                   <td class="px-2 py-2 text-center font-semibold">{{ row.Turno }}</td>
-                  <td class="px-2 py-2 text-center">{{ row.Lote }}</td>
+                  <td class="px-2 py-2 text-center">{{ row.LoteNro ?? row.Lote }}</td>
                   <td class="px-2 py-2 text-center">{{ row.Maq }}</td>
                   <td class="px-2 py-2 text-center">{{ row.Tipo }}</td>
                   <td class="px-2 py-2 text-center">{{ row.Ne }}</td>
@@ -334,6 +334,52 @@ function machineSortValue(value) {
   return Number.isFinite(numeric) ? numeric : Number.MAX_SAFE_INTEGER
 }
 
+function parseLoteNumero(loteStr, allLotes = []) {
+  if (loteStr == null || loteStr === '') return null
+  const s = String(loteStr).toUpperCase().replace(/\s+/g, '')
+
+  // 1) HD followed by 3 digits (covers HD-11526 -> 115)
+  let m = s.match(/HD[-_]?(\d{3})/i)
+  if (m) return Number(m[1])
+
+  // 2) any 3-digit sequence
+  m = s.match(/(\d{3})/)
+  if (m) return Number(m[1])
+
+  // 3) HD followed by 2 digits -> infer hundred by context or fallback
+  m = s.match(/HD[-_]?(\d{2})/i)
+  if (m) {
+    const two = Number(m[1])
+    // try infer hundred from other parsed three-digit lotes
+    const parsedThree = (allLotes || []).map(x => {
+      const mm = String(x || '').toUpperCase().replace(/\s+/g, '').match(/HD[-_]?(\d{3})/i)
+      return mm ? Number(mm[1]) : null
+    }).filter(Boolean)
+    if (parsedThree.length) {
+      const counts = {}
+      parsedThree.forEach(n => {
+        const h = Math.floor(n / 100)
+        counts[h] = (counts[h] || 0) + 1
+      })
+      const modeHundred = Number(Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0] || 1)
+      return modeHundred * 100 + two
+    }
+    // fallback heuristic: if day-like (<=31) assume +100
+    if (two <= 31) return 100 + two
+    return two
+  }
+
+  // 4) any 2-digit sequence fallback
+  m = s.match(/(\d{2})/)
+  if (m) {
+    const t = Number(m[1])
+    if (t <= 31) return 100 + t
+    return t
+  }
+
+  return null
+}
+
 const availableTurnos = computed(() => [...new Set(rows.value.map((r) => r.Turno).filter(Boolean))].sort())
 const availableTipos = computed(() => [...new Set(rows.value.map((r) => r.Tipo).filter(Boolean))].sort((a, b) => a.localeCompare(b)))
 const availableMaquinas = computed(() => {
@@ -446,14 +492,15 @@ async function loadRows() {
       const date = parseDateFromRaw(row.TIME_STAMP)
       const tblList = tblByTestnr.get(testnr) || []
 
-      return {
+        return {
         Ensayo: testnr,
         FechaHora: formatDateTime(date),
         Fecha: formatDate(date),
         Hora: formatTime(date),
         _timeMs: date ? date.getTime() : 0,
         Turno: getTurnoFromDate(date),
-        Lote: row.LOTE || '—',
+          Lote: row.LOTE || '—',
+          LoteNro: null,
         Maq: formatMachine(row.MASCHNR),
         Tipo: row.MACHINE_FAMILY || '—',
         Ne: formatMetric(row.NOMCOUNT, 2),
@@ -480,6 +527,12 @@ async function loadRows() {
       return machineSortValue(a.Maq) - machineSortValue(b.Maq)
     })
 
+    // Calcular LoteNro para cada registro usando contexto de lotes existentes
+    const allLotesRaw = data.map(r => r.Lote).filter(Boolean).filter(x => x !== '—')
+    for (const r of data) {
+      r.LoteNro = parseLoteNumero(r.Lote, allLotesRaw)
+    }
+
     rows.value = data
     lastLoadedAt.value = formatDateTime(new Date())
   } catch (err) {
@@ -505,7 +558,11 @@ async function exportToExcel() {
     filteredRows.value.forEach((row) => {
       const output = {}
       headers.forEach((header) => {
-        output[header] = row[header] ?? ''
+        if (header === 'Lote') {
+          output[header] = row.LoteNro != null ? String(row.LoteNro) : (row.Lote ?? '')
+        } else {
+          output[header] = row[header] ?? ''
+        }
       })
       sheet.addRow(output)
     })
