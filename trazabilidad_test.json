@@ -1,0 +1,1817 @@
+﻿{
+    "fecha":  "2026-05-03",
+    "filtros":  {
+                    "lote":  null,
+                    "ne":  null
+                },
+    "rows":  [
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "B",
+                     "lote":  "116",
+                     "ne":  "10",
+                     "titulo_oe":  "10",
+                     "maquina_codigo":  "050407",
+                     "maquina_num":  7,
+                     "lado":  "U",
+                     "item":  "0804526",
+                     "desc_item":  "HILO 10/1 FANTA OE CARDA TECEL",
+                     "rpm":  "72000",
+                     "prod_kg_hr":  "206.81",
+                     "prod_informada":  "1631.70",
+                     "efic_calculada":  "98.6",
+                     "efic_informada":  "98.5",
+                     "cort_nat":  "182",
+                     "rob_01":  "99",
+                     "rob_02":  "97",
+                     "rob_03":  "90",
+                     "alfa":  "5.35",
+                     "t_bob":  "0.997",
+                     "rpm_card":  "9500",
+                     "mo":  "2",
+                     "cp":  "0",
+                     "cm":  "1",
+                     "ccp":  "6",
+                     "ccm":  "26",
+                     "jp":  "1",
+                     "jm":  "2",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "0",
+                     "clm_s":  "7",
+                     "clm_l":  "64",
+                     "clm_t":  "0",
+                     "passador":  "si",
+                     "maquinas_uster":  "10, 7",
+                     "cvm":  "14.47",
+                     "vellosidad":  null,
+                     "neps_140":  "579.0",
+                     "neps_200":  "42.1",
+                     "thin_30":  "1553.2",
+                     "thin_40":  "87.3",
+                     "thin_50":  "0.7",
+                     "thick_35":  "354.6",
+                     "thick_50":  "39.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "17.67",
+                     "elongacion":  "9.05",
+                     "fuerza_b":  "1043.53",
+                     "trabajo_b":  "20.61",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  95.33333333333333,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.92",
+                     "cvm_carda_max_turno":  "3.45",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.45
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  2.8
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  3.33
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  2.99
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.47
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.46
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "7 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 182.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 32 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cvm",
+                                         "message":  "CVm 14.47%."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "A",
+                     "lote":  "116",
+                     "ne":  "10",
+                     "titulo_oe":  "10",
+                     "maquina_codigo":  "050407",
+                     "maquina_num":  7,
+                     "lado":  "U",
+                     "item":  "0804526",
+                     "desc_item":  "HILO 10/1 FANTA OE CARDA TECEL",
+                     "rpm":  "72000",
+                     "prod_kg_hr":  "208.76",
+                     "prod_informada":  "1190.00",
+                     "efic_calculada":  "71.3",
+                     "efic_informada":  "72.1",
+                     "cort_nat":  "222",
+                     "rob_01":  "98",
+                     "rob_02":  "96",
+                     "rob_03":  "90",
+                     "alfa":  "5.3",
+                     "t_bob":  "0.997",
+                     "rpm_card":  "9500",
+                     "mo":  "0",
+                     "cp":  "0",
+                     "cm":  "0",
+                     "ccp":  "17",
+                     "ccm":  "36",
+                     "jp":  "0",
+                     "jm":  "2",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "3",
+                     "clm_s":  "10",
+                     "clm_l":  "38",
+                     "clm_t":  "0",
+                     "passador":  "si",
+                     "maquinas_uster":  "10, 7",
+                     "cvm":  "14.47",
+                     "vellosidad":  null,
+                     "neps_140":  "579.0",
+                     "neps_200":  "42.1",
+                     "thin_30":  "1553.2",
+                     "thin_40":  "87.3",
+                     "thin_50":  "0.7",
+                     "thick_35":  "354.6",
+                     "thick_50":  "39.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "17.67",
+                     "elongacion":  "9.05",
+                     "fuerza_b":  "1043.53",
+                     "trabajo_b":  "20.61",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  94.66666666666667,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.98",
+                     "cvm_carda_max_turno":  "3.36",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.36
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  3.33
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  2.93
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  3.02
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.64
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.61
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "7 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 72.1%."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 222.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 53 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cvm",
+                                         "message":  "CVm 14.47%."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "C",
+                     "lote":  "116",
+                     "ne":  "10",
+                     "titulo_oe":  "10",
+                     "maquina_codigo":  "050407",
+                     "maquina_num":  7,
+                     "lado":  "U",
+                     "item":  "0804526",
+                     "desc_item":  "HILO 10/1 FANTA OE CARDA TECEL",
+                     "rpm":  "72000",
+                     "prod_kg_hr":  "208.76",
+                     "prod_informada":  "1301.80",
+                     "efic_calculada":  "77.9",
+                     "efic_informada":  "78.7",
+                     "cort_nat":  "179",
+                     "rob_01":  "98",
+                     "rob_02":  "97",
+                     "rob_03":  "98",
+                     "alfa":  "5.3",
+                     "t_bob":  "0.997",
+                     "rpm_card":  "9500",
+                     "mo":  "0",
+                     "cp":  "0",
+                     "cm":  "0",
+                     "ccp":  "16",
+                     "ccm":  "32",
+                     "jp":  "0",
+                     "jm":  "3",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "1",
+                     "clm_s":  "8",
+                     "clm_l":  "35",
+                     "clm_t":  "0",
+                     "passador":  "si",
+                     "maquinas_uster":  "10, 7",
+                     "cvm":  "14.47",
+                     "vellosidad":  null,
+                     "neps_140":  "579.0",
+                     "neps_200":  "42.1",
+                     "thin_30":  "1553.2",
+                     "thin_40":  "87.3",
+                     "thin_50":  "0.7",
+                     "thick_35":  "354.6",
+                     "thick_50":  "39.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "17.67",
+                     "elongacion":  "9.05",
+                     "fuerza_b":  "1043.53",
+                     "trabajo_b":  "20.61",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  97.66666666666667,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.92",
+                     "cvm_carda_max_turno":  "3.50",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.5
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  2.83
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  2.94
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  3.06
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.49
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.72
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "7 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 78.7%."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 179.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 48 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cvm",
+                                         "message":  "CVm 14.47%."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "C",
+                     "lote":  "116",
+                     "ne":  "10",
+                     "titulo_oe":  "10",
+                     "maquina_codigo":  "050410",
+                     "maquina_num":  10,
+                     "lado":  "U",
+                     "item":  "0523096",
+                     "desc_item":  "HILO 10/1 LISO OE CARDA TECEL",
+                     "rpm":  "80000",
+                     "prod_kg_hr":  "231.96",
+                     "prod_informada":  "620.10",
+                     "efic_calculada":  "33.4",
+                     "efic_informada":  "33.4",
+                     "cort_nat":  "122",
+                     "rob_01":  "96",
+                     "rob_02":  "93",
+                     "rob_03":  "94",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.002",
+                     "rpm_card":  "9500",
+                     "mo":  "8",
+                     "cp":  "1",
+                     "cm":  "0",
+                     "ccp":  "3",
+                     "ccm":  "30",
+                     "jp":  "1",
+                     "jm":  "0",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "2",
+                     "clm_s":  "20",
+                     "clm_l":  "23",
+                     "clm_t":  "17",
+                     "passador":  "si",
+                     "maquinas_uster":  "10, 7",
+                     "cvm":  "14.47",
+                     "vellosidad":  null,
+                     "neps_140":  "579.0",
+                     "neps_200":  "42.1",
+                     "thin_30":  "1553.2",
+                     "thin_40":  "87.3",
+                     "thin_50":  "0.7",
+                     "thick_35":  "354.6",
+                     "thick_50":  "39.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "17.67",
+                     "elongacion":  "9.05",
+                     "fuerza_b":  "1043.53",
+                     "trabajo_b":  "20.61",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  94.33333333333333,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.92",
+                     "cvm_carda_max_turno":  "3.50",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.5
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  2.83
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  2.94
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  3.06
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.49
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.72
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "10 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 33.4%."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 33 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cvm",
+                                         "message":  "CVm 14.47%."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "B",
+                     "lote":  "116",
+                     "ne":  "10",
+                     "titulo_oe":  "10",
+                     "maquina_codigo":  "050410",
+                     "maquina_num":  10,
+                     "lado":  "U",
+                     "item":  "0523096",
+                     "desc_item":  "HILO 10/1 LISO OE CARDA TECEL",
+                     "rpm":  "80000",
+                     "prod_kg_hr":  "231.96",
+                     "prod_informada":  "1808.30",
+                     "efic_calculada":  "97.4",
+                     "efic_informada":  "97.2",
+                     "cort_nat":  "188",
+                     "rob_01":  "96",
+                     "rob_02":  "94",
+                     "rob_03":  "97",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.002",
+                     "rpm_card":  "9500",
+                     "mo":  "18",
+                     "cp":  "9",
+                     "cm":  "3",
+                     "ccp":  "6",
+                     "ccm":  "57",
+                     "jp":  "4",
+                     "jm":  "2",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "8",
+                     "clm_s":  "69",
+                     "clm_l":  "71",
+                     "clm_t":  "49",
+                     "passador":  "si",
+                     "maquinas_uster":  "10, 7",
+                     "cvm":  "14.47",
+                     "vellosidad":  null,
+                     "neps_140":  "579.0",
+                     "neps_200":  "42.1",
+                     "thin_30":  "1553.2",
+                     "thin_40":  "87.3",
+                     "thin_50":  "0.7",
+                     "thick_35":  "354.6",
+                     "thick_50":  "39.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "17.67",
+                     "elongacion":  "9.05",
+                     "fuerza_b":  "1043.53",
+                     "trabajo_b":  "20.61",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  95.66666666666667,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.92",
+                     "cvm_carda_max_turno":  "3.45",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.45
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  2.8
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  3.33
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  2.99
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.47
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.46
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "10 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 188.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 63 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cvm",
+                                         "message":  "CVm 14.47%."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "A",
+                     "lote":  "116",
+                     "ne":  "10",
+                     "titulo_oe":  "10",
+                     "maquina_codigo":  "050410",
+                     "maquina_num":  10,
+                     "lado":  "U",
+                     "item":  "0523096",
+                     "desc_item":  "HILO 10/1 LISO OE CARDA TECEL",
+                     "rpm":  "80000",
+                     "prod_kg_hr":  "231.96",
+                     "prod_informada":  "1304.20",
+                     "efic_calculada":  "70.3",
+                     "efic_informada":  "70.1",
+                     "cort_nat":  "149",
+                     "rob_01":  "97",
+                     "rob_02":  "91",
+                     "rob_03":  "94",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.002",
+                     "rpm_card":  "9500",
+                     "mo":  "11",
+                     "cp":  "3",
+                     "cm":  "1",
+                     "ccp":  "12",
+                     "ccm":  "36",
+                     "jp":  "7",
+                     "jm":  "3",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "7",
+                     "clm_s":  "86",
+                     "clm_l":  "59",
+                     "clm_t":  "50",
+                     "passador":  "si",
+                     "maquinas_uster":  "10, 7",
+                     "cvm":  "14.47",
+                     "vellosidad":  null,
+                     "neps_140":  "579.0",
+                     "neps_200":  "42.1",
+                     "thin_30":  "1553.2",
+                     "thin_40":  "87.3",
+                     "thin_50":  "0.7",
+                     "thick_35":  "354.6",
+                     "thick_50":  "39.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "17.67",
+                     "elongacion":  "9.05",
+                     "fuerza_b":  "1043.53",
+                     "trabajo_b":  "20.61",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  94,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.98",
+                     "cvm_carda_max_turno":  "3.36",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.36
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  3.33
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  2.93
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  3.02
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.64
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.61
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "10 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 70.1%."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 48 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cvm",
+                                         "message":  "CVm 14.47%."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "A",
+                     "lote":  "117",
+                     "ne":  "12.5",
+                     "titulo_oe":  "12.5",
+                     "maquina_codigo":  "050403",
+                     "maquina_num":  3,
+                     "lado":  "A",
+                     "item":  "0957330",
+                     "desc_item":  "HILO 12,5 LISO OE CARDA TECEL",
+                     "rpm":  "90000",
+                     "prod_kg_hr":  "103.74",
+                     "prod_informada":  "657.90",
+                     "efic_calculada":  "79.3",
+                     "efic_informada":  "79.0",
+                     "cort_nat":  "208",
+                     "rob_01":  "0",
+                     "rob_02":  "0",
+                     "rob_03":  "0",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.006",
+                     "rpm_card":  "9500",
+                     "mo":  "18",
+                     "cp":  "4",
+                     "cm":  "12",
+                     "ccp":  "11",
+                     "ccm":  "4",
+                     "jp":  "28",
+                     "jm":  "1",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "0",
+                     "clm_s":  "35",
+                     "clm_l":  "7",
+                     "clm_t":  "41",
+                     "passador":  "si",
+                     "maquinas_uster":  "3 LI, 3 LP",
+                     "cvm":  "12.13",
+                     "vellosidad":  null,
+                     "neps_140":  "610.6",
+                     "neps_200":  "47.1",
+                     "thin_30":  "834.4",
+                     "thin_40":  "28.6",
+                     "thin_50":  "0.2",
+                     "thick_35":  "220.3",
+                     "thick_50":  "12.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "18.10",
+                     "elongacion":  "8.38",
+                     "fuerza_b":  "855.17",
+                     "trabajo_b":  "16.04",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  null,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.98",
+                     "cvm_carda_max_turno":  "3.36",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.36
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  3.33
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  2.93
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  3.02
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.64
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.61
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "LP",
+                     "maquina_label":  "3 LP",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 79.0%."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 208.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "empalmes",
+                                         "message":  "Empalmes 29 elevados (revisar piecer)."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "cvm",
+                                         "message":  "CVm 12.13% cerca de límite."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "C",
+                     "lote":  "117",
+                     "ne":  "12.5",
+                     "titulo_oe":  "12.5",
+                     "maquina_codigo":  "050403",
+                     "maquina_num":  3,
+                     "lado":  "A",
+                     "item":  "0957330",
+                     "desc_item":  "HILO 12,5 LISO OE CARDA TECEL",
+                     "rpm":  "90000",
+                     "prod_kg_hr":  "103.74",
+                     "prod_informada":  "578.80",
+                     "efic_calculada":  "69.7",
+                     "efic_informada":  "69.5",
+                     "cort_nat":  "171",
+                     "rob_01":  "0",
+                     "rob_02":  "0",
+                     "rob_03":  "0",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.006",
+                     "rpm_card":  "9500",
+                     "mo":  "15",
+                     "cp":  "13",
+                     "cm":  "8",
+                     "ccp":  "8",
+                     "ccm":  "6",
+                     "jp":  "9",
+                     "jm":  "0",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "1",
+                     "clm_s":  "26",
+                     "clm_l":  "6",
+                     "clm_t":  "39",
+                     "passador":  "si",
+                     "maquinas_uster":  "3 LI, 3 LP",
+                     "cvm":  "12.13",
+                     "vellosidad":  null,
+                     "neps_140":  "610.6",
+                     "neps_200":  "47.1",
+                     "thin_30":  "834.4",
+                     "thin_40":  "28.6",
+                     "thin_50":  "0.2",
+                     "thick_35":  "220.3",
+                     "thick_50":  "12.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "18.10",
+                     "elongacion":  "8.38",
+                     "fuerza_b":  "855.17",
+                     "trabajo_b":  "16.04",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  null,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.92",
+                     "cvm_carda_max_turno":  "3.50",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.5
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  2.83
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  2.94
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  3.06
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.49
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.72
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "LP",
+                     "maquina_label":  "3 LP",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 69.5%."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 171.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "cvm",
+                                         "message":  "CVm 12.13% cerca de límite."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "B",
+                     "lote":  "117",
+                     "ne":  "12.5",
+                     "titulo_oe":  "12.5",
+                     "maquina_codigo":  "050403",
+                     "maquina_num":  3,
+                     "lado":  "A",
+                     "item":  "0957330",
+                     "desc_item":  "HILO 12,5 LISO OE CARDA TECEL",
+                     "rpm":  "90000",
+                     "prod_kg_hr":  "103.74",
+                     "prod_informada":  "780.10",
+                     "efic_calculada":  "94.0",
+                     "efic_informada":  "93.7",
+                     "cort_nat":  "227",
+                     "rob_01":  "0",
+                     "rob_02":  "0",
+                     "rob_03":  "0",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.006",
+                     "rpm_card":  "9500",
+                     "mo":  "23",
+                     "cp":  "4",
+                     "cm":  "8",
+                     "ccp":  "2",
+                     "ccm":  "12",
+                     "jp":  "3",
+                     "jm":  "0",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "1",
+                     "clm_s":  "40",
+                     "clm_l":  "12",
+                     "clm_t":  "27",
+                     "passador":  "si",
+                     "maquinas_uster":  "3 LI, 3 LP",
+                     "cvm":  "12.13",
+                     "vellosidad":  null,
+                     "neps_140":  "610.6",
+                     "neps_200":  "47.1",
+                     "thin_30":  "834.4",
+                     "thin_40":  "28.6",
+                     "thin_50":  "0.2",
+                     "thick_35":  "220.3",
+                     "thick_50":  "12.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "18.10",
+                     "elongacion":  "8.38",
+                     "fuerza_b":  "855.17",
+                     "trabajo_b":  "16.04",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  null,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.92",
+                     "cvm_carda_max_turno":  "3.45",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.45
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  2.8
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  3.33
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  2.99
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.47
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.46
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "LP",
+                     "maquina_label":  "3 LP",
+                     "alertas":  [
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 227.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "cvm",
+                                         "message":  "CVm 12.13% cerca de límite."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "C",
+                     "lote":  "117",
+                     "ne":  "12.5",
+                     "titulo_oe":  "12.5",
+                     "maquina_codigo":  "050403",
+                     "maquina_num":  3,
+                     "lado":  "B",
+                     "item":  "0957330",
+                     "desc_item":  "HILO 12,5 LISO OE CARDA TECEL",
+                     "rpm":  "90000",
+                     "prod_kg_hr":  "103.74",
+                     "prod_informada":  "554.40",
+                     "efic_calculada":  "66.8",
+                     "efic_informada":  "66.6",
+                     "cort_nat":  "153",
+                     "rob_01":  "0",
+                     "rob_02":  "0",
+                     "rob_03":  "0",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.006",
+                     "rpm_card":  "9500",
+                     "mo":  "22",
+                     "cp":  "6",
+                     "cm":  "7",
+                     "ccp":  "6",
+                     "ccm":  "1",
+                     "jp":  "9",
+                     "jm":  "0",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "1",
+                     "clm_s":  "31",
+                     "clm_l":  "4",
+                     "clm_t":  "23",
+                     "passador":  "si",
+                     "maquinas_uster":  "3 LI, 3 LP",
+                     "cvm":  "12.13",
+                     "vellosidad":  null,
+                     "neps_140":  "610.6",
+                     "neps_200":  "47.1",
+                     "thin_30":  "834.4",
+                     "thin_40":  "28.6",
+                     "thin_50":  "0.2",
+                     "thick_35":  "220.3",
+                     "thick_50":  "12.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "18.10",
+                     "elongacion":  "8.38",
+                     "fuerza_b":  "855.17",
+                     "trabajo_b":  "16.04",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  null,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.92",
+                     "cvm_carda_max_turno":  "3.50",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.5
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  2.83
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  2.94
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  3.06
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.49
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.72
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "LI",
+                     "maquina_label":  "3 LI",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 66.6%."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 153.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "cvm",
+                                         "message":  "CVm 12.13% cerca de límite."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "A",
+                     "lote":  "117",
+                     "ne":  "12.5",
+                     "titulo_oe":  "12.5",
+                     "maquina_codigo":  "050403",
+                     "maquina_num":  3,
+                     "lado":  "B",
+                     "item":  "0957330",
+                     "desc_item":  "HILO 12,5 LISO OE CARDA TECEL",
+                     "rpm":  "90000",
+                     "prod_kg_hr":  "103.74",
+                     "prod_informada":  "762.20",
+                     "efic_calculada":  "91.8",
+                     "efic_informada":  "91.6",
+                     "cort_nat":  "241",
+                     "rob_01":  "0",
+                     "rob_02":  "0",
+                     "rob_03":  "0",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.006",
+                     "rpm_card":  "9500",
+                     "mo":  "38",
+                     "cp":  "8",
+                     "cm":  "24",
+                     "ccp":  "19",
+                     "ccm":  "5",
+                     "jp":  "20",
+                     "jm":  "0",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "0",
+                     "clm_s":  "70",
+                     "clm_l":  "9",
+                     "clm_t":  "65",
+                     "passador":  "si",
+                     "maquinas_uster":  "3 LI, 3 LP",
+                     "cvm":  "12.13",
+                     "vellosidad":  null,
+                     "neps_140":  "610.6",
+                     "neps_200":  "47.1",
+                     "thin_30":  "834.4",
+                     "thin_40":  "28.6",
+                     "thin_50":  "0.2",
+                     "thick_35":  "220.3",
+                     "thick_50":  "12.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "18.10",
+                     "elongacion":  "8.38",
+                     "fuerza_b":  "855.17",
+                     "trabajo_b":  "16.04",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  null,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.98",
+                     "cvm_carda_max_turno":  "3.36",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.36
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  3.33
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  2.93
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  3.02
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.64
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.61
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "LI",
+                     "maquina_label":  "3 LI",
+                     "alertas":  [
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 241.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 24 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "empalmes",
+                                         "message":  "Empalmes 20 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "cvm",
+                                         "message":  "CVm 12.13% cerca de límite."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "B",
+                     "lote":  "117",
+                     "ne":  "12.5",
+                     "titulo_oe":  "12.5",
+                     "maquina_codigo":  "050403",
+                     "maquina_num":  3,
+                     "lado":  "B",
+                     "item":  "0957330",
+                     "desc_item":  "HILO 12,5 LISO OE CARDA TECEL",
+                     "rpm":  "90000",
+                     "prod_kg_hr":  "103.74",
+                     "prod_informada":  "810.00",
+                     "efic_calculada":  "97.6",
+                     "efic_informada":  "97.4",
+                     "cort_nat":  "178",
+                     "rob_01":  "0",
+                     "rob_02":  "0",
+                     "rob_03":  "0",
+                     "alfa":  "5.3",
+                     "t_bob":  "1.006",
+                     "rpm_card":  "9500",
+                     "mo":  "21",
+                     "cp":  "9",
+                     "cm":  "17",
+                     "ccp":  "9",
+                     "ccm":  "1",
+                     "jp":  "9",
+                     "jm":  "0",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "2",
+                     "clm_s":  "47",
+                     "clm_l":  "10",
+                     "clm_t":  "50",
+                     "passador":  "si",
+                     "maquinas_uster":  "3 LI, 3 LP",
+                     "cvm":  "12.13",
+                     "vellosidad":  null,
+                     "neps_140":  "610.6",
+                     "neps_200":  "47.1",
+                     "thin_30":  "834.4",
+                     "thin_40":  "28.6",
+                     "thin_50":  "0.2",
+                     "thick_35":  "220.3",
+                     "thick_50":  "12.4",
+                     "ensayos_uster":  "2",
+                     "tenacidad":  "18.10",
+                     "elongacion":  "8.38",
+                     "fuerza_b":  "855.17",
+                     "trabajo_b":  "16.04",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  null,
+                     "alimentacion":  "MANUAR",
+                     "cadena_alimentacion":  "TRUTZSCHLER \u003e MANUAR",
+                     "style_carda_objetivo":  "TRUTZSCHLER",
+                     "cvm_carda_turno":  "2.92",
+                     "cvm_carda_max_turno":  "3.45",
+                     "muestras_carda_turno":  6,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "2, 3, 4, 5, 6, 7",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  2,
+                                                      "cvm":  3.45
+                                                  },
+                                                  {
+                                                      "carda":  3,
+                                                      "cvm":  2.8
+                                                  },
+                                                  {
+                                                      "carda":  4,
+                                                      "cvm":  3.33
+                                                  },
+                                                  {
+                                                      "carda":  5,
+                                                      "cvm":  2.99
+                                                  },
+                                                  {
+                                                      "carda":  6,
+                                                      "cvm":  2.47
+                                                  },
+                                                  {
+                                                      "carda":  7,
+                                                      "cvm":  2.46
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  80,
+                     "prod_kgh_carda_min":  80,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "LI",
+                     "maquina_label":  "3 LI",
+                     "alertas":  [
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 178.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "cvm",
+                                         "message":  "CVm 12.13% cerca de límite."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE. Controlar uniformidad de estiraje y priorizar seguimiento de cardas del día."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "B",
+                     "lote":  "117",
+                     "ne":  "7",
+                     "titulo_oe":  "7",
+                     "maquina_codigo":  "050409",
+                     "maquina_num":  9,
+                     "lado":  "U",
+                     "item":  "0523093",
+                     "desc_item":  "HILO 7/1 LISO OE CARDA TECEL",
+                     "rpm":  "80000",
+                     "prod_kg_hr":  "396.07",
+                     "prod_informada":  "2793.70",
+                     "efic_calculada":  "88.2",
+                     "efic_informada":  "87.8",
+                     "cort_nat":  "346",
+                     "rob_01":  "86",
+                     "rob_02":  "90",
+                     "rob_03":  "89",
+                     "alfa":  "5.3",
+                     "t_bob":  "0.983",
+                     "rpm_card":  "9500",
+                     "mo":  "34",
+                     "cp":  "25",
+                     "cm":  "0",
+                     "ccp":  "63",
+                     "ccm":  "66",
+                     "jp":  "35",
+                     "jm":  "2",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "5",
+                     "clm_s":  "91",
+                     "clm_l":  "15",
+                     "clm_t":  "97",
+                     "passador":  "no",
+                     "maquinas_uster":  "9",
+                     "cvm":  "10.70",
+                     "vellosidad":  null,
+                     "neps_140":  "107.1",
+                     "neps_200":  "4.3",
+                     "thin_30":  "248.1",
+                     "thin_40":  "2.1",
+                     "thin_50":  "0.0",
+                     "thick_35":  "69.5",
+                     "thick_50":  "3.2",
+                     "ensayos_uster":  "1",
+                     "tenacidad":  "17.02",
+                     "elongacion":  "9.48",
+                     "fuerza_b":  "1435.90",
+                     "trabajo_b":  "29.87",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  88.33333333333333,
+                     "alimentacion":  "CARDA RIETER",
+                     "cadena_alimentacion":  "CARDA RIETER",
+                     "style_carda_objetivo":  "CARDA RIETER",
+                     "cvm_carda_turno":  "3.56",
+                     "cvm_carda_max_turno":  "4.52",
+                     "muestras_carda_turno":  9,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "10, 11, 12, 13, 15, 16, 17, 8, 9",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  8,
+                                                      "cvm":  3.56
+                                                  },
+                                                  {
+                                                      "carda":  9,
+                                                      "cvm":  3.69
+                                                  },
+                                                  {
+                                                      "carda":  10,
+                                                      "cvm":  3.01
+                                                  },
+                                                  {
+                                                      "carda":  11,
+                                                      "cvm":  3.24
+                                                  },
+                                                  {
+                                                      "carda":  12,
+                                                      "cvm":  3.14
+                                                  },
+                                                  {
+                                                      "carda":  13,
+                                                      "cvm":  3.78
+                                                  },
+                                                  {
+                                                      "carda":  15,
+                                                      "cvm":  3.45
+                                                  },
+                                                  {
+                                                      "carda":  16,
+                                                      "cvm":  4.52
+                                                  },
+                                                  {
+                                                      "carda":  17,
+                                                      "cvm":  3.63
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  71.19,
+                     "prod_kgh_carda_min":  70.09,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "9 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "media",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 87.8% por debajo de ventana estable."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 346.0 elevado."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 129 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "empalmes",
+                                         "message":  "Empalmes 37 elevados (revisar piecer)."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "robots",
+                                         "message":  "Eficiencia promedio Robots 88.3% en seguimiento."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "C",
+                     "lote":  "117",
+                     "ne":  "7",
+                     "titulo_oe":  "7",
+                     "maquina_codigo":  "050409",
+                     "maquina_num":  9,
+                     "lado":  "U",
+                     "item":  "0523093",
+                     "desc_item":  "HILO 7/1 LISO OE CARDA TECEL",
+                     "rpm":  "80000",
+                     "prod_kg_hr":  "396.07",
+                     "prod_informada":  "2161.40",
+                     "efic_calculada":  "68.2",
+                     "efic_informada":  "68.0",
+                     "cort_nat":  "215",
+                     "rob_01":  "80",
+                     "rob_02":  "89",
+                     "rob_03":  "92",
+                     "alfa":  "5.3",
+                     "t_bob":  "0.983",
+                     "rpm_card":  "9500",
+                     "mo":  "17",
+                     "cp":  "36",
+                     "cm":  "0",
+                     "ccp":  "100",
+                     "ccm":  "86",
+                     "jp":  "37",
+                     "jm":  "1",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "3",
+                     "clm_s":  "65",
+                     "clm_l":  "20",
+                     "clm_t":  "59",
+                     "passador":  "no",
+                     "maquinas_uster":  "9",
+                     "cvm":  "10.70",
+                     "vellosidad":  null,
+                     "neps_140":  "107.1",
+                     "neps_200":  "4.3",
+                     "thin_30":  "248.1",
+                     "thin_40":  "2.1",
+                     "thin_50":  "0.0",
+                     "thick_35":  "69.5",
+                     "thick_50":  "3.2",
+                     "ensayos_uster":  "1",
+                     "tenacidad":  "17.02",
+                     "elongacion":  "9.48",
+                     "fuerza_b":  "1435.90",
+                     "trabajo_b":  "29.87",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  87,
+                     "alimentacion":  "CARDA RIETER",
+                     "cadena_alimentacion":  "CARDA RIETER",
+                     "style_carda_objetivo":  "CARDA RIETER",
+                     "cvm_carda_turno":  "3.90",
+                     "cvm_carda_max_turno":  "4.73",
+                     "muestras_carda_turno":  12,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "10, 11, 12, 13, 15, 16, 17, 8, 9",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  8,
+                                                      "cvm":  3.52
+                                                  },
+                                                  {
+                                                      "carda":  9,
+                                                      "cvm":  4.01
+                                                  },
+                                                  {
+                                                      "carda":  10,
+                                                      "cvm":  3
+                                                  },
+                                                  {
+                                                      "carda":  11,
+                                                      "cvm":  3.19
+                                                  },
+                                                  {
+                                                      "carda":  12,
+                                                      "cvm":  3.17
+                                                  },
+                                                  {
+                                                      "carda":  13,
+                                                      "cvm":  3.61
+                                                  },
+                                                  {
+                                                      "carda":  15,
+                                                      "cvm":  3.99
+                                                  },
+                                                  {
+                                                      "carda":  16,
+                                                      "cvm":  4.73
+                                                  },
+                                                  {
+                                                      "carda":  16,
+                                                      "cvm":  4.39
+                                                  },
+                                                  {
+                                                      "carda":  16,
+                                                      "cvm":  4.59
+                                                  },
+                                                  {
+                                                      "carda":  16,
+                                                      "cvm":  4.69
+                                                  },
+                                                  {
+                                                      "carda":  17,
+                                                      "cvm":  3.89
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  70.05,
+                     "prod_kgh_carda_min":  59.83,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "9 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 68.0%."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 215.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 186 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "empalmes",
+                                         "message":  "Empalmes 38 elevados (revisar piecer)."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "robots",
+                                         "message":  "Eficiencia promedio Robots 87.0% en seguimiento."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE."
+                 },
+                 {
+                     "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                     "turno":  "A",
+                     "lote":  "117",
+                     "ne":  "7",
+                     "titulo_oe":  "7",
+                     "maquina_codigo":  "050409",
+                     "maquina_num":  9,
+                     "lado":  "U",
+                     "item":  "0523093",
+                     "desc_item":  "HILO 7/1 LISO OE CARDA TECEL",
+                     "rpm":  "80000",
+                     "prod_kg_hr":  "396.07",
+                     "prod_informada":  "1919.30",
+                     "efic_calculada":  "60.6",
+                     "efic_informada":  "60.3",
+                     "cort_nat":  "227",
+                     "rob_01":  "83",
+                     "rob_02":  "93",
+                     "rob_03":  "83",
+                     "alfa":  "5.3",
+                     "t_bob":  "0.983",
+                     "rpm_card":  "9500",
+                     "mo":  "21",
+                     "cp":  "0",
+                     "cm":  "0",
+                     "ccp":  "10",
+                     "ccm":  "64",
+                     "jp":  "40",
+                     "jm":  "6",
+                     "oe_cvp":  "0",
+                     "oe_cvm":  "0",
+                     "clm_n":  "7",
+                     "clm_s":  "58",
+                     "clm_l":  "9",
+                     "clm_t":  "75",
+                     "passador":  "no",
+                     "maquinas_uster":  "9",
+                     "cvm":  "10.70",
+                     "vellosidad":  null,
+                     "neps_140":  "107.1",
+                     "neps_200":  "4.3",
+                     "thin_30":  "248.1",
+                     "thin_40":  "2.1",
+                     "thin_50":  "0.0",
+                     "thick_35":  "69.5",
+                     "thick_50":  "3.2",
+                     "ensayos_uster":  "1",
+                     "tenacidad":  "17.02",
+                     "elongacion":  "9.48",
+                     "fuerza_b":  "1435.90",
+                     "trabajo_b":  "29.87",
+                     "tensor_obs":  null,
+                     "robots_efic_avg":  86.33333333333333,
+                     "alimentacion":  "CARDA RIETER",
+                     "cadena_alimentacion":  "CARDA RIETER",
+                     "style_carda_objetivo":  "CARDA RIETER",
+                     "cvm_carda_turno":  "3.63",
+                     "cvm_carda_max_turno":  "4.32",
+                     "muestras_carda_turno":  9,
+                     "muestras_carda_esperadas":  2,
+                     "maquinas_carda_turno":  "10, 11, 12, 13, 15, 16, 17, 8, 9",
+                     "detalle_cardas_turno":  [
+                                                  {
+                                                      "carda":  8,
+                                                      "cvm":  3.35
+                                                  },
+                                                  {
+                                                      "carda":  9,
+                                                      "cvm":  3.76
+                                                  },
+                                                  {
+                                                      "carda":  10,
+                                                      "cvm":  3.44
+                                                  },
+                                                  {
+                                                      "carda":  11,
+                                                      "cvm":  3.29
+                                                  },
+                                                  {
+                                                      "carda":  12,
+                                                      "cvm":  3.25
+                                                  },
+                                                  {
+                                                      "carda":  13,
+                                                      "cvm":  3.7
+                                                  },
+                                                  {
+                                                      "carda":  15,
+                                                      "cvm":  3.75
+                                                  },
+                                                  {
+                                                      "carda":  16,
+                                                      "cvm":  4.32
+                                                  },
+                                                  {
+                                                      "carda":  17,
+                                                      "cvm":  3.77
+                                                  }
+                                              ],
+                     "prod_kgh_carda_turno":  71.19,
+                     "prod_kgh_carda_min":  70.09,
+                     "prod_kgh_carda_max":  80,
+                     "cobertura_carda_turno":  "completa",
+                     "lado_label":  "U",
+                     "maquina_label":  "9 U",
+                     "alertas":  [
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "eficiencia",
+                                         "message":  "Eficiencia informada 60.3%."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "corte_nat",
+                                         "message":  "Corte natural 227.0 en vigilancia."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "cortes_cortos",
+                                         "message":  "Cortes cortos 74 elevados (calidad de cinta/carda)."
+                                     },
+                                     {
+                                         "severity":  "alta",
+                                         "code":  "empalmes",
+                                         "message":  "Empalmes 46 elevados (revisar piecer)."
+                                     },
+                                     {
+                                         "severity":  "media",
+                                         "code":  "robots",
+                                         "message":  "Eficiencia promedio Robots 86.3% en seguimiento."
+                                     }
+                                 ],
+                     "recomendacion":  "Revisar limpieza de rotor, apertura y estabilidad de alimentación en la OE."
+                 }
+             ],
+    "cardas":  [
+                   {
+                       "fecha_prod":  "2026-05-03T03:00:00.000Z",
+                       "titulo_cinta":  "0.1",
+                       "maquinas_prod":  "10, 11, 12, 13, 15, 16, 17, 2, 3, 4, 5, 6, 7, 8, 9",
+                       "prod_kgh_avg":  "74.49",
+                       "prod_inform_avg":  "369.73",
+                       "efic_infor_avg":  "80.37",
+                       "maquinas_lab":  "10, 11, 12, 13, 15, 16, 17, 2, 3, 4, 5, 6, 7, 8, 9",
+                       "cvm_avg":  "3.42",
+                       "cvm_max":  "4.73",
+                       "ensayos_lab":  "48",
+                       "posiciones_prod":  "45",
+                       "posiciones_matcheadas":  "45",
+                       "confianza_match":  "alta",
+                       "observacion_match":  "Coincidencia inferida por fecha productiva, turno y carda."
+                   }
+               ],
+    "resumen":  {
+                    "registros_oe":  15,
+                    "maquinas_oe":  5,
+                    "lotes":  2,
+                    "titulos":  3,
+                    "cardas_contexto":  1
+                }
+}

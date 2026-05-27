@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-screen flex flex-col p-1">
     <main class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col">
-      <div class="flex flex-col gap-2 mb-3 flex-shrink-0">
+      <div class="flex flex-col gap-2 mb-3 shrink-0">
         <div class="@container flex items-center gap-2 flex-wrap">
           <h3 class="text-lg font-semibold text-slate-800 whitespace-nowrap">Resumen Ensayos Cardas</h3>
 
@@ -25,19 +25,19 @@
           <div class="flex-1 flex items-center justify-end gap-2 flex-wrap">
             <div class="flex items-center gap-2 flex-wrap">
               <label class="text-sm text-slate-600">Turno:</label>
-              <select v-model="turnoQuery" class="px-2 py-1 border border-slate-200 rounded-lg text-sm text-slate-900 min-w-[80px]">
+              <select v-model="turnoQuery" class="px-2 py-1 border border-slate-200 rounded-lg text-sm text-slate-900 min-w-20">
                 <option value="">Todos</option>
                 <option v-for="turno in availableTurnos" :key="turno" :value="turno">{{ turno }}</option>
               </select>
 
               <label class="text-sm text-slate-600">Tipo:</label>
-              <select v-model="tipoQuery" class="px-2 py-1 border border-slate-200 rounded-lg text-sm text-slate-900 min-w-[160px]">
+              <select v-model="tipoQuery" class="px-2 py-1 border border-slate-200 rounded-lg text-sm text-slate-900 min-w-40">
                 <option value="">Todos</option>
                 <option v-for="tipo in availableTipos" :key="tipo" :value="tipo">{{ tipo }}</option>
               </select>
 
               <label class="text-sm text-slate-600">Maq.:</label>
-              <select v-model="maquinaQuery" class="px-2 py-1 border border-slate-200 rounded-lg text-sm text-slate-900 min-w-[90px]">
+              <select v-model="maquinaQuery" class="px-2 py-1 border border-slate-200 rounded-lg text-sm text-slate-900 min-w-22.5">
                 <option value="">Todas</option>
                 <option v-for="maquina in availableMaquinas" :key="maquina" :value="maquina">{{ maquina }}</option>
               </select>
@@ -74,13 +74,13 @@
         <div v-if="rows.length === 0" class="text-sm text-slate-600 py-8 text-center">No hay ensayos CARDAS guardados.</div>
 
         <div v-else class="flex-1 min-h-0 flex flex-col">
-          <div v-if="filteredRows.length === 0" class="text-sm text-slate-600 mb-4 py-4 text-center bg-slate-50 rounded-lg flex-shrink-0">
+          <div v-if="filteredRows.length === 0" class="text-sm text-slate-600 mb-4 py-4 text-center bg-slate-50 rounded-lg shrink-0">
             No hay coincidencias para los filtros.
           </div>
 
           <div class="overflow-auto _minimal-scroll w-full flex-1 min-h-0 rounded-xl border border-slate-200 pb-0">
             <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs">
-              <thead class="bg-gradient-to-r from-slate-50 to-slate-100 sticky top-0 z-20">
+              <thead class="bg-linear-to-r from-slate-50 to-slate-100 sticky top-0 z-20">
                 <tr>
                   <th class="px-2 py-[0.3rem] text-center font-semibold text-slate-700 border-b border-slate-200">Ensayo</th>
                   <th class="px-2 py-[0.3rem] text-center font-semibold text-slate-700 border-b border-slate-200">Fecha</th>
@@ -132,7 +132,7 @@
             </table>
           </div>
 
-          <div class="flex items-center justify-between mt-3 flex-shrink-0 gap-3 flex-wrap">
+          <div class="flex items-center justify-between mt-3 shrink-0 gap-3 flex-wrap">
             <div class="text-xs text-slate-500">
               Mostrando {{ startDisplay }}-{{ endDisplay }} de {{ filteredRows.length }}
             </div>
@@ -191,7 +191,7 @@
             <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 text-sm font-semibold text-slate-800">Detalle TBL</div>
             <div class="overflow-auto max-h-[45vh]">
               <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs">
-                <thead class="bg-gradient-to-r from-slate-50 to-slate-100 sticky top-0 z-10">
+                <thead class="bg-linear-to-r from-slate-50 to-slate-100 sticky top-0 z-10">
                   <tr>
                     <th class="px-2 py-2 text-center font-semibold text-slate-700">Seq</th>
                     <th class="px-2 py-2 text-center font-semibold text-slate-700">No</th>

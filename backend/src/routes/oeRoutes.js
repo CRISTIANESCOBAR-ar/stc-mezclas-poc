@@ -366,7 +366,13 @@ router.get('/trazabilidad', async (req, res) => {
           ${sqlParseNumberIntl(`${exprClmT}::text`)} AS clm_t
         FROM tb_produccion_oe t
         WHERE ${sqlParseDate(`${exprData}::text`)} = $1::date
-          AND ($2::text IS NULL OR TRIM(${exprLote}::text) = TRIM($2))
+          AND ($2::text IS NULL OR (
+            CASE
+              WHEN TRIM(${exprLote}::text) ~ '^[0-9]+$' AND TRIM($2::text) ~ '^[0-9]+$'
+              THEN TRIM(${exprLote}::text)::bigint = TRIM($2::text)::bigint
+              ELSE TRIM(${exprLote}::text) = TRIM($2::text)
+            END
+          ))
           AND ($3::text IS NULL OR NULLIF(TRIM(SPLIT_PART(COALESCE(${exprTitulo}::text, ''), '/', 1)), '') = SPLIT_PART($3, '/', 1))
       ),
       uster_lotes AS (

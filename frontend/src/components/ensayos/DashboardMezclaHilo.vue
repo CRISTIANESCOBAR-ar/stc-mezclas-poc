@@ -295,9 +295,9 @@
       </div>
 
       <!-- ── CTA: Informe IA (vista dedicada /relato-ia) ── -->
-      <div v-if="hasData" class="bg-gradient-to-r from-indigo-50 via-white to-purple-50 rounded-2xl border border-indigo-100 shadow-sm p-5 flex flex-wrap items-center gap-4">
+      <div v-if="hasData" class="bg-linear-to-r from-indigo-50 via-white to-purple-50 rounded-2xl border border-indigo-100 shadow-sm p-5 flex flex-wrap items-center gap-4">
         <div class="text-3xl">✨</div>
-        <div class="flex-1 min-w-[220px]">
+        <div class="flex-1 min-w-55">
           <h2 class="font-bold text-slate-800 text-sm md:text-base">Informe Estratégico con IA</h2>
           <p class="text-xs text-slate-500 mt-0.5">
             Análisis ejecutivo cruzando Fibra, Hilo y Producción OE — formato profesional, lectura rápida.
