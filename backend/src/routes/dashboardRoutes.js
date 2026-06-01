@@ -514,6 +514,7 @@ router.post('/narrativa-lotes', async (req, res) => {
     const loteNums = [...new Set(rows.map(r => Number(r.mistura)))].filter(n => !isNaN(n) && n > 0);
     console.log(`[narrativa-lotes] loteNums = [${loteNums.join(', ')}]`);
     let oeData = [];
+    let oeColSet = new Set(); // fuera del try para que el catch pueda leerlo en logs
     try {
       // Detectar nombre de columna de fecha en tb_produccion_oe para tolerar variantes (data_producao, DATA_PRODUCAO, data, fecha, etc.)
       const oeColsRes = await pool.query(`
@@ -521,7 +522,7 @@ router.post('/narrativa-lotes', async (req, res) => {
         FROM information_schema.columns
         WHERE table_schema = 'public' AND table_name = 'tb_produccion_oe'
       `);
-      const oeColSet = new Set(oeColsRes.rows.map(r => r.column_name));
+      oeColSet = new Set(oeColsRes.rows.map(r => r.column_name));
       const findColumn = (columnSet, candidates) => {
         for (const c of candidates) if (columnSet.has(c)) return c;
         const lowered = new Map([...columnSet].map(name => [name.toLowerCase(), name]));
@@ -533,84 +534,131 @@ router.post('/narrativa-lotes', async (req, res) => {
       };
       const cData = findColumn(oeColSet, ['DATA_PRODUCAO', 'data_producao', 'DATA PRODUCAO', 'data', 'DATA_PRODUCCION', 'data_produccion', 'FECHA_PRODUCCION', 'fecha_produccion', 'fecha']);
       const quoteIdent = (ident) => `"${String(ident).replace(/"/g, '""')}"`;
-      const dataExpr = cData ? quoteIdent(cData) : 'data_producao';
+      // oe() resuelve el nombre de columna con quoteIdent para soportar mayúsculas (columnas importadas desde planilla)
+      const oe = (c, fallback) => c ? quoteIdent(c) : (fallback ? quoteIdent(fallback) : 'NULL::text');
 
-      // Usamos el SQL original pero reemplazamos las ocurrencias literales de data_producao
-      const baseSql = `
+      // Resolver todos los nombres de columna dinámicamente — evita fallos cuando la tabla tiene nombres en mayúsculas
+      const cLoteOE     = findColumn(oeColSet, ['LOTE PRODUC','lote produc','LOTE_PRODUC','lote_produc','lote']);
+      const cMaquinaOE  = findColumn(oeColSet, ['MAQUINA','maquina','MÁQUINA','máquina']);
+      const cLadoOE     = findColumn(oeColSet, ['LADO','lado']);
+      const cItemOE     = findColumn(oeColSet, ['ITEM','item']);
+      const cDescItemOE = findColumn(oeColSet, ['DESC ITEM','desc item','DESC_ITEM','desc_item']);
+      const cTituloOE   = findColumn(oeColSet, ['TÍTULO','TITULO','título','titulo']);
+      const cRpmOE      = findColumn(oeColSet, ['RPM','rpm']);
+      const cRpmCardOE  = findColumn(oeColSet, ['RPM CARD','rpm card','RPM_CARD','rpm_card']);
+      const cProdInfOE  = findColumn(oeColSet, ['PROD INFORMADA','prod informada','PROD_INFORMADA','prod_informada']);
+      const cEficCalcOE = findColumn(oeColSet, ['EFIC CALCULADA','efic calculada','EFIC_CALCULADA','efic_calculada']);
+      const cEficInfOE  = findColumn(oeColSet, ['EFIC INFORMADA','efic informada','EFIC_INFORMADA','efic_informada']);
+      const cCortNatOE  = findColumn(oeColSet, ['CORT NAT','cort nat','CORT_NAT','cort_nat']);
+      const cRob01OE    = findColumn(oeColSet, ['% ROB 01','% rob 01','ROB 01','rob 01','ROB_01','rob_01']);
+      const cRob02OE    = findColumn(oeColSet, ['% ROB 02','% rob 02','ROB 02','rob 02','ROB_02','rob_02']);
+      const cRob03OE    = findColumn(oeColSet, ['% ROB 03','% rob 03','ROB 03','rob 03','ROB_03','rob_03']);
+      const cNOE        = findColumn(oeColSet, ['N','n']);
+      const cSOE        = findColumn(oeColSet, ['S','s']);
+      const cLOE        = findColumn(oeColSet, ['L','l']);
+      const cTOE        = findColumn(oeColSet, ['T','t']);
+      const cMoOE       = findColumn(oeColSet, ['MO','mo','Mo']);
+      const cJpOE       = findColumn(oeColSet, ['JP (P+)','jp (p+)','JP','jp']);
+      const cJmOE       = findColumn(oeColSet, ['JM (P-)','jm (p-)','JM','jm']);
+
+      // Expresiones finales con identificadores correctamente entrecomillados
+      const dExpr  = oe(cData,       'DATA_PRODUCAO');
+      const loteEx = oe(cLoteOE,     'LOTE PRODUC');
+      const maqEx  = oe(cMaquinaOE,  'MAQUINA');
+      const ladoEx = oe(cLadoOE,     'LADO');
+      const itemEx = oe(cItemOE,     'ITEM');
+      const descEx = oe(cDescItemOE, 'DESC ITEM');
+      const titEx  = oe(cTituloOE,   'TÍTULO');
+      const pifEx  = `${oe(cProdInfOE,  'PROD INFORMADA')}::text`;
+      const eicEx  = `${oe(cEficCalcOE, 'EFIC CALCULADA')}::text`;
+      const eiiEx  = `${oe(cEficInfOE,  'EFIC INFORMADA')}::text`;
+      const rpmEx  = `${oe(cRpmOE,      'RPM')}::text`;
+      const rpmCEx = `${oe(cRpmCardOE,  'RPM CARD')}::text`;
+      const cnEx   = `${oe(cCortNatOE,  'CORT NAT')}::text`;
+      const r1Ex   = `${oe(cRob01OE,    '% ROB 01')}::text`;
+      const r2Ex   = `${oe(cRob02OE,    '% ROB 02')}::text`;
+      const r3Ex   = `${oe(cRob03OE,    '% ROB 03')}::text`;
+      const nEx    = `${oe(cNOE,  'N')}::text`;
+      const sEx    = `${oe(cSOE,  'S')}::text`;
+      const lEx    = `${oe(cLOE,  'L')}::text`;
+      const tEx    = `${oe(cTOE,  'T')}::text`;
+      const moEx   = `${oe(cMoOE, 'MO')}::text`;
+      const jpEx   = `${oe(cJpOE, 'JP (P+)')}::text`;
+      const jmEx   = `${oe(cJmOE, 'JM (P-)')}::text`;
+
+      const oeSql = `
         SELECT
-          TO_DATE(data_producao, 'DD/MM/YYYY')                                                          AS fecha_oe,
-          TO_CHAR(TO_DATE(data_producao, 'DD/MM/YYYY'), 'YYYY-MM-DD')                                  AS fecha_oe_key,
-          TRIM("LOTE PRODUC")::bigint                                                                  AS lote,
-          maquina,
-          LADO                                                                                          AS lado,
-          item,
-          "DESC ITEM"                                                                                   AS desc_item,
-          TRIM("TÍTULO")                                                                                AS titulo,
-          -- Producción e eficiencia
+          TO_DATE(${dExpr}::text, 'DD/MM/YYYY')                                                        AS fecha_oe,
+          TO_CHAR(TO_DATE(${dExpr}::text, 'DD/MM/YYYY'), 'YYYY-MM-DD')                                AS fecha_oe_key,
+          TRIM(${loteEx}::text)::bigint                                                                AS lote,
+          ${maqEx}                                                                                     AS maquina,
+          ${ladoEx}                                                                                    AS lado,
+          ${itemEx}                                                                                    AS item,
+          ${descEx}                                                                                    AS desc_item,
+          TRIM(${titEx}::text)                                                                         AS titulo,
           ROUND(AVG(CASE
-            WHEN "PROD INFORMADA" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("PROD INFORMADA", '.', ''), ',', '.')::numeric
-            WHEN "PROD INFORMADA" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("PROD INFORMADA", ',', '.')::numeric
+            WHEN ${pifEx} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${pifEx}, '.', ''), ',', '.')::numeric
+            WHEN ${pifEx} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${pifEx}, ',', '.')::numeric
           END)::numeric, 1) AS prod_informada_avg,
           ROUND(AVG(CASE
-            WHEN "EFIC INFORMADA" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("EFIC INFORMADA", '.', ''), ',', '.')::numeric
-            WHEN "EFIC INFORMADA" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("EFIC INFORMADA", ',', '.')::numeric
+            WHEN ${eiiEx} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${eiiEx}, '.', ''), ',', '.')::numeric
+            WHEN ${eiiEx} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${eiiEx}, ',', '.')::numeric
           END)::numeric, 1) AS efic_informada_avg,
           ROUND(AVG(CASE
-            WHEN "EFIC CALCULADA" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("EFIC CALCULADA", '.', ''), ',', '.')::numeric
-            WHEN "EFIC CALCULADA" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("EFIC CALCULADA", ',', '.')::numeric
+            WHEN ${eicEx} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${eicEx}, '.', ''), ',', '.')::numeric
+            WHEN ${eicEx} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${eicEx}, ',', '.')::numeric
           END)::numeric, 1) AS efic_avg,
           ROUND(AVG(CASE
-            WHEN rpm::text ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(rpm::text, '.', ''), ',', '.')::numeric
-            WHEN rpm::text ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE(rpm::text, ',', '.')::numeric
+            WHEN ${rpmEx} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${rpmEx}, '.', ''), ',', '.')::numeric
+            WHEN ${rpmEx} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${rpmEx}, ',', '.')::numeric
           END)::numeric, 0) AS rpm_avg,
           ROUND(AVG(CASE
-            WHEN "RPM CARD"::text ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("RPM CARD"::text, '.', ''), ',', '.')::numeric
-            WHEN "RPM CARD"::text ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("RPM CARD"::text, ',', '.')::numeric
+            WHEN ${rpmCEx} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${rpmCEx}, '.', ''), ',', '.')::numeric
+            WHEN ${rpmCEx} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${rpmCEx}, ',', '.')::numeric
           END)::numeric, 0) AS rpm_card_avg,
-          -- Cortes naturales y mecánicos
           SUM(CASE
-            WHEN "CORT NAT" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("CORT NAT", '.', ''), ',', '.')::numeric
-            WHEN "CORT NAT" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("CORT NAT", ',', '.')::numeric
+            WHEN ${cnEx} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${cnEx}, '.', ''), ',', '.')::numeric
+            WHEN ${cnEx} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${cnEx}, ',', '.')::numeric
             ELSE 0
           END) AS nat_total,
           ROUND(
             (
               COALESCE(AVG(CASE
-                WHEN "% ROB 01" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 01", '.', ''), ',', '.')::numeric
-                WHEN "% ROB 01" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 01", ',', '.')::numeric
+                WHEN ${r1Ex} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${r1Ex}, '.', ''), ',', '.')::numeric
+                WHEN ${r1Ex} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${r1Ex}, ',', '.')::numeric
               END), 0) +
               COALESCE(AVG(CASE
-                WHEN "% ROB 02" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 02", '.', ''), ',', '.')::numeric
-                WHEN "% ROB 02" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 02", ',', '.')::numeric
+                WHEN ${r2Ex} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${r2Ex}, '.', ''), ',', '.')::numeric
+                WHEN ${r2Ex} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${r2Ex}, ',', '.')::numeric
               END), 0) +
               COALESCE(AVG(CASE
-                WHEN "% ROB 03" ~ '^[0-9]{1,3}(\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE("% ROB 03", '.', ''), ',', '.')::numeric
-                WHEN "% ROB 03" ~ '^[0-9]+([,.][0-9]+)?$'                THEN REPLACE("% ROB 03", ',', '.')::numeric
+                WHEN ${r3Ex} ~ '^[0-9]{1,3}(\\.[0-9]{3})+(,[0-9]*)?$' THEN REPLACE(REPLACE(${r3Ex}, '.', ''), ',', '.')::numeric
+                WHEN ${r3Ex} ~ '^[0-9]+([,.][0-9]+)?$'                 THEN REPLACE(${r3Ex}, ',', '.')::numeric
               END), 0)
             ) / 3.0
           , 2) AS rob_mecanicos_pct,
-          -- Cortes de purga por tipo
-          SUM(CASE WHEN n         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(n,         ',', '.')::numeric ELSE 0 END) AS n_total,
-          SUM(CASE WHEN s         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(s,         ',', '.')::numeric ELSE 0 END) AS s_total,
-          SUM(CASE WHEN l         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(l,         ',', '.')::numeric ELSE 0 END) AS l_total,
-          SUM(CASE WHEN t         ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(t,         ',', '.')::numeric ELSE 0 END) AS t_total,
-          SUM(CASE WHEN mo        ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(mo,        ',', '.')::numeric ELSE 0 END) AS mo_total,
-          SUM(CASE WHEN "JP (P+)" ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE("JP (P+)", ',', '.')::numeric ELSE 0 END) AS jp_total,
-          SUM(CASE WHEN "JM (P-)" ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE("JM (P-)", ',', '.')::numeric ELSE 0 END) AS jm_total,
-          COUNT(*)                                                                                      AS registros
+          SUM(CASE WHEN ${nEx}  ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(${nEx},  ',', '.')::numeric ELSE 0 END) AS n_total,
+          SUM(CASE WHEN ${sEx}  ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(${sEx},  ',', '.')::numeric ELSE 0 END) AS s_total,
+          SUM(CASE WHEN ${lEx}  ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(${lEx},  ',', '.')::numeric ELSE 0 END) AS l_total,
+          SUM(CASE WHEN ${tEx}  ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(${tEx},  ',', '.')::numeric ELSE 0 END) AS t_total,
+          SUM(CASE WHEN ${moEx} ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(${moEx}, ',', '.')::numeric ELSE 0 END) AS mo_total,
+          SUM(CASE WHEN ${jpEx} ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(${jpEx}, ',', '.')::numeric ELSE 0 END) AS jp_total,
+          SUM(CASE WHEN ${jmEx} ~ '^[0-9]+([,.][0-9]+)?$' THEN REPLACE(${jmEx}, ',', '.')::numeric ELSE 0 END) AS jm_total,
+          COUNT(*) AS registros
         FROM tb_produccion_oe
-        WHERE TRIM("LOTE PRODUC") ~ '^[0-9]+$'
-          AND TRIM("LOTE PRODUC")::bigint = ANY(\$1)
-        GROUP BY TO_DATE(data_producao, 'DD/MM/YYYY'), TRIM("LOTE PRODUC")::bigint, maquina, LADO, item, "DESC ITEM", TRIM("TÍTULO")
-        ORDER BY TO_DATE(data_producao, 'DD/MM/YYYY') DESC NULLS LAST, TRIM("LOTE PRODUC")::bigint, maquina, LADO
+        WHERE TRIM(${loteEx}::text) ~ '^[0-9]+$'
+          AND TRIM(${loteEx}::text)::bigint = ANY($1)
+        GROUP BY TO_DATE(${dExpr}::text, 'DD/MM/YYYY'), TRIM(${loteEx}::text)::bigint,
+                 ${maqEx}, ${ladoEx}, ${itemEx}, ${descEx}, TRIM(${titEx}::text)
+        ORDER BY TO_DATE(${dExpr}::text, 'DD/MM/YYYY') DESC NULLS LAST,
+                 TRIM(${loteEx}::text)::bigint, ${maqEx}, ${ladoEx}
       `;
-
-      const oeSql = baseSql.replace(/data_producao/g, dataExpr);
       const oeResult = await pool.query(oeSql, [loteNums]);
       oeData = oeResult.rows;
       console.log(`[narrativa-lotes] oeData filas=${oeData.length}`, oeData.length > 0 ? `primer lote=${oeData[0].lote} maq=${oeData[0].maquina}` : '(vacío)');
     } catch (oeErr) {
-      console.warn('OE data query failed (non-fatal):', oeErr.message);
+      console.warn('[narrativa-lotes] OE query falló (non-fatal):', oeErr.message);
+      console.warn('[narrativa-lotes] Columnas detectadas en tb_produccion_oe:', [...oeColSet].join(', '));
     }
 
     // ── Query pasador/estiraje desde tb_uster_par (por lote + nomcount) ──────
@@ -674,23 +722,43 @@ router.post('/narrativa-lotes', async (req, res) => {
     // ── Query preparación Cardas/Manuar por fecha de producción OE ──────────
     let cardasByDateData = [];
     try {
-      const cardasByDateResult = await pool.query(`
-        SELECT
-          TO_DATE(SPLIT_PART(data, ' ', 1), 'DD/MM/YY')                                            AS fecha_carda,
-          TO_CHAR(TO_DATE(SPLIT_PART(data, ' ', 1), 'DD/MM/YY'), 'YYYY-MM-DD')                      AS fecha_carda_key,
-          ROUND(AVG(CASE WHEN rpm ~ '^[0-9]' THEN REPLACE(rpm, ',', '.')::numeric END)::numeric, 0) AS rpm_carda_avg,
-          STRING_AGG(DISTINCT NULLIF(TRIM(titulo), ''), ', ' ORDER BY NULLIF(TRIM(titulo), ''))      AS titulos_carda
-        FROM tb_produccion_carda
-        WHERE data IS NOT NULL
-          AND TO_DATE(SPLIT_PART(data, ' ', 1), 'DD/MM/YY') = ANY(
-            SELECT DISTINCT TO_DATE(data_producao, 'DD/MM/YYYY')
-            FROM tb_produccion_oe
-            WHERE TRIM("LOTE PRODUC") ~ '^[0-9]+$'
-              AND TRIM("LOTE PRODUC")::bigint = ANY(\$1)
-          )
-        GROUP BY TO_DATE(SPLIT_PART(data, ' ', 1), 'DD/MM/YY')
-      `, [loteNums]);
-      cardasByDateData = cardasByDateResult.rows;
+      const cardaColsRes = await pool.query(`
+        SELECT column_name FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'tb_produccion_carda'
+      `);
+      const cardaColSet = new Set(cardaColsRes.rows.map(r => r.column_name));
+      const findColCarda = (candidates) => {
+        for (const c of candidates) if (cardaColSet.has(c)) return c;
+        const lowered = new Map([...cardaColSet].map(n => [n.toLowerCase(), n]));
+        for (const c of candidates) { const f = lowered.get(String(c).toLowerCase()); if (f) return f; }
+        return null;
+      };
+      const cCardaData   = findColCarda(['DATA','data','FECHA','fecha']);
+      const cCardaRpm    = findColCarda(['RPM','rpm']);
+      const cCardaTitulo = findColCarda(['TITULO','titulo','TÍTULO','título']);
+
+      if (cCardaData && cCardaRpm) {
+        const cdDataEx   = `"${cCardaData}"`;
+        const cdRpmEx    = `"${cCardaRpm}"`;
+        const cdTituloEx = cCardaTitulo ? `"${cCardaTitulo}"` : 'NULL::text';
+        const cardasByDateResult = await pool.query(`
+          SELECT
+            TO_DATE(SPLIT_PART(${cdDataEx}::text, ' ', 1), 'DD/MM/YY')                                               AS fecha_carda,
+            TO_CHAR(TO_DATE(SPLIT_PART(${cdDataEx}::text, ' ', 1), 'DD/MM/YY'), 'YYYY-MM-DD')                         AS fecha_carda_key,
+            ROUND(AVG(CASE WHEN ${cdRpmEx}::text ~ '^[0-9]' THEN REPLACE(${cdRpmEx}::text, ',', '.')::numeric END)::numeric, 0) AS rpm_carda_avg,
+            STRING_AGG(DISTINCT NULLIF(TRIM(${cdTituloEx}::text), ''), ', ' ORDER BY NULLIF(TRIM(${cdTituloEx}::text), '')) AS titulos_carda
+          FROM tb_produccion_carda
+          WHERE ${cdDataEx} IS NOT NULL
+            AND TO_DATE(SPLIT_PART(${cdDataEx}::text, ' ', 1), 'DD/MM/YY') = ANY(
+              SELECT DISTINCT TO_DATE(TRIM(${dExpr}::text), 'DD/MM/YYYY')
+              FROM tb_produccion_oe
+              WHERE TRIM(${loteEx}::text) ~ '^[0-9]+$'
+                AND TRIM(${loteEx}::text)::bigint = ANY($1)
+            )
+          GROUP BY TO_DATE(SPLIT_PART(${cdDataEx}::text, ' ', 1), 'DD/MM/YY')
+        `, [loteNums]);
+        cardasByDateData = cardasByDateResult.rows;
+      }
     } catch (cardaErr) {
       console.warn('Cardas by date query failed (non-fatal):', cardaErr.message);
     }
