@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col w-full min-h-screen p-4 bg-slate-50">
+  <div class="flex flex-col w-full h-full p-4 bg-slate-50 overflow-hidden">
     <!-- Header / Selector -->
     <div class="mb-4 shrink-0 flex items-center justify-between gap-2">
       <div class="flex flex-col ml-8">
@@ -69,22 +69,41 @@
     </div>
 
     <!-- Table Container -->
-    <div class="flex flex-col gap-4">
+    <div class="flex-1 min-h-0 flex flex-col gap-4">
       <!-- Top Table: TXT Files List -->
-      <div class="bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col">
+      <div class="flex-1 min-h-0 bg-white rounded-xl shadow-md border border-slate-200 overflow-hidden flex flex-col">
         <!-- Radiobutton Filters -->
-        <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex items-center gap-4 shrink-0">
-          <span class="text-[10px] font-bold text-slate-500 uppercase">{{ t('hvi.filters.show') }}</span>
-          <div class="flex items-center gap-3">
-            <label v-for="opt in filterStatusOptions" :key="opt.value" class="flex items-center gap-1.5 cursor-pointer group">
-              <input 
-                type="radio" 
-                v-model="filterStatus" 
-                :value="opt.value" 
-                class="w-3 h-3 text-blue-600 focus:ring-blue-500 border-slate-300"
-              />
-              <span class="text-[11px] font-medium text-slate-600 group-hover:text-blue-600 transition-colors">{{ opt.label }}</span>
-            </label>
+        <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center gap-x-6 gap-y-2 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-slate-500 uppercase">{{ t('hvi.filters.show') }}</span>
+            <div class="flex items-center gap-3">
+              <label v-for="opt in filterStatusOptions" :key="opt.value" class="flex items-center gap-1.5 cursor-pointer group">
+                <input 
+                  type="radio" 
+                  v-model="filterStatus" 
+                  :value="opt.value" 
+                  class="w-3 h-3 text-blue-600 focus:ring-blue-500 border-slate-300"
+                />
+                <span class="text-[11px] font-medium text-slate-600 group-hover:text-blue-600 transition-colors">{{ opt.label }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="hidden sm:block h-4 w-px bg-slate-300"></div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-bold text-slate-500 uppercase">{{ t('hvi.filters.typeShow') }}</span>
+            <div class="flex items-center gap-3">
+              <label v-for="opt in filterTypeOptions" :key="opt.value" class="flex items-center gap-1.5 cursor-pointer group">
+                <input 
+                  type="radio" 
+                  v-model="filterType" 
+                  :value="opt.value" 
+                  class="w-3 h-3 text-blue-600 focus:ring-blue-500 border-slate-300"
+                />
+                <span class="text-[11px] font-medium text-slate-600 group-hover:text-blue-600 transition-colors">{{ opt.label }}</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -243,8 +262,8 @@
       </div>
 
       <!-- Bottom Table: HVI Detailed Data -->
-      <div class="bg-white rounded-xl shadow-md border border-slate-200 flex flex-col min-w-0">
-        <div v-if="selectedFileName || hviDetails.length" class="sticky top-0 z-50 bg-white">
+      <div class="flex-1 min-h-0 bg-white rounded-xl shadow-md border border-slate-200 flex flex-col min-w-0">
+        <div v-if="selectedFileName || hviDetails.length" class="sticky top-0 z-50 bg-white shrink-0">
           <div v-if="selectedFileName" class="bg-slate-50 px-4 py-2 border-b border-slate-200 flex justify-between items-center shrink-0">
           <div class="flex items-center gap-4 flex-1 flex-wrap">
             <div class="flex items-center gap-1.5">
@@ -384,7 +403,7 @@
 
         <div
           ref="detailsBodyScroller"
-          class="overflow-x-auto overflow-y-visible relative"
+          class="overflow-auto relative flex-1 min-h-0"
           @scroll="syncDetailsBodyScroll"
         >
           <table class="details-table w-full text-left border-separate border-spacing-0 table-fixed min-w-300">
@@ -499,7 +518,7 @@
         </div>
         
         <!-- Leyenda de clasificación HVI -->
-        <div v-if="hviDetails.length" class="mt-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200">
+        <div v-if="hviDetails.length" class="mt-3 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 shrink-0">
           <div class="flex flex-wrap items-center gap-4 text-xs">
             <span class="font-semibold text-slate-600">{{ t('hvi.legend.classification') }}</span>
             <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-100 border border-green-300"></span> {{ t('hvi.legend.excellent') }}</span>
@@ -1148,6 +1167,12 @@ const filterStatusOptions = computed(() => [
   { value: 'No guardados', label: t('hvi.filters.unsaved') },
   { value: 'Guardados', label: t('hvi.filters.saved') },
 ]);
+const filterType = ref('Todos'); // Todos, Ent, Mue
+const filterTypeOptions = computed(() => [
+  { value: 'Todos', label: t('hvi.filters.typeAll') },
+  { value: 'Ent', label: t('hvi.filters.typeEnt') },
+  { value: 'Mue', label: t('hvi.filters.typeMue') },
+]);
 const detailsHeaderScroller = ref(null);
 const detailsBodyScroller = ref(null);
 
@@ -1392,14 +1417,25 @@ const solicitarAnalisisAI = async () => {
 
 // Propiedad computada para filtrar la lista de archivos
 const filteredFiles = computed(() => {
-  if (filterStatus.value === 'Todos') return parsedFiles.value;
-  if (filterStatus.value === 'Guardados') {
-    return parsedFiles.value.filter(f => f.estado === 'Procesado');
-  }
-  if (filterStatus.value === 'No guardados') {
-    return parsedFiles.value.filter(f => f.estado === 'Pendiente');
-  }
-  return parsedFiles.value;
+  return parsedFiles.value.filter(f => {
+    // 1. Filtrado por Estado (filterStatus)
+    let matchStatus = true;
+    if (filterStatus.value === 'Guardados') {
+      matchStatus = f.estado === 'Procesado';
+    } else if (filterStatus.value === 'No guardados') {
+      matchStatus = f.estado === 'Pendiente';
+    }
+
+    // 2. Filtrado por Tipo (filterType)
+    let matchType = true;
+    if (filterType.value === 'Ent') {
+      matchType = f.tipo?.toLowerCase() === 'ent';
+    } else if (filterType.value === 'Mue') {
+      matchType = f.tipo?.toLowerCase() === 'mue';
+    }
+
+    return matchStatus && matchType;
+  });
 });
 
 // Propiedad computada para calcular los promedios

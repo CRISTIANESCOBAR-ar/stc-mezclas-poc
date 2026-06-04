@@ -316,7 +316,8 @@ function getTestnrFromName(name) {
 }
 
 function getPrefixFromName(name) {
-  const m = String(name || '').match(/^(STC\d+)_/i)
+  if (!name) return ''
+  const m = String(name).match(/^(STC\d+)/i)
   return m ? m[1].toUpperCase() : ''
 }
 
@@ -387,32 +388,86 @@ function detectMachineFamily(style, prefix, maschnr) {
 
 function parseParText(text, filename, sourcePath = '') {
   const prefix = getPrefixFromName(filename)
-  const rawTime = extractTsvCell(text, 9, 5)
+  
+  // Robust key-value map parsing
+  const lines = String(text || '').split(/\r?\n/)
+  const keyMap = {}
+  let catalogVal = ''
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed) continue
+    if (trimmed.toUpperCase().startsWith('CATALOG')) {
+      catalogVal = trimmed.replace(/^CATALOG\s+/i, '').trim()
+    }
+    const cols = line.split('\t').map(c => c.trim())
+    if (cols.length >= 2) {
+      const key1 = cols[0].toUpperCase()
+      const key2 = cols[2] ? cols[2].toUpperCase() : ''
+      const val = cols[4] !== undefined ? cols[4] : cols[cols.length - 1]
+      if (key1) keyMap[key1] = val
+      if (key2) keyMap[key2] = val
+    }
+  }
+
+  const getVal = (key, lineNum, colNum) => {
+    if (keyMap[key] !== undefined && keyMap[key] !== '') return keyMap[key]
+    return extractTsvCell(text, lineNum, colNum)
+  }
+
+  const rawTime = getVal('TIME', 9, 5)
   const timeDate = parseDateFromRaw(rawTime)
+  
   const out = {
-    TESTNR: extractTsvCell(text, 8, 5),
+    TESTNR: getVal('TESTNR', 8, 5),
     TIME: rawTime,
-    LOTE: extractTsvCell(text, 10, 5),
-    SORTIMENT: extractTsvCell(text, 11, 3),
-    STYLE: extractTsvCell(text, 11, 5),
-    MASCHNR: extractTsvCell(text, 13, 5),
-    MATCLASS: extractTsvCell(text, 14, 8),
-    NOMCOUNT: extractTsvCell(text, 15, 5),
-    LABORANT: extractTsvCell(text, 21, 5),
-    OBS: extractTsvCell(text, 22, 5),
-    CATALOG: extractTsvCell(text, 3, 1).replace(/^CATALOG\s+/i, ''),
+    LOTE: getVal('LOTE', 10, 5),
+    SORTIMENT: keyMap['SORTIMENT'] || extractTsvCell(text, 11, 3),
+    STYLE: keyMap['STYLE'] || extractTsvCell(text, 11, 5),
+    MASCHNR: getVal('MASCHNR', 13, 5),
+    MATCLASS: getVal('MATCLASS', 14, 8),
+    NOMCOUNT: getVal('NOMCOUNT', 15, 5),
+    LABORANT: getVal('LABORANT', 21, 5),
+    OBS: getVal('OBS', 22, 5),
+    CATALOG: catalogVal || extractTsvCell(text, 3, 1).replace(/^CATALOG\s+/i, ''),
     SOURCE_PREFIX: prefix,
     SOURCE_PATH: sourcePath || filename,
     TIME_MS: timeDate ? timeDate.getTime() : null,
     TIME_DISPLAY: timeDate ? formatDateTimeFromDate(timeDate) : (rawTime || ''),
     TURNO: getTurnoFromDate(timeDate),
   }
+  
+  const filenameHasManuar = String(filename || '').toUpperCase().includes('MANUAR')
+
+  // Look for MANUAR only in specific 'alimentacion'-like keys parsed into keyMap,
+  // avoid scanning the whole file text which can contain unrelated mentions.
+  const alimentKeys = ['ALIMENTACION', 'ALIMENT', 'CADENA_ALIMENTACION', 'CHAIN_FEED', 'ALIMENTATION']
+  const alimentacionVal = alimentKeys.map(k => String(keyMap[k] || '')).join(' ').toUpperCase()
+  const hasManuarInAliment = alimentacionVal.includes('MANUAR')
+
+  // If filename explicitly references MANUAR, or STYLE is empty and alimentacion indicates MANUAR, set STYLE.
+  if (filenameHasManuar || ((!out.STYLE || out.STYLE === '') && hasManuarInAliment)) {
+    if (!out.STYLE || out.STYLE === '') out.STYLE = 'MANUAR'
+  }
+
   out.MACHINE_FAMILY = detectMachineFamily(out.STYLE, prefix, out.MASCHNR)
+
+  // Only force MACHINE_FAMILY to MANUAR when STYLE explicitly indicates MANUAR or filename does,
+  // or when alimentacion indicates MANUAR but STYLE is absent. Explicit STYLE (e.g. 'OPEN END') wins.
+  const styleUpper = String(out.STYLE || '').toUpperCase()
+  if (styleUpper.includes('MANUAR') || filenameHasManuar || (hasManuarInAliment && (!styleUpper || styleUpper === ''))) {
+    out.MACHINE_FAMILY = 'MANUAR'
+  }
+
   return out
 }
 
 function hasOpenEndHints(par) {
   if (!par || typeof par !== 'object') return false
+
+  // If STYLE contains MANUAR or family is MANUAR, it is a MANUAR trial (preparation), NOT rotor / Open End!
+  const style = String(par.STYLE || '').toUpperCase()
+  const family = String(par.MACHINE_FAMILY || '').toUpperCase()
+  if (style.includes('MANUAR') || family === 'MANUAR') return false
 
   const joined = [
     par.STYLE,
@@ -448,6 +503,9 @@ function isCardasPar(par) {
 
   const prefix = String(par.SOURCE_PREFIX || '').toUpperCase()
   if (prefix.startsWith('STC01') || prefix.startsWith('STC001') || prefix.startsWith('STC02') || prefix.startsWith('STC002')) return true
+
+  // If the file starts with STC03 but is actually MANUAR, it is Cardas!
+  if ((prefix.startsWith('STC03') || prefix.startsWith('STC003')) && (style.includes('MANUAR') || family === 'MANUAR')) return true
 
   return false
 }

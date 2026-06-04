@@ -53,8 +53,19 @@ async function ensureUsterCardaSchema() {
       UNIQUE(testnr, seqno)
     )
   `)
+  await query(`
+    CREATE TABLE IF NOT EXISTS tb_uster_carda_titulo_tbl (
+      id BIGSERIAL PRIMARY KEY,
+      testnr TEXT NOT NULL REFERENCES tb_uster_carda_par(testnr) ON DELETE CASCADE,
+      repno INTEGER NOT NULL,
+      titulo NUMERIC,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      UNIQUE(testnr, repno)
+    )
+  `)
   await query('CREATE INDEX IF NOT EXISTS idx_uster_carda_par_time ON tb_uster_carda_par(time_stamp)')
   await query('CREATE INDEX IF NOT EXISTS idx_uster_carda_tbl_testnr ON tb_uster_carda_tbl(testnr)')
+  await query('CREATE INDEX IF NOT EXISTS idx_uster_carda_titulo_testnr ON tb_uster_carda_titulo_tbl(testnr)')
 }
 
 ensureUsterCardaSchema().catch(err => {
@@ -85,7 +96,28 @@ router.post('/status', async (req, res) => {
 router.get('/par', async (req, res) => {
   try {
     await ensureUsterCardaSchema()
-    const result = await query('SELECT * FROM tb_uster_carda_par ORDER BY testnr')
+    const result = await query(`
+      SELECT p.*,
+             t.titulo_avg,
+             t.titulo_stddev,
+             t.titulo_cv,
+             t.titulo_1,
+             t.titulo_2,
+             t.titulo_3
+      FROM tb_uster_carda_par p
+      LEFT JOIN (
+        SELECT testnr,
+               AVG(titulo) AS titulo_avg,
+               STDDEV_SAMP(titulo) AS titulo_stddev,
+               (CASE WHEN AVG(titulo) > 0 THEN (STDDEV_SAMP(titulo) / AVG(titulo)) * 100 ELSE 0 END) AS titulo_cv,
+               MAX(CASE WHEN repno = 1 THEN titulo END) AS titulo_1,
+               MAX(CASE WHEN repno = 2 THEN titulo END) AS titulo_2,
+               MAX(CASE WHEN repno = 3 THEN titulo END) AS titulo_3
+        FROM tb_uster_carda_titulo_tbl
+        GROUP BY testnr
+      ) t ON t.testnr = p.testnr
+      ORDER BY p.testnr
+    `)
     res.json({ rows: result.rows.map(uppercaseKeys) })
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -105,8 +137,20 @@ router.get('/tbl', async (req, res) => {
   }
 })
 
+router.get('/titulos', async (req, res) => {
+  const { testnr } = req.query
+  if (!testnr) return res.status(400).json({ error: 'testnr required' })
+  try {
+    await ensureUsterCardaSchema()
+    const result = await query('SELECT * FROM tb_uster_carda_titulo_tbl WHERE testnr = $1 ORDER BY repno', [testnr])
+    res.json({ rows: result.rows.map(uppercaseKeys) })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 router.post('/upload', async (req, res) => {
-  const { par, tbl } = req.body
+  const { par, tbl, titulos } = req.body
   if (!par?.TESTNR) return res.status(400).json({ error: 'Missing PAR data or TESTNR' })
 
   await ensureUsterCardaSchema()
@@ -169,6 +213,21 @@ router.post('/upload', async (req, res) => {
           toNum(r.CVM_10M_PERCENT),
           toNum(r.TITULO_MACHINE),
           toNum(r.TITULO_REL_PERC)
+        ])
+      }
+    }
+
+    // Save manual counts (titulos)
+    await client.query('DELETE FROM tb_uster_carda_titulo_tbl WHERE testnr = $1', [par.TESTNR])
+    if (Array.isArray(titulos) && titulos.length) {
+      for (const t of titulos) {
+        await client.query(`
+          INSERT INTO tb_uster_carda_titulo_tbl (testnr, repno, titulo)
+          VALUES ($1, $2, $3)
+        `, [
+          par.TESTNR,
+          t.REPNO,
+          toNum(t.TITULO)
         ])
       }
     }

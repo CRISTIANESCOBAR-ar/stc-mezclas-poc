@@ -73,6 +73,12 @@ const routes = [
     meta: { title: 'Resumen Ensayos Cardas' }
   },
   {
+    path: '/matriz-control-uster',
+    name: 'matriz-control-uster',
+    component: () => import('./components/ensayos/MatrizControlUster.vue'),
+    meta: { title: 'Matriz Control Uster' }
+  },
+  {
     path: '/resumen-semanal-hilanderia',
     name: 'resumen-semanal-hilanderia',
     component: () => import('./components/ensayos/ResumenSemanalHilanderia.vue'),

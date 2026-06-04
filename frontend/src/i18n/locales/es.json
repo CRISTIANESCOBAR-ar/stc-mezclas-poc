@@ -227,7 +227,11 @@
       "show": "Mostrar:",
       "all": "Todos",
       "unsaved": "No guardados",
-      "saved": "Guardados"
+      "saved": "Guardados",
+      "typeShow": "Tipo:",
+      "typeAll": "Todos",
+      "typeEnt": "Ent",
+      "typeMue": "Mue"
     },
     "table": {
       "type": "Tipo",
@@ -392,6 +396,7 @@
       "graficos":      { "titulo": "Gráficos Ensayos",           "desc": "Gráficos de control estadístico por título (LCL/UCL, media global, evolución diaria)." },
       "resumen":       { "titulo": "Resumen Ensayos",            "desc": "Resumen consolidado de ensayos USTER de hilo en un rango de fechas." },
       "resumenCardas": { "titulo": "Resumen Ensayos Cardas",     "desc": "Resumen de ensayos USTER de cinta de carda por máquina y alimentación." },
+      "matrizControlUster": { "titulo": "Matriz de Control Uster", "desc": "Matriz de control para ensayos de USTER de cinta de carda organizada por turno, tipo y máquina." },
       "resumenSemanal":{ "titulo": "Resumen Semanal Hilandería", "desc": "Vista semanal con KPIs operativos y de calidad de toda la hilandería." },
       "resumenDiario": { "titulo": "Resumen Diario",             "desc": "Vista diaria con producción, calidad y alertas del día seleccionado." },
       "calidadFibra":  { "titulo": "Análisis Calidad Fibra",     "desc": "Análisis HVI con histogramas y métricas por origen del algodón." },

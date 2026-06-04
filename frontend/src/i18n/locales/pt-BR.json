@@ -227,7 +227,11 @@
       "show": "Mostrar:",
       "all": "Todos",
       "unsaved": "Não salvos",
-      "saved": "Salvos"
+      "saved": "Salvos",
+      "typeShow": "Tipo:",
+      "typeAll": "Todos",
+      "typeEnt": "Ent",
+      "typeMue": "Mue"
     },
     "table": {
       "type": "Tipo",
@@ -392,6 +396,7 @@
       "graficos":      { "titulo": "Gráficos Ensaios",             "desc": "Gráficos de controle estatístico por título (LCL/UCL, média global, evolução diária)." },
       "resumen":       { "titulo": "Resumo Ensaios",               "desc": "Resumo consolidado de ensaios USTER de fio em um intervalo de datas." },
       "resumenCardas": { "titulo": "Resumo Ensaios Cardas",        "desc": "Resumo de ensaios USTER de fita de carda por máquina e alimentação." },
+      "matrizControlUster": { "titulo": "Matriz de Controle Uster", "desc": "Matriz de controle para ensaios USTER de fita de carda organizada por turno, tipo e máquina." },
       "resumenSemanal":{ "titulo": "Resumo Semanal Fiação",        "desc": "Visão semanal com KPIs operativos e de qualidade de toda a fiação." },
       "resumenDiario": { "titulo": "Resumo Diário",                "desc": "Visão diária com produção, qualidade e alertas do dia selecionado." },
       "calidadFibra":  { "titulo": "Análise Qualidade Fibra",      "desc": "Análise HVI com histogramas e métricas por origem do algodão." },

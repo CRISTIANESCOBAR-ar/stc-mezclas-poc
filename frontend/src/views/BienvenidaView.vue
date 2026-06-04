@@ -113,6 +113,8 @@ const categorias = computed(() => [
         titulo: t('bienvenida.cards.resumen.titulo'),        descripcion: t('bienvenida.cards.resumen.desc') },
       { path: '/resumen-cardas',             icon: '🗂️', bg: 'bg-cyan-50 text-cyan-600',
         titulo: t('bienvenida.cards.resumenCardas.titulo'),  descripcion: t('bienvenida.cards.resumenCardas.desc') },
+      { path: '/matriz-control-uster',       icon: '📊', bg: 'bg-indigo-50 text-indigo-600',
+        titulo: t('bienvenida.cards.matrizControlUster.titulo'), descripcion: t('bienvenida.cards.matrizControlUster.desc') },
       { path: '/resumen-semanal-hilanderia', icon: '📅', bg: 'bg-emerald-50 text-emerald-600',
         titulo: t('bienvenida.cards.resumenSemanal.titulo'), descripcion: t('bienvenida.cards.resumenSemanal.desc') },
       { path: '/resumen-diario',             icon: '☀️', bg: 'bg-amber-50 text-amber-600',
