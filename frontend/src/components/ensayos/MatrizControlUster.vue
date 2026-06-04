@@ -24,7 +24,7 @@
 
             <!-- Control del límite de control de calidad -->
             <div class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-sm">
-              <span class="text-slate-600 font-medium">Límite CVm% Máx:</span>
+              <span class="text-slate-600 font-medium">CVm% Máx:</span>
               <input
                 v-model.number="cvmLimit"
                 type="number"
@@ -45,7 +45,7 @@
           </div>
 
           <div class="flex-1 flex items-center justify-end gap-2 flex-wrap">
-            <div class="flex items-center gap-2 flex-wrap">
+            <div class="flex items-center gap-2">
               <label class="text-sm text-slate-600">Turno:</label>
               <select v-model="turnoQuery" class="px-2 py-1 border border-slate-200 rounded-lg text-sm text-slate-900 min-w-20">
                 <option value="">Todos</option>
@@ -59,19 +59,21 @@
               </select>
             </div>
 
-            <button
-              @click="loadRows"
-              class="inline-flex items-center gap-1 px-2.5 py-1 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
-            >
-              Refrescar
-            </button>
+            <div class="flex items-center gap-2">
+              <button
+                @click="loadRows"
+                class="inline-flex items-center gap-1 px-2.5 py-1 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
+              >
+                Refrescar
+              </button>
 
-            <button
-              @click="exportToExcel"
-              class="inline-flex items-center gap-1 px-2.5 py-1 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
-            >
-              Exportar
-            </button>
+              <button
+                @click="exportToExcel"
+                class="inline-flex items-center gap-1 px-2.5 py-1 border border-slate-200 bg-white text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
+              >
+                Exportar
+              </button>
+            </div>
           </div>
         </div>
 
