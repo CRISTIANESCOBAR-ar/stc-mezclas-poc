@@ -374,13 +374,13 @@ router.get('/mezcla-lotes', async (req, res) => {
           ),
           ensayos AS (
             SELECT
-              p.testnr, p.maschnr, p.machine_family, p.nomcount, p.lote,
+              p.testnr, p.source_prefix, p.maschnr, p.machine_family, p.nomcount, p.lote,
               ROUND(AVG(t.cvm_percent)::numeric, 2) AS cvm_avg,
               COUNT(t.id) AS tbl_rows
             FROM tb_uster_carda_par p
-            LEFT JOIN tb_uster_carda_tbl t ON t.testnr = p.testnr
+            LEFT JOIN tb_uster_carda_tbl t ON t.testnr = p.testnr AND t.source_prefix = p.source_prefix
             WHERE DATE(p.created_at AT TIME ZONE 'America/Buenos_Aires') = (SELECT dia FROM ultimo_dia)
-            GROUP BY p.testnr, p.maschnr, p.machine_family, p.nomcount, p.lote
+            GROUP BY p.testnr, p.source_prefix, p.maschnr, p.machine_family, p.nomcount, p.lote
           ),
           maq_resumen AS (
             SELECT

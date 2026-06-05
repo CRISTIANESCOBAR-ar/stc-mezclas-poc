@@ -113,10 +113,10 @@
               <tbody>
                 <tr
                   v-for="item in filteredScanList"
-                  :key="item.testnr"
+                  :key="item.recordKey"
                   class="hover:bg-blue-50 cursor-pointer transition-colors"
-                  :class="{ 'bg-blue-50': selectedTestnr === item.testnr }"
-                  @click="selectRow(item.testnr)"
+                  :class="{ 'bg-blue-50': selectedTestnr === item.recordKey }"
+                  @click="selectRow(item.recordKey)"
                 >
                   <td class="px-2 py-2 border-t border-slate-100 text-center">{{ item.testnr }}</td>
                   <td class="px-2 py-2 border-t border-slate-100 text-center">{{ item.hasPar ? 'OK' : '' }}</td>
@@ -146,7 +146,7 @@
           <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
             <div class="text-lg font-semibold text-slate-800">Datos Ensayo Cinta</div>
             <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              <div><span class="font-semibold">TESTNR:</span> {{ selectedTestnr || '-' }}</div>
+              <div><span class="font-semibold">TESTNR:</span> {{ selectedTestnrLabel || '-' }}</div>
               <div><span class="font-semibold">Catalogo:</span> {{ parData.CATALOG || '-' }}</div>
               <div><span class="font-semibold">Lote:</span> {{ parData.LOTE || '-' }}</div>
               <div><span class="font-semibold">Fecha/Hora:</span> {{ formatDateTime(parData.TIME) }}</div>
@@ -327,6 +327,10 @@ function normalizeTestnr(value) {
   return raw.replace(/^0+/, '') || '0'
 }
 
+function makeRecordKey(testnr, sourcePrefix) {
+  return `${String(sourcePrefix || '').trim().toUpperCase()}::${normalizeTestnr(testnr)}`
+}
+
 function extractTsvCell(text, rowIndex, colIndex) {
   if (!text) return ''
   const lines = String(text).split(/\r?\n/)
@@ -449,12 +453,32 @@ function parseParText(text, filename, sourcePath = '') {
     if (!out.STYLE || out.STYLE === '') out.STYLE = 'MANUAR'
   }
 
-  out.MACHINE_FAMILY = detectMachineFamily(out.STYLE, prefix, out.MASCHNR)
+  const openEndJoined = [
+    out.STYLE,
+    out.SORTIMENT,
+    out.MATCLASS,
+    out.OBS,
+    out.CATALOG,
+    out.SOURCE_PREFIX,
+    out.SOURCE_PATH,
+  ]
+    .map((v) => String(v || '').toUpperCase())
+    .join(' ')
+
+  const hasExplicitOpenEnd =
+    openEndJoined.includes('OPEN END') ||
+    openEndJoined.includes('OPENEND') ||
+    openEndJoined.includes('ROTOR') ||
+    /(^|[^A-Z0-9])OE([^A-Z0-9]|$)/.test(openEndJoined)
+
+  out.MACHINE_FAMILY = hasExplicitOpenEnd
+    ? 'OPEN END'
+    : detectMachineFamily(out.STYLE, prefix, out.MASCHNR)
 
   // Only force MACHINE_FAMILY to MANUAR when STYLE explicitly indicates MANUAR or filename does,
   // or when alimentacion indicates MANUAR but STYLE is absent. Explicit STYLE (e.g. 'OPEN END') wins.
   const styleUpper = String(out.STYLE || '').toUpperCase()
-  if (styleUpper.includes('MANUAR') || filenameHasManuar || (hasManuarInAliment && (!styleUpper || styleUpper === ''))) {
+  if (!hasExplicitOpenEnd && (styleUpper.includes('MANUAR') || filenameHasManuar || (hasManuarInAliment && (!styleUpper || styleUpper === '')))) {
     out.MACHINE_FAMILY = 'MANUAR'
   }
 
@@ -620,9 +644,14 @@ const pendingBatchCount = computed(() =>
   scanList.value.filter((i) => !i.imp && i.hasPar && i.hasTbl).length
 )
 
+const selectedScanItem = computed(() =>
+  scanList.value.find((x) => x.recordKey === selectedTestnr.value) || null
+)
+
+const selectedTestnrLabel = computed(() => selectedScanItem.value?.testnr || '')
+
 const isTestSaved = computed(() => {
-  const item = scanList.value.find((x) => x.testnr === selectedTestnr.value)
-  return Boolean(item?.imp)
+  return Boolean(selectedScanItem.value?.imp)
 })
 
 const tituloStats = computed(() => {
@@ -742,10 +771,17 @@ function formatDateTime(value) {
 async function checkExistingTests(testnrs) {
   if (!Array.isArray(testnrs) || !testnrs.length) return []
   try {
+    const entries = testnrs
+      .map((entry) => ({
+        testnr: String(entry?.testnr ?? entry ?? '').trim(),
+        sourcePrefix: String(entry?.sourcePrefix || entry?.source_prefix || '').trim().toUpperCase(),
+      }))
+      .filter((entry) => entry.testnr)
+
     const resp = await fetch('/api/uster-cardas/status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ testnrs }),
+      body: JSON.stringify({ entries }),
       credentials: 'include',
     })
     const data = await resp.json()
@@ -765,9 +801,13 @@ async function scanDirectory(dirHandle) {
 
     const testnr = getTestnrFromName(name)
     if (!testnr) continue
+    const sourcePrefix = getPrefixFromName(name)
+    const recordKey = makeRecordKey(testnr, sourcePrefix)
 
-    if (!map[testnr]) {
-      map[testnr] = {
+    if (!map[recordKey]) {
+      map[recordKey] = {
+        recordKey,
+        sourcePrefix,
         testnr,
         hasPar: false,
         hasTbl: false,
@@ -788,35 +828,34 @@ async function scanDirectory(dirHandle) {
         const txt = await (await handle.getFile()).text()
         const par = parseParText(txt, name, name)
         if (!isCardasPar(par)) {
-          delete map[testnr]
+          delete map[recordKey]
           continue
         }
-        map[testnr].hasPar = true
-        map[testnr].parHandle = handle
-        map[testnr].nomcount = par.NOMCOUNT || ''
-        map[testnr].maschnr = par.MASCHNR || ''
-        map[testnr].machineFamily = par.MACHINE_FAMILY || ''
-        map[testnr].parTimeMs = Number.isFinite(par.TIME_MS) ? par.TIME_MS : null
-        map[testnr].parTimeDisplay = par.TIME_DISPLAY || ''
-        map[testnr].turno = par.TURNO || ''
+        map[recordKey].sourcePrefix = String(par.SOURCE_PREFIX || sourcePrefix || '').trim().toUpperCase()
+        map[recordKey].hasPar = true
+        map[recordKey].parHandle = handle
+        map[recordKey].nomcount = par.NOMCOUNT || ''
+        map[recordKey].maschnr = par.MASCHNR || ''
+        map[recordKey].machineFamily = par.MACHINE_FAMILY || ''
+        map[recordKey].parTimeMs = Number.isFinite(par.TIME_MS) ? par.TIME_MS : null
+        map[recordKey].parTimeDisplay = par.TIME_DISPLAY || ''
+        map[recordKey].turno = par.TURNO || ''
       } catch {
         // ignore parse errors during scan
       }
     }
 
     if (lower.endsWith('.tbl')) {
-      map[testnr].hasTbl = true
-      map[testnr].tblHandle = handle
+      map[recordKey].hasTbl = true
+      map[recordKey].tblHandle = handle
     }
   }
 
   const list = sortScanItems(Object.values(map).filter((item) => item.hasPar))
-  const existing = await checkExistingTests(list.map((i) => i.testnr))
+  const existing = await checkExistingTests(list.map((i) => ({ testnr: i.testnr, sourcePrefix: i.sourcePrefix })))
   const existingSet = new Set(existing)
-  const existingNormSet = new Set(existing.map((x) => normalizeTestnr(x)))
   for (const item of list) {
-    const current = String(item.testnr || '').trim()
-    item.imp = existingSet.has(current) || existingNormSet.has(normalizeTestnr(current))
+    item.imp = existingSet.has(makeRecordKey(item.testnr, item.sourcePrefix))
   }
 
   scanList.value = list
@@ -846,7 +885,7 @@ async function readFileFromHandle(handle) {
 }
 
 async function selectRow(testnr) {
-  const item = scanList.value.find((x) => x.testnr === testnr)
+  const item = scanList.value.find((x) => x.recordKey === testnr)
   if (!item) return
 
   selectedTestnr.value = testnr
@@ -868,10 +907,11 @@ async function saveCurrentTest() {
   isSaving.value = true
 
   try {
-    const item = scanList.value.find((x) => x.testnr === selectedTestnr.value)
+    const item = selectedScanItem.value
+    if (!item) throw new Error('No hay ensayo seleccionado')
     const par = {
-      TESTNR: selectedTestnr.value,
-      SOURCE_PREFIX: parData.value.SOURCE_PREFIX || getPrefixFromName(item?.parHandle?.name || ''),
+      TESTNR: item.testnr,
+      SOURCE_PREFIX: parData.value.SOURCE_PREFIX || item.sourcePrefix || getPrefixFromName(item?.parHandle?.name || ''),
       CATALOG: parData.value.CATALOG || null,
       SORTIMENT: parData.value.SORTIMENT || null,
       STYLE: parData.value.STYLE || null,
@@ -900,15 +940,15 @@ async function saveCurrentTest() {
     const data = await resp.json()
     if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`)
 
-    const current = scanList.value.find((x) => x.testnr === selectedTestnr.value)
+    const current = selectedScanItem.value
     if (current) current.imp = true
 
-    const previousTestnr = selectedTestnr.value
+    const previousRecordKey = selectedTestnr.value
 
     if (filterMode.value === 'not') {
-      const nextUnsaved = filteredScanList.value.find((x) => x.testnr !== previousTestnr)
-      if (nextUnsaved?.testnr) {
-        await selectRow(nextUnsaved.testnr)
+      const nextUnsaved = filteredScanList.value.find((x) => x.recordKey !== previousRecordKey)
+      if (nextUnsaved?.recordKey) {
+        await selectRow(nextUnsaved.recordKey)
       } else {
         clearSelection()
       }
@@ -918,7 +958,7 @@ async function saveCurrentTest() {
       toast: true,
       position: 'top-end',
       icon: 'success',
-      title: `Ensayo ${previousTestnr} guardado`,
+      title: `Ensayo ${item.sourcePrefix}-${item.testnr} guardado`,
       showConfirmButton: false,
       timer: 2400,
       timerProgressBar: true,
@@ -937,9 +977,12 @@ async function saveCurrentTest() {
 async function deleteCurrentTest() {
   if (!selectedTestnr.value || !isTestSaved.value || isDeleting.value) return
 
+  const item = selectedScanItem.value
+  if (!item) return
+
   const confirm = await Swal.fire({
     title: 'Eliminar ensayo guardado?',
-    text: `Se eliminara ${selectedTestnr.value} de la base de datos.`,
+    text: `Se eliminara ${item.sourcePrefix}-${item.testnr} de la base de datos.`,
     icon: 'warning',
     showCancelButton: true,
     confirmButtonText: 'Eliminar',
@@ -949,21 +992,20 @@ async function deleteCurrentTest() {
 
   isDeleting.value = true
   try {
-    const resp = await fetch(`/api/uster-cardas/delete/${encodeURIComponent(selectedTestnr.value)}`, {
+    const resp = await fetch(`/api/uster-cardas/delete/${encodeURIComponent(item.testnr)}?source_prefix=${encodeURIComponent(item.sourcePrefix)}`, {
       method: 'DELETE',
       credentials: 'include',
     })
     const data = await resp.json()
     if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`)
 
-    const item = scanList.value.find((x) => x.testnr === selectedTestnr.value)
-    if (item) item.imp = false
+    item.imp = false
 
     await Swal.fire({
       toast: true,
       position: 'top-end',
       icon: 'success',
-      title: `Ensayo ${selectedTestnr.value} eliminado`,
+      title: `Ensayo ${item.sourcePrefix}-${item.testnr} eliminado`,
       showConfirmButton: false,
       timer: 2200,
       timerProgressBar: true,
@@ -1006,7 +1048,7 @@ async function batchImportPending() {
 
       const par = {
         TESTNR: item.testnr,
-        SOURCE_PREFIX: parsedPar.SOURCE_PREFIX || getPrefixFromName(item.parHandle?.name || ''),
+        SOURCE_PREFIX: parsedPar.SOURCE_PREFIX || item.sourcePrefix || getPrefixFromName(item.parHandle?.name || ''),
         CATALOG: parsedPar.CATALOG || null,
         SORTIMENT: parsedPar.SORTIMENT || null,
         STYLE: parsedPar.STYLE || null,
@@ -1030,7 +1072,7 @@ async function batchImportPending() {
       if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`)
       item.imp = true
     } catch (err) {
-      errors.push({ testnr: item.testnr, error: String(err?.message || err) })
+      errors.push({ testnr: `${item.sourcePrefix}-${item.testnr}`, error: String(err?.message || err) })
     }
     batchProgress.value++
   }
@@ -1143,9 +1185,13 @@ async function onFolderInputChange(event) {
 
     const testnr = getTestnrFromName(f.name)
     if (!testnr) continue
+    const sourcePrefix = getPrefixFromName(f.name)
+    const recordKey = makeRecordKey(testnr, sourcePrefix)
 
-    if (!map[testnr]) {
-      map[testnr] = {
+    if (!map[recordKey]) {
+      map[recordKey] = {
+        recordKey,
+        sourcePrefix,
         testnr,
         hasPar: false,
         hasTbl: false,
@@ -1165,32 +1211,31 @@ async function onFolderInputChange(event) {
       const txt = await f.text()
       const par = parseParText(txt, f.name, f.webkitRelativePath || f.name)
       if (!isCardasPar(par)) {
-        delete map[testnr]
+        delete map[recordKey]
         continue
       }
-      map[testnr].hasPar = true
-      map[testnr].parHandle = f
-      map[testnr].nomcount = par.NOMCOUNT || ''
-      map[testnr].maschnr = par.MASCHNR || ''
-      map[testnr].machineFamily = par.MACHINE_FAMILY || ''
-      map[testnr].parTimeMs = Number.isFinite(par.TIME_MS) ? par.TIME_MS : null
-      map[testnr].parTimeDisplay = par.TIME_DISPLAY || ''
-      map[testnr].turno = par.TURNO || ''
+      map[recordKey].sourcePrefix = String(par.SOURCE_PREFIX || sourcePrefix || '').trim().toUpperCase()
+      map[recordKey].hasPar = true
+      map[recordKey].parHandle = f
+      map[recordKey].nomcount = par.NOMCOUNT || ''
+      map[recordKey].maschnr = par.MASCHNR || ''
+      map[recordKey].machineFamily = par.MACHINE_FAMILY || ''
+      map[recordKey].parTimeMs = Number.isFinite(par.TIME_MS) ? par.TIME_MS : null
+      map[recordKey].parTimeDisplay = par.TIME_DISPLAY || ''
+      map[recordKey].turno = par.TURNO || ''
     }
 
     if (lower.endsWith('.tbl')) {
-      map[testnr].hasTbl = true
-      map[testnr].tblHandle = f
+      map[recordKey].hasTbl = true
+      map[recordKey].tblHandle = f
     }
   }
 
   const list = sortScanItems(Object.values(map).filter((item) => item.hasPar))
-  const existing = await checkExistingTests(list.map((i) => i.testnr))
+  const existing = await checkExistingTests(list.map((i) => ({ testnr: i.testnr, sourcePrefix: i.sourcePrefix })))
   const existingSet = new Set(existing)
-  const existingNormSet = new Set(existing.map((x) => normalizeTestnr(x)))
   for (const item of list) {
-    const current = String(item.testnr || '').trim()
-    item.imp = existingSet.has(current) || existingNormSet.has(normalizeTestnr(current))
+    item.imp = existingSet.has(makeRecordKey(item.testnr, item.sourcePrefix))
   }
 
   scanList.value = list

@@ -682,10 +682,10 @@ router.get('/trazabilidad', async (req, res) => {
                 THEN regexp_replace(TRIM(COALESCE(p.maschnr, '')), '[^0-9]', '', 'g')::int
               ELSE NULL
             END AS carda_num,
-            p.testnr,
+            (COALESCE(p.source_prefix, '') || ':' || p.testnr) AS test_key,
             ROUND(AVG(t.cvm_percent)::numeric, 2) AS cvm_test
           FROM tb_uster_carda_par p
-          LEFT JOIN tb_uster_carda_tbl t ON t.testnr = p.testnr
+          LEFT JOIN tb_uster_carda_tbl t ON t.testnr = p.testnr AND t.source_prefix = p.source_prefix
           WHERE ${sqlParseMixedLocalTimestamp('p.time_stamp')} IS NOT NULL
             AND (
               CASE
@@ -701,7 +701,7 @@ router.get('/trazabilidad', async (req, res) => {
           style_norm,
           ROUND(AVG(cvm_test)::numeric, 2) AS cvm_turno_avg,
           ROUND(MAX(cvm_test)::numeric, 2) AS cvm_turno_max,
-          COUNT(DISTINCT testnr) AS muestras_turno,
+          COUNT(DISTINCT test_key) AS muestras_turno,
           STRING_AGG(DISTINCT carda_num::text, ', ') FILTER (WHERE carda_num IS NOT NULL) AS maquinas_lab,
           (
             SELECT json_agg(json_build_object('carda', carda_num, 'cvm', cvm_test) ORDER BY carda_num NULLS LAST)
@@ -802,10 +802,10 @@ router.get('/trazabilidad', async (req, res) => {
             END AS turno,
             CASE WHEN TRIM(COALESCE(p.maschnr, '')) ~ '^[0-9]+$' THEN TRIM(p.maschnr)::int ELSE NULL END AS carda_num,
             p.nomcount::numeric AS titulo_cinta,
-            p.testnr,
+            (COALESCE(p.source_prefix, '') || ':' || p.testnr) AS test_key,
             ROUND(AVG(t.cvm_percent)::numeric, 2) AS cvm_avg
           FROM tb_uster_carda_par p
-          LEFT JOIN tb_uster_carda_tbl t ON t.testnr = p.testnr
+          LEFT JOIN tb_uster_carda_tbl t ON t.testnr = p.testnr AND t.source_prefix = p.source_prefix
           WHERE ${sqlParseMixedLocalTimestamp('p.time_stamp')} IS NOT NULL
             AND (
               CASE
@@ -834,7 +834,7 @@ router.get('/trazabilidad', async (req, res) => {
             STRING_AGG(DISTINCT carda_num::text, ', ') FILTER (WHERE carda_num IS NOT NULL) AS maquinas_lab,
             ROUND(AVG(cvm_avg)::numeric, 2) AS cvm_avg,
             ROUND(MAX(cvm_avg)::numeric, 2) AS cvm_max,
-            COUNT(DISTINCT testnr) AS ensayos_lab
+            COUNT(DISTINCT test_key) AS ensayos_lab
           FROM carda_lab
           GROUP BY fecha_prod, titulo_cinta
         ),

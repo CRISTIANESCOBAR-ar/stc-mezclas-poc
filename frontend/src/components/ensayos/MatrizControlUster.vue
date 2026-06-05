@@ -115,7 +115,7 @@
               <thead class="bg-slate-50 sticky top-0 z-20">
                 <tr>
                   <th class="w-20 px-2 py-2 text-center font-bold text-slate-700 border-b border-r border-slate-200 bg-slate-100">Fecha</th>
-                  <th class="w-14 px-2 py-2 text-center font-bold text-slate-700 border-b border-r border-slate-200 bg-slate-100">Turno</th>
+                  <th class="w-20 px-2 py-2 text-center font-bold text-slate-700 border-b border-r border-slate-200 bg-slate-100">Turno</th>
                   <th class="w-32 px-2 py-2 text-left font-bold text-slate-700 border-b border-r border-slate-200 bg-slate-100">Tipo</th>
                   <th class="w-32 px-2 py-2 text-center font-bold text-slate-700 border-b border-r border-slate-200 bg-slate-100">Rango Horario</th>
                   <!-- Columnas dinámicas de máquinas -->
@@ -134,10 +134,32 @@
                   :key="idx"
                   class="hover:bg-slate-50 transition-colors duration-150"
                   :class="row.isReensayo ? 'bg-amber-50/20' : ''"
+                  :style="rowspanMeta[idx]?.turnoSpan > 0 && idx > 0 ? { borderTop: '2px solid #94a3b8' } : {}"
                 >
-                  <td class="px-2 py-2 text-center font-medium text-slate-600 border-r border-slate-200">{{ row.Fecha }}</td>
-                  <td class="px-2 py-2 text-center font-semibold text-slate-900 border-r border-slate-200">
-                    {{ row.Turno }}
+                  <td
+                    v-if="rowspanMeta[idx].fechaSpan > 0"
+                    :rowspan="rowspanMeta[idx].fechaSpan"
+                    class="px-2 py-2 text-center font-medium text-slate-600 border-r border-slate-200 align-middle"
+                  >{{ row.Fecha }}</td>
+                  <td
+                    v-if="rowspanMeta[idx].turnoSpan > 0"
+                    :rowspan="rowspanMeta[idx].turnoSpan"
+                    class="px-2 py-2 text-center border-r border-slate-200 align-middle"
+                  >
+                    <div class="flex flex-col items-center gap-0.5">
+                      <span
+                        class="inline-flex items-center justify-center w-6 h-6 rounded-full text-[11px] font-bold"
+                        :class="row.Turno === 'A' ? 'bg-emerald-100 text-emerald-800' : row.Turno === 'B' ? 'bg-blue-100 text-blue-800' : 'bg-indigo-100 text-indigo-700'"
+                      >{{ row.Turno }}</span>
+                      <span class="text-[9px] text-slate-400 leading-tight whitespace-nowrap">{{ rowspanMeta[idx].recorridas }} rec.</span>
+                      <span class="text-[9px] text-slate-400 leading-tight whitespace-nowrap">{{ rowspanMeta[idx].ensayos }} ens.</span>
+                      <template v-if="rowspanMeta[idx].laboratoristas?.length">
+                        <span class="mt-1 pt-1 border-t border-slate-200 w-full text-xs text-slate-600 leading-snug text-center font-medium"
+                          v-for="lab in rowspanMeta[idx].laboratoristas"
+                          :key="lab"
+                        >{{ fmtLab(lab) }}</span>
+                      </template>
+                    </div>
                   </td>
                   <td class="px-2 py-2 text-left text-slate-700 border-r border-slate-200 truncate">
                     {{ row.Tipo }}
@@ -537,6 +559,61 @@ const pagedPivotedRows = computed(() => {
   return filteredPivotedRows.value.slice(start, start + pageSize.value)
 })
 
+// Calcula rowspan para Fecha y Turno sobre el array ya paginado.
+// Array paralelo a pagedPivotedRows: { fechaSpan, turnoSpan, recorridas, ensayos }
+// span = 0 → no renderizar <td>; span > 0 → :rowspan="N"
+const rowspanMeta = computed(() => {
+  const rows = pagedPivotedRows.value
+  const meta = rows.map(() => ({ fechaSpan: 0, turnoSpan: 0, recorridas: 0, ensayos: 0, laboratoristas: [] }))
+
+  const countEnsayos = (row) =>
+    Object.values(row.valores || {}).filter((v) => v && v.cvm != null && v.cvm !== '').length
+
+  // turnoSpan: grupos consecutivos por Fecha+Turno
+  let i = rows.length - 1
+  while (i >= 0) {
+    const key = rows[i].Fecha + '_' + rows[i].Turno
+    let span = 1
+    let ensayos = countEnsayos(rows[i])
+    let j = i - 1
+    while (j >= 0 && (rows[j].Fecha + '_' + rows[j].Turno) === key) {
+      span++
+      ensayos += countEnsayos(rows[j])
+      j--
+    }
+    const head = j + 1
+    meta[head].turnoSpan = span
+    meta[head].recorridas = span
+    meta[head].ensayos = ensayos
+    // Recolectar laboratoristas únicos del grupo (puede haber relevo)
+    const labSet = new Set()
+    for (let k = head; k <= i; k++) {
+      for (const val of Object.values(rows[k].valores || {})) {
+        const lab = String(val?.trial?.Laboratorista || '').trim()
+        if (lab && lab !== '—') labSet.add(lab)
+      }
+    }
+    meta[head].laboratoristas = [...labSet].sort()
+    for (let k = head + 1; k <= i; k++) meta[k].turnoSpan = 0
+    i = j
+  }
+
+  // fechaSpan: grupos consecutivos por Fecha
+  i = rows.length - 1
+  while (i >= 0) {
+    const fecha = rows[i].Fecha
+    let span = 1
+    let j = i - 1
+    while (j >= 0 && rows[j].Fecha === fecha) { span++; j-- }
+    const head = j + 1
+    meta[head].fechaSpan = span
+    for (let k = head + 1; k <= i; k++) meta[k].fechaSpan = 0
+    i = j
+  }
+
+  return meta
+})
+
 const startDisplay = computed(() => {
   if (!filteredPivotedRows.value.length) return 0
   if (pageSize.value === 0) return 1
@@ -552,6 +629,14 @@ const endDisplay = computed(() => {
 watch([filteredPivotedRows, pageSize], () => {
   page.value = 1
 })
+
+// Abrevia un nombre de laboratorista: primera palabra, primera letra mayúscula resto minúsculas
+// Ej: "GARCIA ALBERTO" → "Garcia", "Martinez Raul" → "Martinez"
+function fmtLab(name) {
+  if (!name) return ''
+  const word = String(name).trim().split(/\s+/)[0]
+  return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+}
 
 function clearFilters() {
   q.value = ''
