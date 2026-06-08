@@ -1,20 +1,20 @@
 <template>
-  <div class="flex flex-col h-full overflow-hidden bg-gradient-to-br from-slate-50 to-blue-50 p-4">
+  <div class="flex flex-col h-full overflow-hidden bg-linear-to-br from-slate-50 to-blue-50 p-4">
     <!-- Header unificado -->
-    <div class="flex items-center justify-between gap-4 mb-4 bg-white/80 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm border border-slate-200 relative z-[100]">
+    <div class="flex items-center justify-between gap-4 mb-4 bg-white/80 backdrop-blur-sm rounded-xl px-4 py-3 shadow-sm border border-slate-200 relative z-100">
       <!-- Título -->
-      <div class="flex items-center gap-2 flex-shrink-0">
+      <div class="flex items-center gap-2 shrink-0">
         <span class="text-xl">🧬</span>
-        <h1 class="text-lg font-bold bg-gradient-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
+        <h1 class="text-lg font-bold bg-linear-to-r from-emerald-700 to-teal-700 bg-clip-text text-transparent">
           Análisis Calidad Fibra
         </h1>
       </div>
       
       <!-- Barra separadora -->
-      <div class="h-6 w-px bg-slate-300 flex-shrink-0"></div>
+      <div class="h-6 w-px bg-slate-300 shrink-0"></div>
       
       <!-- Radio buttons para agrupación -->
-      <div class="flex items-center gap-3 flex-shrink-0">
+      <div class="flex items-center gap-3 shrink-0">
         <label class="text-sm font-semibold text-slate-700">Agrupación:</label>
         <label class="flex items-center gap-1.5 cursor-pointer">
           <input
@@ -37,21 +37,21 @@
       </div>
 
       <!-- Barra separadora -->
-      <div class="h-6 w-px bg-slate-300 flex-shrink-0"></div>
+      <div class="h-6 w-px bg-slate-300 shrink-0"></div>
 
       <!-- Datepickers -->
-      <div class="flex items-center gap-3 flex-shrink-0">
+      <div class="flex items-center gap-3 shrink-0">
         <CustomDatepicker v-model="startDate" label="Desde" :show-buttons="false" />
         <CustomDatepicker v-model="endDate" label="Hasta" :show-buttons="false" />
       </div>
       
       <!-- Botones de acción -->
-      <div class="flex items-center gap-2 ml-auto flex-shrink-0">
+      <div class="flex items-center gap-2 ml-auto shrink-0">
         <button
           @click="loadData"
           :disabled="loading"
           v-tippy="{ content: 'Refrescar datos', placement: 'bottom' }"
-          class="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
+          class="w-9 h-9 flex items-center justify-center bg-linear-to-r from-emerald-600 to-teal-600 text-white rounded-lg hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
         >
           <svg v-if="!loading" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 12a9 9 0 1 1-3-6.7" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -67,7 +67,7 @@
           @click="exportToExcel"
           :disabled="loading || filteredRows.length === 0"
           v-tippy="{ content: 'Exportar a Excel', placement: 'bottom' }"
-          class="w-9 h-9 flex items-center justify-center bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
+          class="w-9 h-9 flex items-center justify-center bg-linear-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md"
         >
           <span class="text-lg">📊</span>
         </button>
@@ -88,7 +88,7 @@
 
     <div v-else class="flex-1 overflow-auto rounded-xl border border-slate-200 bg-white shadow-md">
       <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs">
-        <thead class="bg-gradient-to-r from-emerald-50 to-teal-50 sticky top-0 z-[5]">
+        <thead class="bg-linear-to-r from-emerald-50 to-teal-50 sticky top-0 z-5">
           <!-- Fila de Grupos -->
           <tr class="border-b border-slate-300">
             <th colspan="4" class="px-2 py-1.5 text-center text-[10px] font-medium text-slate-500 bg-slate-50/50 border-r-2 border-slate-300"></th>

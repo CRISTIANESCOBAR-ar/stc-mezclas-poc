@@ -91,6 +91,12 @@ const routes = [
     meta: { title: 'Análisis Calidad Fibra' }
   },
   {
+    path: '/meta-por-revisor',
+    name: 'meta-por-revisor',
+    component: () => import('./components/ensayos/MetaPorRevisor.vue'),
+    meta: { title: 'Meta por Revisor' }
+  },
+  {
     path: '/informe-auditoria-lote',
     name: 'informe-auditoria-lote',
     component: () => import('./components/ensayos/InformeAuditoriaLote.vue'),
