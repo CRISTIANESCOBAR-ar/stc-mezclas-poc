@@ -1136,6 +1136,14 @@ async function loadSelectedTensoFiles(testnr) {
 			} catch (err) {
 				console.warn('reading .PAR from scan-list handles failed', err)
 			}
+
+			// Fallback: if the scan came from the input element, a File object may be attached
+			if (!fileText.value && item.parFile && typeof item.parFile.text === 'function') {
+				try {
+					fileText.value = await item.parFile.text()
+					parsedParData.value = parseParText(fileText.value)
+				} catch (err) { console.warn('reading .PAR from input file fallback', err) }
+			}
 			try {
 				if (item.tblHandle && typeof item.tblHandle.getFile === 'function') {
 					const tf = await item.tblHandle.getFile()
@@ -1145,6 +1153,15 @@ async function loadSelectedTensoFiles(testnr) {
 				}
 			} catch (err) {
 				console.warn('reading .TBL from scan-list handles failed', err)
+			}
+
+			// Fallback: use File object stored from input selection
+			if (!tblText.value && item.tblFile && typeof item.tblFile.text === 'function') {
+				try {
+					tblText.value = await item.tblFile.text()
+					selectedTblName.value = item.tblFile.name || ''
+					parseTblText(tblText.value)
+				} catch (err) { console.warn('reading .TBL from input file fallback', err) }
 			}
 			// if we got anything, return early
 			if (fileText.value || tblText.value) return
@@ -1546,9 +1563,19 @@ async function onTensoFolderInputChangeLocal(e) {
 			if (!map[t]) map[t] = { testnr: t, hasPar: false, hasTbl: false, nomcount: '', maschnr: '' }
 			if (ln.endsWith('.par')) {
 				map[t].hasPar = true
-				try { const txt = await f.text(); map[t].nomcount = extractTsvCell(txt, 14, 5) || ''; map[t].maschnr = extractTsvCell(txt, 12, 5) || '' } catch (err) { console.warn('reading .PAR fallback', err) }
+				// store the File object as a fallback when user used the input (no FileSystemFileHandle)
+				map[t].parFile = f
+				try {
+					const txt = await f.text()
+					map[t].nomcount = extractTsvCell(txt, 14, 5) || ''
+					map[t].maschnr = extractTsvCell(txt, 12, 5) || ''
+				} catch (err) { console.warn('reading .PAR fallback', err) }
 			}
-			if (ln.endsWith('.tbl')) map[t].hasTbl = true
+			if (ln.endsWith('.tbl')) {
+				map[t].hasTbl = true
+				// store the File object for the .TBL as fallback
+				map[t].tblFile = f
+			}
 		}
 		// Consultar BD inmediatamente para obtener estado guardado antes de asignar
 		try {
