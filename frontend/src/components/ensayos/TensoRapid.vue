@@ -9,7 +9,7 @@
 		<main
 			class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col overflow-y-auto">
 			<!-- Selector de carpeta (con título principal delante) -->
-			<div class="flex-shrink-0 mb-3 flex items-center gap-3">
+			<div class="shrink-0 mb-3 flex items-center gap-3">
 				<div class="text-2xl font-semibold text-slate-800 mr-4 inline-flex items-center gap-2">
 					<svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 						<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -50,7 +50,7 @@
 			<!-- Contenedor que agrupa filtros, tablas y estado -->
 			<div class="flex-1 flex flex-col mt-2 bg-white rounded-2xl shadow-sm p-4 border border-slate-200 min-h-0">
 				<!-- Top row: filtros a la izquierda y título Datos .TBL a la derecha (si hay datos) -->
-				<div class="flex-shrink-0 mt-2 flex items-center justify-between gap-4">
+				<div class="shrink-0 mt-2 flex items-center justify-between gap-4">
 					<div class="flex items-center gap-4">
 						<label class="inline-flex items-center text-sm cursor-pointer">
 							<input type="radio" name="tenso-filter" v-model="filterMode" value="all"
@@ -92,8 +92,8 @@
 				<!-- Grid de dos columnas: tabla de ensayos a la izquierda y datos TBL a la derecha -->
 				<!-- Left column fixed, right column flexible to avoid TBL dropping below -->
 				<div class="flex-1 min-h-0 mt-4 flex flex-col xl:flex-row gap-4 tenso-grid">
-					<!-- Columna izquierda: Tabla de ensayos encontrados -->
-					<div class="flex flex-col h-full min-h-0 xl:w-[60%] flex-shrink-0">
+						<!-- Columna izquierda: Tabla de ensayos encontrados -->
+						<div class="flex flex-col h-full min-h-0 xl:w-[60%] shrink-0">
 						<div class="flex-1 min-h-0 overflow-y-auto _minimal-scroll">
 							<table class="text-xs border-collapse fixed-table scan-table w-full">
 								<colgroup>
@@ -107,7 +107,7 @@
 									<!-- Acción increased by ~15% (212px -> 244px) -->
 									<col class="col-accion" />
 								</colgroup>
-								<thead class="sticky top-0 bg-gradient-to-r from-slate-50 to-slate-100 z-10">
+								<thead class="sticky top-0 bg-linear-to-r from-slate-50 to-slate-100 z-10">
 									<tr>
 										<th
 											class="px-2 py-1 border border-slate-200 text-xs text-center font-semibold text-slate-700">
@@ -260,7 +260,7 @@
 								Ver más ({{ displayLimit }} / {{ filteredTotal }})
 							</button>
 						</div>
-						<div class="flex-shrink-0 flex items-center gap-2 mt-3">
+						<div class="shrink-0 flex items-center gap-2 mt-3">
 							<div class="text-sm font-medium text-slate-600">{{ tensoScanStatus }}</div>
 							<div v-if="isScanning" class="text-sm text-slate-500 flex items-center gap-2">
 								<svg class="w-4 h-4 animate-spin text-slate-600" viewBox="0 0 24 24" fill="none">
@@ -278,7 +278,7 @@
 					<!-- Fin columna izquierda -->
 
 					<!-- Columna derecha: Tabla TBL (sin contenedor exterior) -->
-					<div v-show="parsedTblData.length" class="flex flex-col min-w-0 xl:w-[40%] flex-shrink">
+					<div v-show="parsedTblData.length" class="flex flex-col min-w-0 xl:w-[40%] shrink">
 						<div class="overflow-x-auto overflow-y-auto _minimal-scroll max-h-96 min-w-0">
 							<table class="min-w-full text-sm border-collapse tbl-centered">
 								<colgroup>
@@ -294,7 +294,7 @@
 									<col style="width:40px" />
 									<col style="width:40px" />
 								</colgroup>
-								<thead class="sticky top-0 bg-gradient-to-r from-slate-50 to-slate-100">
+								<thead class="sticky top-0 bg-linear-to-r from-slate-50 to-slate-100">
 									<tr>
 										<th class="p-2 border border-slate-200 text-xs font-semibold text-slate-700">#
 										</th>
