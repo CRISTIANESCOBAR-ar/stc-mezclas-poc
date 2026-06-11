@@ -93,8 +93,9 @@ const routes = [
   {
     path: '/meta-por-revisor',
     name: 'meta-por-revisor',
-    component: () => import('./components/ensayos/MetaPorRevisor.vue'),
-    meta: { title: 'Meta por Revisor' }
+    // Esta ruta referenciaba un componente externo a este proyecto
+    // Se elimina para evitar dependencias cruzadas con otros repositorios
+    redirect: '/resumen'
   },
   {
     path: '/informe-auditoria-lote',
