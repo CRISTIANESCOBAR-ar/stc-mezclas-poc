@@ -1097,6 +1097,7 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
 // ─────────── Historial de costos IA ───────────
 router.get('/narrativa-costos', async (req, res) => {
   try {
+    await ensureCacheTable();
     // Resumen por día
     const resumenDia = await pool.query(`
       SELECT
