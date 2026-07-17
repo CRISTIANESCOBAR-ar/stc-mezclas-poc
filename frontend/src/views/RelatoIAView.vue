@@ -23,6 +23,15 @@
                 Borrar
               </button>
             </div>
+            <!-- Sugerencia de lotes -->
+            <div v-if="lotesSugeridos" class="mt-1 flex items-center gap-1 text-[10px]">
+              <span class="text-slate-400 font-medium">{{ $t('relatoIA.latestSuggested') }}</span>
+              <button @click="lotesInput = lotesSugeridos" type="button"
+                class="text-indigo-600 hover:text-indigo-800 hover:underline font-semibold focus:outline-none"
+                title="Hacer clic para usar estos lotes">
+                {{ lotesSugeridos }}
+              </button>
+            </div>
           </div>
           <div>
             <label class="block text-[10px] font-semibold text-gray-500 uppercase tracking-wide">{{ $t('relatoIA.date') }}</label>
@@ -125,6 +134,11 @@
                 :class="copiado ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
                 {{ copiado ? $t('relatoIA.copied') : $t('relatoIA.copyAll') }}
               </button>
+              <button v-if="payloadParaIA" @click="copiarJSON"
+                class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold transition-colors"
+                :class="copiadoJson ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'">
+                {{ copiadoJson ? $t('relatoIA.copiedJson') : $t('relatoIA.copyJson') }}
+              </button>
               <button @click="descargarMarkdown"
                 class="w-full px-2 py-1.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
                 {{ $t('relatoIA.downloadMd') }}
@@ -203,6 +217,9 @@ const copiado = ref(false)
 const docRef = ref(null)
 const activeId = ref('')
 const tokenInfo = ref(null)   // { tokensEntrada, tokensSalida, tokensTotal, costoUSD }
+const lotesSugeridos = ref('')
+const payloadParaIA = ref(null)
+const copiadoJson = ref(false)
 
 // ── Render Markdown ──
 const fuenteBanner = computed(() => {
@@ -339,6 +356,18 @@ async function copiarTodo() {
     copiado.value = true
     setTimeout(() => { copiado.value = false }, 2000)
   } catch { /* fallback omitido */ }
+}
+
+async function copiarJSON() {
+  if (!payloadParaIA.value) return
+  try {
+    const jsonStr = JSON.stringify(payloadParaIA.value, null, 2)
+    await navigator.clipboard.writeText(jsonStr)
+    copiadoJson.value = true
+    setTimeout(() => { copiadoJson.value = false }, 2000)
+  } catch (e) {
+    alert('Error al copiar JSON: ' + e.message)
+  }
 }
 
 function descargarMarkdown() {
@@ -670,6 +699,7 @@ async function cargar(force = false) {
   error.value = ''
   aviso.value = ''
   narrativa.value = ''
+  payloadParaIA.value = null
 
   // sync URL para que sea compartible
   router.replace({ query: { lotes: lotesInput.value, fecha: fechaInput.value, formato: formato.value } })
@@ -687,18 +717,21 @@ async function cargar(force = false) {
       return
     }
 
+    const payload = {
+      rows: rowsData,
+      proveedores: dashData.proveedores || [],
+      cardas: dashData.cardas || null,
+      fecha: fechaInput.value,
+      formato: formato.value,
+      forceRefresh: force,
+      idioma: localStorage.getItem('stc_locale') || 'es',
+    }
+    payloadParaIA.value = payload
+
     const narrRes = await fetch('/api/dashboard/narrativa-lotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        rows: rowsData,
-        proveedores: dashData.proveedores || [],
-        cardas: dashData.cardas || null,
-        fecha: fechaInput.value,
-        formato: formato.value,
-        forceRefresh: force,
-        idioma: localStorage.getItem('stc_locale') || 'es',
-      })
+      body: JSON.stringify(payload)
     })
     const narrData = await narrRes.json()
     if (!narrData.success) throw new Error(narrData.error || 'No se pudo generar el informe')
@@ -718,8 +751,36 @@ async function cargar(force = false) {
   }
 }
 
-// ── Auto-cargar si vienen query params ──
-onMounted(() => {
+async function sugerirLotesAutomatico() {
+  try {
+    // Aumentamos el límite a 10 para poder descartar duplicados y obtener suficientes lotes únicos
+    const response = await fetch('/api/inventory/lote-fiac-reference-summary?limit=10')
+    if (response.ok) {
+      const data = await response.json()
+      const refs = Array.isArray(data?.referencias) ? data.referencias : []
+      // Extraemos y quitamos duplicados
+      const uniqueLotes = Array.from(new Set(refs.map(r => r.loteFiac).filter(Boolean)))
+      // Ordenamos de menor a mayor
+      const sorted = uniqueLotes.sort((a, b) => {
+        const na = Number(a)
+        const nb = Number(b)
+        if (!isNaN(na) && !isNaN(nb)) return na - nb
+        return String(a).localeCompare(String(b))
+      })
+      // Tomamos los últimos 3 lotes únicos
+      const last3 = sorted.slice(-3)
+      if (last3.length > 0) {
+        return last3.join(', ')
+      }
+    }
+  } catch (e) {
+    console.error('Error al obtener sugerencia de lotes:', e)
+  }
+  return ''
+}
+
+// ── Cargar configuración en el montaje ──
+onMounted(async () => {
   // Si no vienen `lotes` por query, intentar cargar desde localStorage
   try {
     if (!route.query.lotes) {
@@ -730,8 +791,14 @@ onMounted(() => {
     // ignore (e.g., SSR or storage disabled)
   }
 
-  if (lotesInput.value.trim() && fechaInput.value) {
-    cargar(false)
+  // Obtener la sugerencia de los 3 últimos lotes y sugerirlos automáticamente
+  const sugeridos = await sugerirLotesAutomatico()
+  if (sugeridos) {
+    lotesSugeridos.value = sugeridos
+    // Si el textbox está vacío, se sugiere/completa automáticamente con los 3 últimos
+    if (!lotesInput.value.trim()) {
+      lotesInput.value = sugeridos
+    }
   }
 })
 onBeforeUnmount(() => {
