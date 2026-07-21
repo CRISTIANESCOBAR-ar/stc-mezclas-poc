@@ -91,13 +91,6 @@ const routes = [
     meta: { title: 'Análisis Calidad Fibra' }
   },
   {
-    path: '/meta-por-revisor',
-    name: 'meta-por-revisor',
-    // Esta ruta referenciaba un componente externo a este proyecto
-    // Se elimina para evitar dependencias cruzadas con otros repositorios
-    redirect: '/resumen'
-  },
-  {
     path: '/informe-auditoria-lote',
     name: 'informe-auditoria-lote',
     component: () => import('./components/ensayos/InformeAuditoriaLote.vue'),

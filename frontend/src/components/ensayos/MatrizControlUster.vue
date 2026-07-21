@@ -347,6 +347,16 @@ function parseDateFromRaw(value) {
     return Number.isNaN(date.getTime()) ? null : date
   }
 
+  // Soporte para formato YYYY-MM-DD (datepicker) en hora local
+  const ymdMatch = raw.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/)
+  if (ymdMatch) {
+    const year = Number(ymdMatch[1])
+    const month = Number(ymdMatch[2]) - 1
+    const day = Number(ymdMatch[3])
+    const date = new Date(year, month, day, Number(ymdMatch[4] || 0), Number(ymdMatch[5] || 0), Number(ymdMatch[6] || 0))
+    return Number.isNaN(date.getTime()) ? null : date
+  }
+
   const match = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/)
   if (match) {
     let year = Number(match[3])
@@ -355,7 +365,7 @@ function parseDateFromRaw(value) {
     return Number.isNaN(date.getTime()) ? null : date
   }
 
-  // Handle standard YYYY-MM-DD input date values correctly
+  // Handle standard input date values correctly
   const parsed = Date.parse(raw)
   if (Number.isNaN(parsed)) return null
   const date = new Date(parsed)
