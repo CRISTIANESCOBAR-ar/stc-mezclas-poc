@@ -253,13 +253,6 @@
 								</tbody>
 							</table>
 						</div>
-						<!-- Ver más -->
-						<div v-if="filteredTotal > displayLimit" class="flex justify-center mt-1">
-							<button @click="loadMore"
-								class="text-xs text-indigo-600 hover:text-indigo-800 px-3 py-1 rounded border border-indigo-200 hover:border-indigo-400 transition-colors">
-								Ver más ({{ displayLimit }} / {{ filteredTotal }})
-							</button>
-						</div>
 						<div class="shrink-0 flex items-center gap-2 mt-3">
 							<div class="text-sm font-medium text-slate-600">{{ tensoScanStatus }}</div>
 							<div v-if="isScanning" class="text-sm text-slate-500 flex items-center gap-2">
@@ -385,8 +378,6 @@ const isScanning = ref(false)
 const isSaving = ref(false)
 const isDeleting = ref(false)
 const maxRows = 10
-const PAGE_SIZE = 100
-const displayLimit = ref(PAGE_SIZE)
 
 // Bandera de ciclo de vida para cancelar operaciones async al desmontar
 let _mounted = true
@@ -431,25 +422,11 @@ const tensoDisplayList = computed(() => {
 		return out
 	}
 
-	// Limitar a displayLimit para no renderizar cientos de filas a la vez
-	const limited = filtered.slice(0, displayLimit.value)
-	if (limited.length >= maxRows) return limited
-	out.push(...limited)
+	if (filtered.length >= maxRows) return filtered
+	out.push(...filtered)
 	while (out.length < maxRows) out.push({ testnr: '', hasPar: false, hasTbl: false, nomcount: '', maschnr: '' })
 	return out
 })
-
-// Total de items filtrados (para saber si hay más que cargar)
-const filteredTotal = computed(() => {
-	const src = Array.isArray(tensoScanList.value) ? tensoScanList.value : []
-	if (filterMode.value === 'all') return src.length
-	const showSaved = filterMode.value === 'saved'
-	return src.filter(item => showSaved ? !!item.saved : !item.saved).length
-})
-
-function loadMore() {
-	displayLimit.value += PAGE_SIZE
-}
 
 // Handlers para mantener comportamiento de filtros
 // filtros manejados por filterMode (radio)
@@ -514,8 +491,8 @@ const initialLoadBanner = computed(() => {
 	return null
 })
 
-// Cuando cambia el modo de filtro o el tamaño de la lista, actualizar el label y resetear paginación
-watch(filterMode, () => { displayLimit.value = PAGE_SIZE; recalcStatus() })
+// Cuando cambia el modo de filtro o el tamaño de la lista, actualizar el label
+watch(filterMode, () => { recalcStatus() })
 watch(() => tensoScanList.value.length, () => recalcStatus())
 
 // **VALIDACIÓN 1: Verificar que el ensayo Uster existe en la base de datos**
@@ -1496,7 +1473,6 @@ async function scanTensoDirectory(dirHandle) {
 
 	// ahora asignar la lista ya con flags de "saved"
 	tensoScanList.value = Object.values(map).sort((a, b) => a.testnr.localeCompare(b.testnr))
-	displayLimit.value = PAGE_SIZE  // resetear paginación al escanear
 	// estado inicial con números si están disponibles
 	const savedCnt = Object.values(map).reduce((acc, it) => acc + (it.saved ? 1 : 0), 0)
 	tensoScanStatus.value = formatScanStatus(totalFound, savedCnt, filterMode.value)

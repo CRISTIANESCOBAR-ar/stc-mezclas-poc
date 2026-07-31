@@ -59,20 +59,20 @@
 
             <!-- Día anterior -->
             <button
-              v-tippy="{ content: $t('oe.prev'), placement: 'top', theme: 'light' }"
+              v-tippy="{ content: $t('oe.prev'), placement: 'top', theme: 'custom' }"
               @click="moverFecha(-1)"
               :disabled="!filtros.fecha || loading"
-              class="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm font-bold"
+              class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed text-sm font-bold"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
             </button>
 
             <!-- Consultar -->
             <button
-              v-tippy="{ content: $t('oe.consult'), placement: 'top', theme: 'light' }"
+              v-tippy="{ content: $t('oe.consult'), placement: 'top', theme: 'custom' }"
               @click="cargar"
               :disabled="!filtros.fecha || loading"
-              class="h-9 px-3.5 flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              class="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
             >
               <svg v-if="!loading" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -85,10 +85,10 @@
 
             <!-- Día siguiente -->
             <button
-              v-tippy="{ content: $t('oe.next'), placement: 'top', theme: 'light' }"
+              v-tippy="{ content: $t('oe.next'), placement: 'top', theme: 'custom' }"
               @click="moverFecha(1)"
               :disabled="!filtros.fecha || loading"
-              class="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm font-bold"
+              class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md disabled:opacity-40 disabled:cursor-not-allowed text-sm font-bold"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
             </button>
@@ -96,9 +96,9 @@
             <!-- Limpiar -->
             <button
               v-if="data"
-              v-tippy="{ content: $t('oe.clear'), placement: 'top', theme: 'light' }"
+              v-tippy="{ content: $t('oe.clear'), placement: 'top', theme: 'custom' }"
               @click="limpiar"
-              class="h-9 w-9 flex items-center justify-center rounded-lg border border-gray-200 text-gray-400 hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-colors"
+              class="inline-flex items-center justify-center h-9 w-9 rounded-lg border border-slate-200 bg-white text-slate-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors duration-150 shadow-sm hover:shadow-md"
             >
               <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
