@@ -1,4 +1,4 @@
-﻿/**
+/**
  * optimizer.js — stc-mezclas-poc
  * Full port from stc-produccion-v2/backend/services/blendomat-optimizer.js
  * Includes quality optimization (hill climbing), remanentes, and complete plan rows.
@@ -97,10 +97,16 @@ function assertFeasibleBlendPlan(result) {
             projectedUsed += consumedInBlock;
             remaining -= consumedInBlock;
 
-            if (remaining < 0) {
+            // Solo reportar sobreconsumo si realmente consumimos de este lote
+            // (evita falsos positivos en filas de grupo con stock inicial negativo)
+            if (remaining < 0 && projectedUsed > 0) {
                 issues.push(`Sobreconsumo en ${row.PRODUTOR}/${row.LOTE} al bloque ${blockId} (S.Act=${remaining}).`);
                 break;
             }
+        }
+        
+        if (projectedUsed === 0 && stock < 0) {
+            return; // Omitir inconsistencias para filas ignoradas (ej. cabeceras de grupo)
         }
 
         const reportedUsed = Number(row?.Usados);
@@ -124,10 +130,11 @@ function assertFeasibleBlendPlan(result) {
 // CLASIFICACIÓN DE STOCK
 // =================================================================================================
 
-function classifyStock(stock, rules, supervisionSettings) {
+function classifyStock(stock, rules, supervisionSettings = {}) {
+    const safeSettings = supervisionSettings || {};
     const activeRules = rules.filter(r => {
         const uiKey = r.parametro === 'LEN' ? 'UHML' : (r.parametro === '+b' ? 'PLUS_B' : r.parametro);
-        const s = supervisionSettings[uiKey];
+        const s = safeSettings[uiKey];
         return s && (s.target || s.hardCap || s.tolerance);
     });
 
@@ -139,7 +146,7 @@ function classifyStock(stock, rules, supervisionSettings) {
 
         for (const rule of activeRules) {
             const uiKey = rule.parametro === 'LEN' ? 'UHML' : (rule.parametro === '+b' ? 'PLUS_B' : rule.parametro);
-            const settings = supervisionSettings[uiKey];
+            const settings = safeSettings[uiKey];
             if (!settings) continue;
 
             const val = Number(bale[uiKey]);
@@ -181,11 +188,12 @@ function classifyStock(stock, rules, supervisionSettings) {
 // ALGORITMO 2: ESTABILIDAD (GOLDEN BATCH)
 // =================================================================================================
 
-function optimizeBlendStability(stock, rules, supervisionSettings, blendSize, enforceToleranceCap = false) {
-    const classifiedStock = classifyStock(stock, rules, supervisionSettings);
+function optimizeBlendStability(stock, rules, supervisionSettings = {}, blendSize, enforceToleranceCap = false) {
+    const safeSettings = supervisionSettings || {};
+    const classifiedStock = classifyStock(stock, rules, safeSettings);
     const activeRules = rules.filter(r => {
         const uiKey = r.parametro === 'LEN' ? 'UHML' : (r.parametro === '+b' ? 'PLUS_B' : r.parametro);
-        const s = supervisionSettings[uiKey];
+        const s = safeSettings[uiKey];
         return s && (s.target || s.hardCap || s.tolerance);
     });
 
@@ -266,26 +274,29 @@ function optimizeBlendStability(stock, rules, supervisionSettings, blendSize, en
 
         const smallAssignments = [];
         if (needed > 0 && smallLots.length > 0) {
-            smallLots.sort((a, b) => b.lot._availableCount - a.lot._availableCount);
+            const smallLotClones = smallLots.map(s => ({
+                lot: s.lot,
+                tempAvailable: s.lot._availableCount
+            }));
+            smallLotClones.sort((a, b) => b.tempAvailable - a.tempAvailable);
+
             let currentSmallLotIdx = 0;
-            while (needed > 0 && currentSmallLotIdx < smallLots.length) {
+            while (needed > 0 && currentSmallLotIdx < smallLotClones.length) {
                 const slotFardos = [];
                 let fardosInSlot = 0;
-                while (fardosInSlot < horizon && currentSmallLotIdx < smallLots.length) {
-                    const sLot = smallLots[currentSmallLotIdx];
-                    const take = Math.min(sLot.lot._availableCount, horizon - fardosInSlot);
+                while (fardosInSlot < horizon && currentSmallLotIdx < smallLotClones.length) {
+                    const sLot = smallLotClones[currentSmallLotIdx];
+                    const take = Math.min(sLot.tempAvailable, horizon - fardosInSlot);
                     for (let i = 0; i < take; i++) slotFardos.push({ ...sLot.lot });
                     fardosInSlot += take;
-                    if (sLot.lot._availableCount <= take) currentSmallLotIdx++;
-                    else sLot.lot._availableCount -= take;
+                    sLot.tempAvailable -= take;
+                    if (sLot.tempAvailable <= 0) currentSmallLotIdx++;
                 }
-                if (fardosInSlot > 0) {
-                    while (fardosInSlot < horizon && slotFardos.length > 0) {
-                        slotFardos.push({ ...slotFardos[slotFardos.length - 1] });
-                        fardosInSlot++;
-                    }
+                if (fardosInSlot === horizon) {
                     smallAssignments.push(slotFardos);
                     needed--;
+                } else {
+                    break;
                 }
             }
         }
@@ -299,7 +310,7 @@ function optimizeBlendStability(stock, rules, supervisionSettings, blendSize, en
         const caps = candidates.map(c => ({ ...c }));
         for (const rule of activeRules) {
             const uiKey = rule.parametro === 'LEN' ? 'UHML' : (rule.parametro === '+b' ? 'PLUS_B' : rule.parametro);
-            const settings = supervisionSettings[uiKey];
+            const settings = safeSettings[uiKey];
             if (!settings || !settings.tolerance) continue;
             const minIdealPct = toOptionalNumber(rule.porcentaje_min_ideal);
             if (minIdealPct === null) continue;
@@ -410,7 +421,10 @@ function optimizeBlendStability(stock, rules, supervisionSettings, blendSize, en
             activeRecipe.smallAssignments.forEach(slotFardos => {
                 slotFardos.forEach((f, i) => {
                     const originalLot = classifiedStock.find(l => l.LOTE === f.LOTE && l.PRODUTOR === f.PRODUTOR);
-                    if (originalLot && i < blockDuration) originalLot._usedCount += 1;
+                    if (originalLot && i < blockDuration) {
+                        originalLot._availableCount -= 1;
+                        originalLot._usedCount += 1;
+                    }
                 });
             });
         }
@@ -434,10 +448,11 @@ function validateRecipeAgainstRules(recipeFardos, activeRules, supervisionSettin
     return getRecipeValidationFailure(recipeFardos, activeRules, supervisionSettings, blendSize, hardCapOnly) === null;
 }
 
-function getRecipeValidationFailure(recipeFardos, activeRules, supervisionSettings, blendSize, hardCapOnly = false) {
+function getRecipeValidationFailure(recipeFardos, activeRules, supervisionSettings = {}, blendSize, hardCapOnly = false) {
+    const safeSettings = supervisionSettings || {};
     for (const rule of activeRules) {
         const uiKey = rule.parametro === 'LEN' ? 'UHML' : (rule.parametro === '+b' ? 'PLUS_B' : rule.parametro);
-        const settings = supervisionSettings[uiKey];
+        const settings = safeSettings[uiKey];
         if (!settings) continue;
 
         const values = recipeFardos.map(f => Number(f[uiKey])).filter(v => !Number.isNaN(v));
@@ -592,14 +607,15 @@ function groupBlends(blends) {
 // ALGORITMO 1: ESTÁNDAR (ROUND ROBIN + QUALITY OPTIMIZATION)
 // =================================================================================================
 
-function optimizeBlendStandard(stock, rules, supervisionSettings, blendSize) {
-    const classifiedStock = classifyStock(stock, rules, supervisionSettings);
+function optimizeBlendStandard(stock, rules, supervisionSettings = {}, blendSize) {
+    const safeSettings = supervisionSettings || {};
+    const classifiedStock = classifyStock(stock, rules, safeSettings);
     const blends = [];
     let blendIndex = 1;
 
     const activeRules = rules.filter(r => {
         const uiKey = r.parametro === 'LEN' ? 'UHML' : (r.parametro === '+b' ? 'PLUS_B' : r.parametro);
-        const s = supervisionSettings[uiKey];
+        const s = safeSettings[uiKey];
         return s && (s.target || s.hardCap || s.tolerance);
     });
 

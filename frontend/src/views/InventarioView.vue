@@ -5538,6 +5538,7 @@ const validateBlendPlanFeasibility = (planData) => {
     if (Number.isNaN(stock)) return;
 
     let remaining = stock;
+    let projectedUsed = 0;
 
     for (const blockId of blocks) {
       const perMixCount = Number(row?.mezclas?.[blockId]) || 0;
@@ -5546,9 +5547,11 @@ const validateBlendPlanFeasibility = (planData) => {
         ? mixesFromStats
         : getMixCountFromBlockId(blockId);
 
-      remaining -= perMixCount * mixesCount;
+      const consumedInBlock = perMixCount * mixesCount;
+      projectedUsed += consumedInBlock;
+      remaining -= consumedInBlock;
 
-      if (remaining < 0) {
+      if (remaining < 0 && projectedUsed > 0) {
         issues.push(`${row.PRODUTOR}/${row.LOTE} en ${blockId} (S.Act=${remaining})`);
         break;
       }
@@ -5616,7 +5619,7 @@ const handleMezclas = async ({ silent = false } = {}) => {
 
     if (!response.ok) {
       const errData = await response.json();
-      throw new Error(errData.error || 'Error al calcular mezclas');
+      throw new Error(errData.error || errData.message || 'Error al calcular mezclas');
     }
 
     const data = await response.json();

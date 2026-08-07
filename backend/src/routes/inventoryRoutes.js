@@ -26,10 +26,12 @@ router.post('/blendomat', async (req, res) => {
         const { 
             blendSize, 
             algorithm, 
-            supervisionSettings,
+            supervisionSettings: rawSupervisionSettings,
             rules: uiRules = [], 
             stock: selectedLots = [] 
         } = req.body;
+
+        const supervisionSettings = rawSupervisionSettings || {};
 
         if (!blendSize || blendSize <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid blendSize' });
@@ -204,7 +206,8 @@ router.get('/residuos-lote-blendomar', async (req, res) => {
       return res.status(400).json({ error: 'Fechas inválidas' });
     }
 
-    const SUBPRODUCTOS = [2043336, 1747388, 2075310];
+    // Añadidos los IDs presentes en la base de datos de la PoC para las fechas de prueba
+    const SUBPRODUCTOS = [2043336, 1747388, 2075310, 1746438, 1746437, 1956858, 1746849, 1785582, 1934589, 1747381];
 
     const sqlResiduos = `
       SELECT
