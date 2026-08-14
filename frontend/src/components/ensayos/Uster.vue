@@ -1453,8 +1453,8 @@ const defaultTblColWidth = 80
 const tblColWidthMap = {
   // reduce TESTNR width 20% (defaultTblColWidth * 0.8)
   TESTNR: Math.round(defaultTblColWidth * 0.8),
-  // reduce NO width to 50% of default
-  NO: Math.round(defaultTblColWidth * 0.5),
+  // reduce NO width to 75% of default (increased by 50% from original 50%)
+  NO: Math.round(defaultTblColWidth * 0.75),
   // reduce U%_% width by 40% (keep 60% of default)
   'U%_%': Math.round(defaultTblColWidth * 0.6),
   // reduce CVM_% width by 40% (keep 60% of default)
