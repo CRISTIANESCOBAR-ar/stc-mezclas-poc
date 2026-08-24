@@ -359,13 +359,19 @@
           aria-label="Siguiente ensayo">›</button>
 
         <header class="flex items-start sm:items-center justify-between mb-2 pb-1 gap-3">
-          <div id="modalTitle" class="flex flex-col sm:flex-row sm:items-center gap-2 mx-8">
+          <div id="modalTitle" class="flex flex-col sm:flex-row sm:items-center gap-2 mx-8 flex-wrap">
             <div class="text-slate-600 text-sm">Fecha: <span class="text-slate-900 text-lg font-semibold ml-1">{{
               modalMeta.fechaStr }}</span></div>
+            <div class="text-slate-600 text-sm">Lote: <span class="text-slate-900 text-lg font-semibold ml-1">{{
+              modalMeta.lote }}</span></div>
             <div class="text-slate-600 text-sm">Ne: <span class="text-slate-900 text-lg font-semibold ml-1">{{
               modalMeta.ne }}</span></div>
             <div class="text-slate-600 text-sm">OE Nro.: <span class="text-slate-900 text-lg font-semibold ml-1">{{
               modalMeta.oe }}</span></div>
+            <div class="text-slate-600 text-sm">Estiraje: <span class="text-slate-900 text-lg font-semibold ml-1">{{
+              modalMeta.estiraje || '—' }}</span></div>
+            <div class="text-slate-600 text-sm">Pasador: <span class="text-slate-900 text-lg font-semibold ml-1">{{
+              modalMeta.pasador }}</span></div>
             <div class="text-slate-600 text-sm">Ensayo Uster <span class="text-slate-900 text-lg font-semibold ml-1">{{
               modalMeta.u }}</span> y TensoRapid <span class="text-slate-900 text-lg font-semibold ml-1">{{
                   modalMeta.t }}</span></div>
@@ -1780,11 +1786,18 @@ const modalMeta = computed(() => {
     }
   }
   
+  // Lote
+  const lote = meta?.Lote ?? meta?.LOTE ?? meta?.lote ?? '—'
+  
+  // Pasador
+  const pasadorRaw = meta?.Pasador ?? meta?.PASADOR ?? meta?.pasador ?? null
+  const pasador = (pasadorRaw && String(pasadorRaw).trim() !== '' && String(pasadorRaw).trim() !== '-' && String(pasadorRaw).trim().toUpperCase() !== 'NO' && String(pasadorRaw).trim().toUpperCase() !== 'N') ? 'Sí' : 'No'
+
   // Estiraje: extraer de meta (viene en campo ESTIRAJE)
   let estirajeRaw = meta?.ESTIRAJE ?? meta?.Estiraje ?? meta?.estiraje ?? null
   const estiraje = (estirajeRaw == null || String(estirajeRaw).trim() === '') ? null : String(estirajeRaw).trim()
 
-  return { fechaStr, oe, ne, u, t, obs, laborant, tensorLaborant, estiraje }
+  return { fechaStr, oe, ne, u, t, obs, laborant, tensorLaborant, estiraje, lote, pasador }
 })
 
 // Index within the current filtered list for the selected ensayo
