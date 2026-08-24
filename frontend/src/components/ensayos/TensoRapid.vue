@@ -777,6 +777,7 @@ async function saveToOracle(item) {
 		// Marcar como guardado en la lista y salir del modo edición
 		item.saved = true
 		item.isEditing = false
+		recalcStatus()
 
 		// Enfocar siguiente input vacío en la columna USTER
 		try { await focusNextEmptyUster(item.testnr) } catch (e) { /* ignore */ }
