@@ -82,6 +82,8 @@ const categorias = computed(() => [
         titulo: t('bienvenida.cards.usterHilo.titulo'),     descripcion: t('bienvenida.cards.usterHilo.desc') },
       { path: '/uster-cardas', icon: '🎛️', bg: 'bg-cyan-50 text-cyan-600',
         titulo: t('bienvenida.cards.usterCardas.titulo'),   descripcion: t('bienvenida.cards.usterCardas.desc') },
+      { path: '/hvi-crudo', icon: '📝', bg: 'bg-emerald-50 text-emerald-600',
+        titulo: 'Carga HVI Crudo', descripcion: 'Importar archivos HVI TXT en bloque y cruzarlos con NFE.' },
       { path: '/tensorapid',   icon: '💪', bg: 'bg-purple-50 text-purple-600',
         titulo: t('bienvenida.cards.tensorapid.titulo'),    descripcion: t('bienvenida.cards.tensorapid.desc') },
     ],

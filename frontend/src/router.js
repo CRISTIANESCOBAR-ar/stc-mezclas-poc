@@ -42,6 +42,12 @@ const routes = [
     meta: { title: 'Carga de Archivos Uster Cardas' }
   },
   {
+    path: '/hvi-crudo',
+    name: 'hvi-crudo',
+    component: () => import('./views/HviCrudoImport.vue'),
+    meta: { title: 'Carga HVI Crudo' }
+  },
+  {
     path: '/oe-trazabilidad',
     name: 'oe-trazabilidad',
     component: () => import('./views/OETrazabilidadView.vue'),

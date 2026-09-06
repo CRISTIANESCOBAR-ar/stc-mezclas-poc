@@ -10,6 +10,7 @@ import tensorapidRoutes from './routes/tensorapidRoutes.js'
 import usterCardasRoutes from './routes/usterCardasRoutes.js'
 import calidadFibraRoutes from './routes/calidadFibraRoutes.js'
 import dashboardRoutes from './routes/dashboardRoutes.js'
+import hviCrudoRoutes from './routes/hviCrudoRoutes.js'
 import { backupTrigger } from './services/backupTrigger.js'
 
 const app = express()
@@ -28,6 +29,7 @@ app.use('/api/tensorapid', tensorapidRoutes)
 app.use('/api/uster-cardas', usterCardasRoutes)
 app.use('/api/calidad-fibra', calidadFibraRoutes)
 app.use('/api/dashboard', dashboardRoutes)
+app.use('/api/hvi-crudo', hviCrudoRoutes)
 
 // Health check
 app.get('/api/health', (req, res) => {
