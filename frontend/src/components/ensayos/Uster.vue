@@ -2332,14 +2332,14 @@ const oracleFields = [
 
 // compact fields to show as essential summary (label + code)
 const compactFields = [
-  { label: 'Nro Test', code: 'TESTNR' },
-  { label: 'Hilo', code: 'NOMCOUNT' },
-  { label: 'Tipo Material', code: 'MATCLASS' },
   { label: 'Maquina', code: 'MASCHNR' },
-  { label: 'Lote', code: 'LOTE' },
-  { label: 'Total Test', code: 'TOTAL' },
   { label: 'Fecha y Hora', code: 'TIME' },
   { label: 'Laboratorista', code: 'LABORANT' },
+  { label: 'Hilo', code: 'NOMCOUNT' },
+  { label: 'Lote', code: 'LOTE' },
+  { label: 'Nro Test', code: 'TESTNR' },
+  { label: 'Total Test', code: 'TOTAL' },
+  { label: 'Tipo Material', code: 'MATCLASS' },
   { label: 'Observaciones', code: 'OBS' }
 ]
 
