@@ -1474,6 +1474,14 @@ async function scanTensoDirectory(dirHandle) {
 
 	// ahora asignar la lista ya con flags de "saved"
 	tensoScanList.value = Object.values(map).sort((a, b) => a.testnr.localeCompare(b.testnr))
+
+	// Limpiar el ensayo seleccionado si ya no existe físicamente en la carpeta
+	if (selectedTensoTestnr.value && !tensoScanList.value.some(x => x.testnr === selectedTensoTestnr.value)) {
+		selectedTensoTestnr.value = ''
+		parsedTblData.value = []
+		parsedParData.value = {}
+	}
+
 	// estado inicial con números si están disponibles
 	const savedCnt = Object.values(map).reduce((acc, it) => acc + (it.saved ? 1 : 0), 0)
 	tensoScanStatus.value = formatScanStatus(totalFound, savedCnt, filterMode.value)
@@ -1582,6 +1590,14 @@ async function onTensoFolderInputChangeLocal(e) {
 		} catch (err) { console.warn('Error checking tensorapid status (input pre-assign):', err) }
 
 		tensoScanList.value = Object.values(map).sort((a, b) => a.testnr.localeCompare(b.testnr))
+
+		// Limpiar el ensayo seleccionado si ya no existe en la carpeta
+		if (selectedTensoTestnr.value && !tensoScanList.value.some(x => x.testnr === selectedTensoTestnr.value)) {
+			selectedTensoTestnr.value = ''
+			parsedTblData.value = []
+			parsedParData.value = {}
+		}
+
 		const totalIn = tensoScanList.value.length
 		const savedCntIn = tensoScanList.value.reduce((acc, it) => acc + (it.saved ? 1 : 0), 0)
 		tensoScanStatus.value = formatScanStatus(totalIn, savedCntIn, filterMode.value)
