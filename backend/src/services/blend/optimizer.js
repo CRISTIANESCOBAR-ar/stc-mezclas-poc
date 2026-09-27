@@ -138,7 +138,7 @@ function classifyStock(stock, rules, supervisionSettings = {}) {
         return s && (s.target || s.hardCap || s.tolerance);
     });
 
-    return stock.map(bale => {
+    return stock.map((bale, index) => {
         let isRejected = false;
         let rejectReason = '';
         let isTolerance = false;
@@ -179,7 +179,8 @@ function classifyStock(stock, rules, supervisionSettings = {}) {
             _rejectReason: rejectReason,
             _toleranceReasons: toleranceReasons,
             _usedCount: 0,
-            _availableCount: Number(bale.QTDE_ESTOQUE) || 0
+            _availableCount: Number(bale.QTDE_ESTOQUE) || 0,
+            _lotId: bale._lotId || `L${index}`
         };
     });
 }
@@ -420,7 +421,7 @@ function optimizeBlendStability(stock, rules, supervisionSettings = {}, blendSiz
         if (activeRecipe.smallAssignments) {
             activeRecipe.smallAssignments.forEach(slotFardos => {
                 slotFardos.forEach((f, i) => {
-                    const originalLot = classifiedStock.find(l => l.LOTE === f.LOTE && l.PRODUTOR === f.PRODUTOR);
+                    const originalLot = classifiedStock.find(l => l._lotId === f._lotId);
                     if (originalLot && i < blockDuration) {
                         originalLot._availableCount -= 1;
                         originalLot._usedCount += 1;
@@ -563,7 +564,7 @@ function optimizeRecipeQuality(candidates, activeRules, supervisionSettings) {
 function getBlendSignature(blendFardos) {
     const counts = {};
     blendFardos.forEach(f => {
-        const key = `${f.PRODUTOR}_${f.LOTE}`;
+        const key = f._lotId;
         counts[key] = (counts[key] || 0) + 1;
     });
     return Object.keys(counts).sort().map(k => `${k}:${counts[k]}`).join('|');
@@ -743,7 +744,7 @@ function optimizeBlendStandard(stock, rules, supervisionSettings = {}, blendSize
     while (currentRecipe) {
         const recipeCounts = new Map();
         currentRecipe.forEach(f => {
-            const origLot = classifiedStock.find(l => l.LOTE === f.LOTE && l.PRODUTOR === f.PRODUTOR);
+            const origLot = classifiedStock.find(l => l._lotId === f._lotId);
             recipeCounts.set(origLot, (recipeCounts.get(origLot) || 0) + 1);
         });
 
@@ -805,6 +806,7 @@ function getMotivoLogisticoFromLot(lot) {
 function buildFullStockPlanRows(classifiedStock) {
     return classifiedStock.map(lot => ({
         PRODUTOR: lot.PRODUTOR,
+        _lotId: lot._lotId,
         Estado: getEstadoLabelFromLot(lot),
         // Categoria se mantiene para compatibilidad con frontend (deriveEstadoFromCategoria)
         Categoria: lot._category,
@@ -870,18 +872,18 @@ function generateResult(classifiedStock, groupedBlends, rules, supervisionSettin
     // Plan
     const planArray = buildFullStockPlanRows(classifiedStock);
     const planRowsMap = new Map();
-    planArray.forEach(row => planRowsMap.set(`${row.PRODUTOR}_${row.LOTE}`, row));
+    planArray.forEach(row => planRowsMap.set(row._lotId, row));
 
     groupedBlends.forEach(blend => {
         const blendId    = blend.id;
         const loteCounts = {};
         blend.fardos.forEach(f => {
-            const key = `${f.PRODUTOR}_${f.LOTE}`;
+            const key = f._lotId;
             if (!loteCounts[key]) loteCounts[key] = { count: 0, ref: f };
             loteCounts[key].count++;
         });
         Object.values(loteCounts).forEach(({ count, ref }) => {
-            const row = planRowsMap.get(`${ref.PRODUTOR}_${ref.LOTE}`);
+            const row = planRowsMap.get(ref._lotId);
             if (row) row.mezclas[blendId] = count;
         });
     });
