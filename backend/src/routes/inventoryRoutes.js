@@ -132,8 +132,8 @@ router.get('/lote-fiac-reference-summary', async (req, res) => {
 
     const sql = `
       SELECT
-        MAX(TRIM("LOTE_FIAC"))                     AS "lote_fiac",
-        TRIM("MISTURA")                            AS "mistura",
+        TRIM("LOTE_FIAC")                          AS "lote_fiac",
+        STRING_AGG(DISTINCT TRIM("MISTURA"), ', ') AS "mistura",
         MIN("DT_ENTRADA_PROD")                     AS "primer_ingreso",
         MAX("DT_ENTRADA_PROD")                     AS "ultimo_ingreso",
         COUNT(*)                                   AS "seq_count",
@@ -152,9 +152,10 @@ router.get('/lote-fiac-reference-summary', async (req, res) => {
       WHERE "MISTURA" IS NOT NULL
         AND TRIM("MISTURA") != ''
         AND "TIPO_MOV" = 'MIST'
-      GROUP BY TRIM("MISTURA")
+        AND "LOTE_FIAC" IS NOT NULL
+      GROUP BY TRIM("LOTE_FIAC")
       ORDER BY
-        CAST(NULLIF(regexp_replace(TRIM("MISTURA"), '[^0-9]', '', 'g'), '') AS INTEGER) DESC NULLS LAST
+        CAST(NULLIF(regexp_replace(TRIM("LOTE_FIAC"), '[^0-9]', '', 'g'), '') AS INTEGER) DESC NULLS LAST
       LIMIT $1
     `;
 
@@ -167,7 +168,7 @@ router.get('/lote-fiac-reference-summary', async (req, res) => {
 
     const referencias = rows.map(row => ({
       loteFiac: String(row.lote_fiac || '').replace(/^0+/, '') || String(row.lote_fiac),
-      mistura:  String(row.mistura  || '').replace(/^0+/, '') || String(row.mistura),
+      mistura:  String(row.mistura || '').split(',').map(m => m.trim().replace(/^0+/, '') || m.trim()).join(', '),
       primerIngreso: row.primer_ingreso,
       ultimoIngreso: row.ultimo_ingreso,
       kgUsados: round0(row.kg_usados),

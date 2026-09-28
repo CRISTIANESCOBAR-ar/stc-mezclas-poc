@@ -650,6 +650,16 @@
                             </td>
                           </tr>
                           <tr>
+                            <td class="px-3 py-2 text-sm font-semibold text-gray-700">Mezclas (Misturas)</td>
+                            <td
+                              v-for="column in summaryComparisonColumns"
+                              :key="`res-inline-mezclas-${column.key}`"
+                              class="px-3 py-2 text-sm text-center border-l border-gray-200 text-slate-600"
+                            >
+                              {{ column.kind === 'reference' && column.data && column.data.mistura ? 'M' + String(column.data.mistura).replace(/,\s*/g, ', M') : '—' }}
+                            </td>
+                          </tr>
+                          <tr>
                             <td class="px-3 py-2 text-sm font-semibold text-gray-700">{{ t('summary.kgUsed') }}</td>
                             <td
                               v-for="column in summaryComparisonColumns"
@@ -3351,8 +3361,10 @@ const loadLoteFiacReferenceSummary = async () => {
     const refs = Array.isArray(data?.referencias) ? data.referencias : [];
     const sorted = refs.sort((a, b) => Number(a.loteFiac) - Number(b.loteFiac));
 
-    // Enriquecer con % residuos para cada lote histórico
-    await Promise.all(sorted.map(async (ref, idx) => {
+    // Enriquecer con % residuos para cada lote histórico secuencialmente
+    // para evitar sobrecargar el backend y el pool de DB (lo que causa ECONNRESET en el proxy)
+    for (let idx = 0; idx < sorted.length; idx++) {
+      const ref = sorted[idx];
       try {
         const fechaInicio = toIsoDate(ref.primerIngreso);
         // fechaFin = primerIngreso del siguiente lote + 1 día de solapamiento.
@@ -3372,9 +3384,9 @@ const loadLoteFiacReferenceSummary = async () => {
           // Último lote: usar fecha de hoy
           fechaFin = new Date().toISOString().slice(0, 10);
         }
-        if (!fechaInicio || !fechaFin) { ref.pctResiduos = null; return; }
+        if (!fechaInicio || !fechaFin) { ref.pctResiduos = null; continue; }
         const r = await fetch(`/api/inventory/residuos-lote-blendomar?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
-        if (!r.ok) { ref.pctResiduos = null; return; }
+        if (!r.ok) { ref.pctResiduos = null; continue; }
         const d = await r.json();
         const kgResiduos = Number(d.kgResiduos || 0);
         const kgCardas   = Number(d.kgCardas   || 0);
@@ -3383,7 +3395,7 @@ const loadLoteFiacReferenceSummary = async () => {
       } catch {
         ref.pctResiduos = null;
       }
-    }));
+    }
 
     loteFiacReferenceSummary.value = sorted;
   } catch (error) {
