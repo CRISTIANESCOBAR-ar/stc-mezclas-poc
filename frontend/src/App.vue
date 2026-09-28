@@ -336,24 +336,36 @@ const langOpen = ref(false);
   const reportRoutes = ['/resumen', '/resumen-cardas', '/matriz-control-uster', '/resumen-semanal-hilanderia', '/analisis-calidad-fibra', '/informe-auditoria-lote', '/resumen-diario', '/dashboard-mezcla', '/stats'];
   const isReportRoute = computed(() => reportRoutes.includes($route.path));
 
-  const DROPDOWN_HEIGHT = 360; // approx: header + 8 items
   const VIEWPORT_MARGIN = 8;
 
   function computeReportsPosition() {
     const el = reportsAnchor.value;
-    if (!el) return;
+    const dropEl = reportsDropdown.value;
+    if (!el || !dropEl) return;
+
     const rect = el.getBoundingClientRect();
     const vh = window.innerHeight;
     const left = rect.right + 12; // ml-3
+    
+    // Obtenemos la altura real del contenido para evitar scrolls innecesarios
+    const dropdownHeight = dropEl.scrollHeight;
+    
     const spaceBelow = vh - rect.top;
     let top;
-    if (spaceBelow >= DROPDOWN_HEIGHT + VIEWPORT_MARGIN) {
+    
+    if (spaceBelow >= dropdownHeight + VIEWPORT_MARGIN) {
       top = rect.top;
     } else {
-      // anchor near bottom of viewport, leaving margin
-      top = Math.max(VIEWPORT_MARGIN, vh - DROPDOWN_HEIGHT - VIEWPORT_MARGIN);
+      // Subimos el menú por encima del icono si no hay espacio debajo
+      top = Math.max(VIEWPORT_MARGIN, vh - dropdownHeight - VIEWPORT_MARGIN);
     }
-    reportsDropdownStyle.value = { top: `${top}px`, left: `${left}px`, maxHeight: `${vh - top - VIEWPORT_MARGIN}px`, overflowY: 'auto' };
+    
+    reportsDropdownStyle.value = { 
+      top: `${top}px`, 
+      left: `${left}px`, 
+      maxHeight: `${vh - top - VIEWPORT_MARGIN}px`, 
+      overflowY: 'auto' 
+    };
   }
 
   async function toggleReports() {
