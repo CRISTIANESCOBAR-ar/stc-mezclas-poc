@@ -1,3 +1,4 @@
+import { apiFetch } from '@/services/authSession.js';
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 
@@ -15,7 +16,7 @@ export const useStandardsStore = defineStore('standards', () => {
     if (loaded.value && !force) return;
     loading.value = true;
     try {
-      const res  = await globalThis.fetch('/api/config/standards');
+      const res  = await apiFetch('/api/config/standards');
       const data = await res.json();
       if (!data.success) throw new Error(data.message);
       versionActual.value = data.version_actual || '—';
@@ -30,7 +31,7 @@ export const useStandardsStore = defineStore('standards', () => {
    * Persiste los cambios en la DB y recarga el estado local.
    */
   async function save() {
-    const res  = await globalThis.fetch('/api/config/standards', {
+    const res  = await apiFetch('/api/config/standards', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tolerancias: tolerancias.value })

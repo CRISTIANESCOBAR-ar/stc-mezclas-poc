@@ -1,7 +1,7 @@
+import { logEvent } from '../http.js';
+import { config } from '../config.js';
+import { listBackups } from '../services/backups.js';
 import express from 'express';
-import { existsSync } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
-import path from 'node:path';
 import pool, { query } from '../db/pg.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import crypto from 'crypto';
@@ -9,48 +9,6 @@ import { formatOEParaPrompt, generarNarrativaLocal, buildBloqueOE } from '../hel
 import { parseNarrativaStructure } from '../helpers/narrativaSections.js';
 import { backupTrigger } from '../services/backupTrigger.js';
 const router = express.Router();
-
-const BACKUP_LOCATIONS = [
-  { disk: 'C', dir: 'C:\\stc-produccion-v2\\backups' },
-  { disk: 'D', dir: 'D:\\Backups-STC' },
-];
-
-function classifyBackupFile(fileName) {
-  if (/^stc_produccion_.*\.sql$/i.test(fileName)) return 'full';
-  if (/^ensayos_criticos_.*\.sql$/i.test(fileName)) return 'focused';
-  if (/^uster_ensayos_.*\.sql$/i.test(fileName)) return 'legacy-uster';
-  return 'other';
-}
-
-async function readBackupDirectory(location) {
-  if (!existsSync(location.dir)) {
-    return { ...location, available: false, files: [] };
-  }
-
-  try {
-    const entries = await readdir(location.dir, { withFileTypes: true });
-    const files = [];
-    for (const entry of entries) {
-      if (!entry.isFile()) continue;
-      if (!/\.sql$/i.test(entry.name)) continue;
-      const fullPath = path.join(location.dir, entry.name);
-      const info = await stat(fullPath);
-      files.push({
-        name: entry.name,
-        fullPath,
-        disk: location.disk,
-        category: classifyBackupFile(entry.name),
-        sizeBytes: info.size,
-        modifiedAt: info.mtime.toISOString(),
-      });
-    }
-
-    files.sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt));
-    return { ...location, available: true, files };
-  } catch (err) {
-    return { ...location, available: false, files: [], error: err.message };
-  }
-}
 
 function buildNarrativaStructuredFields(narrativaText) {
   const parsed = parseNarrativaStructure(narrativaText);
@@ -89,53 +47,6 @@ function normalizeComparativaConsolidada(narrativaText, actual, refs) {
 }
 
 // ─────────── Cache + Log de narrativas (Postgres) ───────────
-let cacheTableReady = false;
-async function ensureCacheTable() {
-  if (cacheTableReady) return;
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS tb_narrativa_cache (
-        cache_key   VARCHAR(64) PRIMARY KEY,
-        lotes       TEXT NOT NULL,
-        fecha       VARCHAR(20),
-        formato     VARCHAR(32),
-        modelo      VARCHAR(64),
-        data_hash   VARCHAR(64) NOT NULL,
-        narrativa   TEXT NOT NULL,
-        json_analisis_ia JSONB,
-        modelo_usado VARCHAR(64),
-        token_info  JSONB,
-        created_at  TIMESTAMPTZ DEFAULT NOW(),
-        last_hit_at TIMESTAMPTZ DEFAULT NOW(),
-        hits        INTEGER DEFAULT 0
-      );
-      CREATE INDEX IF NOT EXISTS idx_narrativa_cache_lotes ON tb_narrativa_cache(lotes, fecha);
-      ALTER TABLE tb_narrativa_cache ADD COLUMN IF NOT EXISTS token_info JSONB;
-
-      CREATE TABLE IF NOT EXISTS tb_narrativa_log (
-        id            SERIAL PRIMARY KEY,
-        lotes         TEXT NOT NULL,
-        fecha_corte   VARCHAR(20),
-        formato       VARCHAR(32),
-        idioma        VARCHAR(10) DEFAULT 'es',
-        modelo        VARCHAR(64),
-        tokens_entrada  INTEGER DEFAULT 0,
-        tokens_salida   INTEGER DEFAULT 0,
-        tokens_total    INTEGER DEFAULT 0,
-        costo_usd       NUMERIC(12,6) DEFAULT 0,
-        fuente        VARCHAR(16) DEFAULT 'gemini',
-        desde_cache   BOOLEAN DEFAULT FALSE,
-        created_at    TIMESTAMPTZ DEFAULT NOW()
-      );
-      CREATE INDEX IF NOT EXISTS idx_narrativa_log_created ON tb_narrativa_log(created_at DESC);
-    `);
-    cacheTableReady = true;
-    console.log('✓ Tablas tb_narrativa_cache / tb_narrativa_log listas');
-  } catch (e) {
-    console.warn('⚠️ No pude crear tb_narrativa_cache:', e.message);
-  }
-}
-
 function sha256(s) {
   return crypto.createHash('sha256').update(s).digest('hex');
 }
@@ -433,7 +344,7 @@ router.get('/mezcla-lotes', async (req, res) => {
         cardasCtx = { disponible: false, motivo: 'Tabla de Uster Cardas pendiente de creación (importar primer ensayo).' }
       }
     } catch (cardaErr) {
-      console.warn('cardas-context error (non-blocking):', cardaErr.message)
+      logEvent('query_warning', { requestId: req.requestId, code: cardaErr.code || 'ERROR' });
       cardasCtx = { disponible: false, motivo: `Error al cargar contexto: ${cardaErr.message}` }
     }
 
@@ -462,7 +373,7 @@ router.get('/mezcla-lotes', async (req, res) => {
     const provResult = await query(sqlProv, [loteList], 'dashboard/mezcla-lotes/proveedores');
     res.json({ success: true, rows: result.rows, proveedores: provResult.rows, lotes: loteList, cardas: cardasCtx });
   } catch (err) {
-    console.error('Error /api/dashboard/mezcla-lotes:', err.message);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ error: err.message });
   }
 });
@@ -472,7 +383,6 @@ router.post('/narrativa-lotes', async (req, res) => {
     const { rows, loteActual, model: modelReq, modo, proveedores, formato, fecha, forceRefresh, idioma } = req.body;
     if (!rows || rows.length === 0) return res.status(400).json({ error: 'Sin datos para analizar' });
 
-    await ensureCacheTable();
 
     // ─── Cache lookup (ahorro de tokens) ───
     const lotesKey = [...new Set(rows.map(r => Number(r.mistura)))].sort((a, b) => a - b).join(',');
@@ -494,7 +404,7 @@ router.post('/narrativa-lotes', async (req, res) => {
             [cacheKey]
           );
           const cached = hit.rows[0];
-          console.log(`✓ Caché HIT narrativa lotes=${lotesKey} fecha=${fecha} formato=${formatoKey}`);
+          logEvent('narrativa_cache_hit', { requestId: req.requestId });
           return res.json({
             success: true,
             narrativa: cached.narrativa,
@@ -506,13 +416,13 @@ router.post('/narrativa-lotes', async (req, res) => {
           });
         }
       } catch (e) {
-        console.warn('Cache lookup falló (continuamos):', e.message);
+        logEvent('query_warning', { requestId: req.requestId, code: e.code || 'ERROR' });
       }
     }
 
     // ── Query producción OE — trazabilidad completa con KPIs de eficiencia ───
     const loteNums = [...new Set(rows.map(r => Number(r.mistura)))].filter(n => !isNaN(n) && n > 0);
-    console.log(`[narrativa-lotes] loteNums = [${loteNums.join(', ')}]`);
+    logEvent('narrativa_requested', { requestId: req.requestId });
     let oeData = [];
     let oeColSet = new Set(); // fuera del try para que el catch pueda leerlo en logs
     try {
@@ -655,9 +565,9 @@ router.post('/narrativa-lotes', async (req, res) => {
       `;
       const oeResult = await pool.query(oeSql, [loteNums]);
       oeData = oeResult.rows;
-      console.log(`[narrativa-lotes] oeData filas=${oeData.length}`, oeData.length > 0 ? `primer lote=${oeData[0].lote} maq=${oeData[0].maquina}` : '(vacío)');
+      logEvent('narrativa_context', { requestId: req.requestId, rows: oeData.length });
     } catch (oeErr) {
-      console.warn('[narrativa-lotes] OE query falló (non-fatal):', oeErr.message);
+      logEvent('query_warning', { requestId: req.requestId, code: oeErr.code || 'ERROR' });
       console.warn('[narrativa-lotes] Columnas detectadas en tb_produccion_oe:', [...oeColSet].join(', '));
     }
 
@@ -688,7 +598,7 @@ router.post('/narrativa-lotes', async (req, res) => {
       `, [loteNums]);
       usterParData = usterParResult.rows;
     } catch (upErr) {
-      console.warn('Uster PAR pasador/estiraje query failed (non-fatal):', upErr.message);
+      logEvent('query_warning', { requestId: req.requestId, code: upErr.code || 'ERROR' });
     }
 
     // ── Query calidad Uster (CvM%) por lote + título (Ne) ──────────────────
@@ -716,7 +626,7 @@ router.post('/narrativa-lotes', async (req, res) => {
       `, [loteNums]);
       usterQualData = usterQualResult.rows;
     } catch (uqErr) {
-      console.warn('Uster calidad CvM query failed (non-fatal):', uqErr.message);
+      logEvent('query_warning', { requestId: req.requestId, code: uqErr.code || 'ERROR' });
     }
 
     // ── Query preparación Cardas/Manuar por fecha de producción OE ──────────
@@ -760,7 +670,7 @@ router.post('/narrativa-lotes', async (req, res) => {
         cardasByDateData = cardasByDateResult.rows;
       }
     } catch (cardaErr) {
-      console.warn('Cardas by date query failed (non-fatal):', cardaErr.message);
+      logEvent('query_warning', { requestId: req.requestId, code: cardaErr.code || 'ERROR' });
     }
 
     const neComparable = (v) => {
@@ -1054,7 +964,7 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
             [cacheKey, lotesKey, fecha || null, formatoKey, modeloKey, dataHash, narrativaCompleta, jsonAnalisisIA, mName, JSON.stringify(tokenInfo)]
           );
         } catch (e) {
-          console.warn('No pude guardar en cache:', e.message);
+          logEvent('query_warning', { requestId: req.requestId, code: e.code || 'ERROR' });
         }
         // Registrar en historial de costos (best-effort)
         try {
@@ -1064,14 +974,14 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
             [lotesKey, fecha || null, formatoKey, idiomaKey, mName, tokensEntrada, tokensSalida, tokensTotal, costoUSD.toFixed(6)]
           );
         } catch (e) {
-          console.warn('No pude registrar en log de costos:', e.message);
+          logEvent('query_warning', { requestId: req.requestId, code: e.code || 'ERROR' });
         }
         return res.json({ success: true, narrativa: narrativaCompleta, fuente: 'gemini', modelo: mName, jsonAnalisisIA, tokenInfo, ...(modelUsado && { avisoModelo: `Gemini respondió con modelo alternativo: ${mName}` }), ...buildNarrativaStructuredFields(narrativaCompleta) });
       } catch (geminiErr) {
         const msg = geminiErr.message || String(geminiErr);
         const esQuotaOAuth = /quota|429|resource.exhausted|api.?key|permission|auth/i.test(msg);
         const esTransient  = !esQuotaOAuth; // Todo lo que no sea quota/auth se reintenta (503, fetch error, timeout, etc.)
-        console.warn(`Gemini [${mName}] falló (${esTransient ? 'transitorio' : 'fatal'}): ${msg.slice(0, 120)}`);
+        logEvent('ai_request_failed', { requestId: req.requestId, transient: esTransient });
         lastGeminiErr = msg;
         if (!esTransient) break; // Error de quota o auth: no tiene sentido reintentar
         // 503 transitorio: espera 1s antes de probar el siguiente modelo
@@ -1089,7 +999,7 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
     return res.json({ success: true, narrativa, fuente: 'local', aviso, geminiErrRaw: geminiErrMsg.slice(0, 200), jsonAnalisisIA, ...buildNarrativaStructuredFields(narrativa) });
 
   } catch (err) {
-    console.error('Error narrativa-lotes:', err.message);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -1097,7 +1007,7 @@ Límite: 700 palabras. Cuantificá cambios con %.`;
 // ─────────── Historial de costos IA ───────────
 router.get('/narrativa-costos', async (req, res) => {
   try {
-    await ensureCacheTable();
+
     // Resumen por día
     const resumenDia = await pool.query(`
       SELECT
@@ -1154,31 +1064,14 @@ router.get('/narrativa-costos', async (req, res) => {
       detalle: detalle.rows,
     });
   } catch (err) {
-    console.error('Error narrativa-costos:', err.message);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
 router.get('/backups', async (req, res) => {
-  try {
-    const directories = await Promise.all(BACKUP_LOCATIONS.map(readBackupDirectory));
-    const allFiles = directories.flatMap((item) => item.files || [])
-      .sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt));
-
-    const latestByCategory = (category) => allFiles.find((file) => file.category === category) || null;
-
-    return res.json({
-      ok: true,
-      trigger: backupTrigger.getStatus(),
-      directories,
-      latestFull: latestByCategory('full'),
-      latestFocused: latestByCategory('focused'),
-      recent: allFiles.slice(0, 100),
-    });
-  } catch (err) {
-    console.error('Error backup visibility:', err.message);
-    return res.status(500).json({ ok: false, error: err.message });
-  }
+  const files = await listBackups(config);
+  return res.json({ ok: true, trigger: await backupTrigger.getStatus(), ...files });
 });
 
 export default router;

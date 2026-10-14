@@ -1,3 +1,4 @@
+import { logEvent } from '../http.js';
 import express from 'express';
 import { StandardsRepository } from '../repositories/standardsRepository.js';
 
@@ -12,7 +13,7 @@ router.get('/standards', async (req, res) => {
         const rules = await StandardsRepository.getActiveRules();
         res.json({ success: true, version_actual: 'Estándar 2026', tolerancias: rules });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.status(error.statusCode || 500).json({ success: false, message: error.message });
     }
 });
 
@@ -30,7 +31,7 @@ router.put('/standards', async (req, res) => {
         await StandardsRepository.saveRules(tolerancias);
         res.json({ success: true, message: `${tolerancias.length} reglas guardadas correctamente.` });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        res.status(error.statusCode || 500).json({ success: false, message: error.message });
     }
 });
 
@@ -133,8 +134,8 @@ router.post('/audit', async (req, res) => {
 
     res.json({ success: true, data: { overallStatus, details, parameterResults } });
   } catch (error) {
-    console.error('Error en /api/config/audit:', error);
-    res.status(500).json({ success: false, message: error.message });
+    logEvent('route_error', { requestId: req.requestId, code: error.code || 'ERROR' });
+    res.status(error.statusCode || 500).json({ success: false, message: error.message });
   }
 });
 

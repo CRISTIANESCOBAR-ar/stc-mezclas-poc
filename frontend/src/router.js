@@ -1,6 +1,10 @@
+import { loadSession, can } from './services/authSession.js';
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
+  { path: '/ingresar', name: 'ingresar', component: () => import('./views/LoginView.vue'), meta: { title: 'Ingresar', public: true } },
+  { path: '/usuarios', name: 'usuarios', component: () => import('./views/UsersView.vue'), meta: { title: 'Usuarios', role: 'administrador' } },
+  { path: '/sin-permiso', component: () => import('./views/AccessDeniedView.vue'), meta: { title: 'Acceso restringido' } },
   {
     path: '/',
     redirect: () => (localStorage.getItem('stc_hide_welcome') === '1' ? '/inventario' : '/bienvenida'),
@@ -11,41 +15,41 @@ const routes = [
     component: () => import('./views/BienvenidaView.vue'),
     meta: { title: 'Bienvenido' },
   },
-  { 
-    path: '/inventario', 
+  {
+    path: '/inventario',
     name: 'inventario',
     component: () => import('./views/InventarioView.vue'),
-    meta: { title: 'Gestión de Inventario (MP)' } 
+    meta: { title: 'Gestión de Inventario (MP)' }
   },
-  { 
-    path: '/configuracion-estandares', 
+  {
+    path: '/configuracion-estandares',
     name: 'configuracion-estandares',
     component: () => import('./views/ConfiguracionEstandaresView.vue'),
-    meta: { title: 'Configuración Estándares y Mezclas' } 
+    meta: { role: 'administrador', title: 'Configuración Estándares y Mezclas' }
   },
-  { 
-    path: '/hvi', 
+  {
+    path: '/hvi',
     name: 'hvi',
     component: () => import('./views/HVIView.vue'),
-    meta: { title: 'Carga de Archivos HVI' } 
+    meta: { role: 'operador', title: 'Carga de Archivos HVI' }
   },
   {
     path: '/uster',
     name: 'uster',
     component: () => import('./views/UsterView.vue'),
-    meta: { title: 'Carga de Archivos Uster' }
+    meta: { role: 'operador', title: 'Carga de Archivos Uster' }
   },
   {
     path: '/uster-cardas',
     name: 'uster-cardas',
     component: () => import('./views/UsterCardasView.vue'),
-    meta: { title: 'Carga de Archivos Uster Cardas' }
+    meta: { role: 'operador', title: 'Carga de Archivos Uster Cardas' }
   },
   {
     path: '/hvi-crudo',
     name: 'hvi-crudo',
     component: () => import('./views/HviCrudoImport.vue'),
-    meta: { title: 'Carga HVI Crudo' }
+    meta: { role: 'operador', title: 'Carga HVI Crudo' }
   },
   {
     path: '/oe-trazabilidad',
@@ -57,7 +61,7 @@ const routes = [
     path: '/tensorapid',
     name: 'tensorapid',
     component: () => import('./views/TensoRapidView.vue'),
-    meta: { title: 'Carga de Archivos TensoRapid' }
+    meta: { role: 'operador', title: 'Carga de Archivos TensoRapid' }
   },
   {
     path: '/relato-ia',
@@ -124,13 +128,13 @@ const routes = [
     path: '/narrativa-costos',
     name: 'narrativa-costos',
     component: () => import('./views/NarrativaCostosView.vue'),
-    meta: { title: 'Reporte Costos IA' }
+    meta: { role: 'administrador', title: 'Reporte Costos IA' }
   },
   {
     path: '/backups',
     name: 'backups',
     component: () => import('./views/BackupsView.vue'),
-    meta: { title: 'Visibilidad de Backups' }
+    meta: { role: 'administrador', title: 'Visibilidad de Backups' }
   }
 ]
 
@@ -139,11 +143,14 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
-  document.title = to.meta.title 
-    ? `${to.meta.title} - STC PoC` 
-    : 'STC PoC'
-  next()
-})
+router.beforeEach(async (to) => {
+  document.title = to.meta.title ? to.meta.title + ' - STC' : 'STC';
+  if (to.meta.public) return true;
+  try {
+    if (!await loadSession()) return { path: '/ingresar', query: { next: to.fullPath } };
+  } catch { return { path: '/ingresar', query: { unavailable: '1', next: to.fullPath } }; }
+  if (to.meta.role && !can(to.meta.role)) return '/sin-permiso';
+  return true;
+});
 
 export default router

@@ -1,3 +1,8 @@
+import { withTransaction } from '../db/transaction.js';
+import { recordBackupRequest } from '../services/backupRequests.js';
+import { validateTestImport } from '../helpers/importValidation.js';
+import { optionalNumber } from '../../../shared/numbers.js';
+import { requiredNumber } from '../../../shared/numbers.js';
 import express from 'express'
 import pool, { query } from '../db/pg.js'
 import { scheduleDatabaseBackup } from '../services/backupTrigger.js'
@@ -10,11 +15,7 @@ function uppercaseKeys(row) {
   return out
 }
 
-function toNum(v) {
-  if (v == null || v === '') return null
-  const n = parseFloat(v)
-  return Number.isNaN(n) ? null : n
-}
+const toNum = optionalNumber;
 
 function normalizeTestnr(v) {
   const raw = String(v || '').trim()
@@ -30,69 +31,45 @@ function makeRecordKey(testnr, sourcePrefix) {
   return `${normalizeSourcePrefix(sourcePrefix)}::${normalizeTestnr(testnr)}`
 }
 
-async function ensureUsterCardaSchema() {
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_uster_carda_par (
-      testnr TEXT NOT NULL,
-      source_prefix TEXT NOT NULL,
-      catalog TEXT,
-      sortiment TEXT,
-      style TEXT,
-      machine_family TEXT,
-      nomcount NUMERIC,
-      maschnr TEXT,
-      lote TEXT,
-      laborant TEXT,
-      time_stamp TEXT,
-      matclass TEXT,
-      obs TEXT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY (testnr, source_prefix)
-    )
-  `)
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_uster_carda_tbl (
-      id BIGSERIAL PRIMARY KEY,
-      testnr TEXT NOT NULL,
-      source_prefix TEXT NOT NULL,
-      seqno INTEGER NOT NULL,
-      no_ NUMERIC,
-      u_percent NUMERIC,
-      cvm_percent NUMERIC,
-      cvm_1m_percent NUMERIC,
-      cvm_3m_percent NUMERIC,
-      cvm_10m_percent NUMERIC,
-      titulo_machine NUMERIC,
-      titulo_rel_perc NUMERIC,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE(testnr, source_prefix, seqno),
-      FOREIGN KEY (testnr, source_prefix)
-        REFERENCES tb_uster_carda_par(testnr, source_prefix) ON DELETE CASCADE
-    )
-  `)
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_uster_carda_titulo_tbl (
-      id BIGSERIAL PRIMARY KEY,
-      testnr TEXT NOT NULL,
-      source_prefix TEXT NOT NULL,
-      repno INTEGER NOT NULL,
-      titulo NUMERIC,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      UNIQUE(testnr, source_prefix, repno),
-      FOREIGN KEY (testnr, source_prefix)
-        REFERENCES tb_uster_carda_par(testnr, source_prefix) ON DELETE CASCADE
-    )
-  `)
-  await query(`ALTER TABLE tb_uster_carda_par ALTER COLUMN source_prefix SET NOT NULL`)
-  await query('CREATE INDEX IF NOT EXISTS idx_uster_carda_par_time ON tb_uster_carda_par(time_stamp)')
-  await query('CREATE INDEX IF NOT EXISTS idx_uster_carda_tbl_testnr_prefix ON tb_uster_carda_tbl(testnr, source_prefix)')
-  await query('CREATE INDEX IF NOT EXISTS idx_uster_carda_titulo_testnr_prefix ON tb_uster_carda_titulo_tbl(testnr, source_prefix)')
-}
+router.get('/tests/:prefix/:testnr', async (req, res, next) => {
+  try {
+    const result = await query(`SELECT to_jsonb(p) AS par, p.xmin::text AS version,
+      COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY seqno) FROM tb_uster_carda_tbl t
+        WHERE t.testnr=p.testnr AND t.source_prefix=p.source_prefix), '[]'::jsonb) AS tbl,
+      COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY repno) FROM tb_uster_carda_titulo_tbl t
+        WHERE t.testnr=p.testnr AND t.source_prefix=p.source_prefix), '[]'::jsonb) AS titulos
+      FROM tb_uster_carda_par p WHERE source_prefix=$1 AND
+      COALESCE(NULLIF(ltrim(trim(testnr), '0'), ''), '0')=$2`,
+      [normalizeSourcePrefix(req.params.prefix), normalizeTestnr(req.params.testnr)]);
+    if (result.rows.length !== 1) return res.status(result.rows.length ? 409 : 404).json({ error: 'No se encontró un ensayo único para ese equipo y número.' });
+    const row = result.rows[0];
+    res.json({ par: uppercaseKeys(row.par), tbl: row.tbl.map(uppercaseKeys), titulos: row.titulos.map(uppercaseKeys), version: row.version });
+  } catch (error) { next(error); }
+});
 
-ensureUsterCardaSchema().catch(err => {
-  console.error('[uster-cardas] schema error:', err.message)
-})
+router.patch('/tests/:prefix/:testnr/manual', async (req, res, next) => {
+  try {
+    const { version, titulos } = req.body;
+    if (!/^\d+$/.test(String(version || '')) || !Array.isArray(titulos) || titulos.length !== 3) return res.status(400).json({ error: 'Versión y tres títulos requeridos.' });
+    const values = titulos.map((row, i) => {
+      if (row?.REPNO !== i + 1) throw Object.assign(new Error('Orden de repeticiones inválido.'), { statusCode: 400 });
+      return requiredNumber(row.TITULO, `Título ${i + 1}`, { min: 0 });
+    });
+    const result = await withTransaction(pool, async client => {
+      const found = await client.query(`SELECT testnr, source_prefix, xmin::text AS version FROM tb_uster_carda_par
+        WHERE source_prefix=$1 AND COALESCE(NULLIF(ltrim(trim(testnr), '0'), ''), '0')=$2 FOR UPDATE`,
+        [normalizeSourcePrefix(req.params.prefix), normalizeTestnr(req.params.testnr)]);
+      if (found.rows.length !== 1 || found.rows[0].version !== String(version)) throw Object.assign(new Error('El ensayo cambió. Recarga antes de guardar.'), { statusCode: 409 });
+      const row = found.rows[0];
+      await client.query('DELETE FROM tb_uster_carda_titulo_tbl WHERE testnr=$1 AND source_prefix=$2', [row.testnr, row.source_prefix]);
+      for (let i=0; i<3; i++) await client.query('INSERT INTO tb_uster_carda_titulo_tbl (testnr, source_prefix, repno, titulo) VALUES ($1,$2,$3,$4)', [row.testnr, row.source_prefix, i+1, values[i]]);
+      const updated = await client.query('UPDATE tb_uster_carda_par SET updated_at=NOW() WHERE testnr=$1 AND source_prefix=$2 RETURNING xmin::text AS version', [row.testnr, row.source_prefix]);
+      await recordBackupRequest(client, 'uster-cardas-manual');
+      return { success: true, version: updated.rows[0].version };
+    });
+    res.json(result);
+  } catch (error) { next(error); }
+});
 
 router.post('/status', async (req, res) => {
   const { entries, testnrs } = req.body
@@ -113,7 +90,7 @@ router.post('/status', async (req, res) => {
     return res.status(400).json({ error: 'entries or testnrs required' })
   }
   try {
-    await ensureUsterCardaSchema()
+
     const original = normalizedEntries.map((entry) => entry.testnr)
     const normalized = original.map((testnr) => normalizeTestnr(testnr))
     const prefixes = [...new Set(normalizedEntries.map((entry) => entry.sourcePrefix).filter(Boolean))]
@@ -143,7 +120,7 @@ router.post('/status', async (req, res) => {
 
 router.get('/par', async (req, res) => {
   try {
-    await ensureUsterCardaSchema()
+
     const result = await query(`
       SELECT p.*,
              t.titulo_avg,
@@ -175,7 +152,7 @@ router.get('/par', async (req, res) => {
 router.get('/tbl', async (req, res) => {
   const { testnr, source_prefix: sourcePrefixQuery } = req.query
   try {
-    await ensureUsterCardaSchema()
+
     const sourcePrefix = normalizeSourcePrefix(sourcePrefixQuery)
     const result = testnr && sourcePrefix
       ? await query('SELECT * FROM tb_uster_carda_tbl WHERE testnr = $1 AND source_prefix = $2 ORDER BY seqno', [testnr, sourcePrefix])
@@ -192,7 +169,7 @@ router.get('/titulos', async (req, res) => {
   const { testnr, source_prefix: sourcePrefixQuery } = req.query
   if (!testnr) return res.status(400).json({ error: 'testnr required' })
   try {
-    await ensureUsterCardaSchema()
+
     const sourcePrefix = normalizeSourcePrefix(sourcePrefixQuery)
     const result = sourcePrefix
       ? await query('SELECT * FROM tb_uster_carda_titulo_tbl WHERE testnr = $1 AND source_prefix = $2 ORDER BY repno', [testnr, sourcePrefix])
@@ -204,16 +181,17 @@ router.get('/titulos', async (req, res) => {
 })
 
 router.post('/upload', async (req, res) => {
-  const { par, tbl, titulos } = req.body
-  if (!par?.TESTNR) return res.status(400).json({ error: 'Missing PAR data or TESTNR' })
-  const sourcePrefix = normalizeSourcePrefix(par.SOURCE_PREFIX || par.CATALOG)
-  if (!sourcePrefix) return res.status(400).json({ error: 'Missing SOURCE_PREFIX/CATALOG' })
-
-  await ensureUsterCardaSchema()
-  const client = await pool.connect()
+  let payload;
+  try { payload = validateTestImport(req.body, 'carda'); }
+  catch (err) { return res.status(400).json({ error: err.message }); }
+  const { par, tbl, titulos } = payload;
+  const sourcePrefix = par.SOURCE_PREFIX;
+  let client;
   try {
+    client = await pool.connect();
+
     await client.query('BEGIN')
-    await client.query(`
+    const headerResult = await client.query(`
       INSERT INTO tb_uster_carda_par
         (testnr, source_prefix, catalog, sortiment, style, machine_family, nomcount,
          maschnr, lote, laborant, time_stamp, matclass, obs, updated_at)
@@ -232,6 +210,7 @@ router.post('/upload', async (req, res) => {
         matclass       = EXCLUDED.matclass,
         obs            = EXCLUDED.obs,
         updated_at     = NOW()
+      RETURNING xmin::text AS version
     `, [
       par.TESTNR,
       sourcePrefix,
@@ -275,7 +254,7 @@ router.post('/upload', async (req, res) => {
     }
 
     // Save manual counts (titulos)
-    await client.query('DELETE FROM tb_uster_carda_titulo_tbl WHERE testnr = $1 AND source_prefix = $2', [par.TESTNR, sourcePrefix])
+    if (titulos !== undefined) await client.query('DELETE FROM tb_uster_carda_titulo_tbl WHERE testnr = $1 AND source_prefix = $2', [par.TESTNR, sourcePrefix])
     if (Array.isArray(titulos) && titulos.length) {
       for (const t of titulos) {
         await client.query(`
@@ -290,14 +269,15 @@ router.post('/upload', async (req, res) => {
       }
     }
 
+    await recordBackupRequest(client, 'uster-cardas');
     await client.query('COMMIT')
     scheduleDatabaseBackup(`uster-cardas:${sourcePrefix}:${par.TESTNR}`)
-    res.json({ success: true, testnr: par.TESTNR, sourcePrefix, tblRows: tbl?.length || 0 })
+    res.json({ success: true, testnr: par.TESTNR, sourcePrefix, tblRows: tbl?.length || 0, version: headerResult.rows[0]?.version })
   } catch (err) {
-    await client.query('ROLLBACK')
+    await client?.query('ROLLBACK')
     res.status(500).json({ error: err.message })
   } finally {
-    client.release()
+    client?.release()
   }
 })
 
@@ -305,7 +285,11 @@ router.delete('/delete/:testnr', async (req, res) => {
   const sourcePrefix = normalizeSourcePrefix(req.query.source_prefix)
   if (!sourcePrefix) return res.status(400).json({ error: 'source_prefix required' })
   try {
-    const result = await query('DELETE FROM tb_uster_carda_par WHERE testnr = $1 AND source_prefix = $2', [req.params.testnr, sourcePrefix])
+    const result = await withTransaction(pool, async client => {
+      const deleted = await client.query('DELETE FROM tb_uster_carda_par WHERE testnr = $1 AND source_prefix = $2', [req.params.testnr, sourcePrefix]);
+      if (deleted.rowCount) await recordBackupRequest(client, 'ensayo-deleted');
+      return deleted;
+    })
     if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' })
     res.json({ success: true })
   } catch (err) {

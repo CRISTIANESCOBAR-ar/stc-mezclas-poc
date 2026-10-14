@@ -123,6 +123,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, watch, onMounted, onBeforeUnmount, nextTick, computed } from 'vue'
 import * as echarts from 'echarts'
 import { toPng } from 'html-to-image'
@@ -504,7 +506,7 @@ async function copyAsImage() {
         })
 
         // Convert to blob and copy
-        const blob = await (await fetch(dataUrl)).blob()
+        const blob = await (await apiFetch(dataUrl)).blob()
         await navigator.clipboard.write([
             new ClipboardItem({ 'image/png': blob })
         ])

@@ -1,9 +1,11 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'path';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const backendPort = loadEnv(mode, path.resolve(__dirname, '../backend'), 'PORT').PORT || '3005';
+  return {
   plugins: [
     vue(),
     VitePWA({
@@ -49,13 +51,15 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,
+    host: process.env.STC_DEV_HOST || '127.0.0.1',
     port: 5173,
+    strictPort: true,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:3005',
+        target: process.env.STC_API_TARGET || `http://127.0.0.1:${backendPort}`,
         changeOrigin: true,
       },
     },
   },
+  };
 });

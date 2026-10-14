@@ -1,9 +1,8 @@
+import { requestJson } from './apiClient.js';
 /**
  * Data Service - API calls to PostgreSQL backend
- * Base URL: /api (proxied through Vite to http://localhost:3001)
+ * Base URL: /api (authenticated same-origin transport)
  */
-
-const API_BASE = '/api'
 
 // Data source (always PostgreSQL in this project)
 let currentSource = 'postgresql'
@@ -18,31 +17,16 @@ export function setDataSource(source) {
 }
 
 async function fetchJson(endpoint) {
-  const url = `${API_BASE}${endpoint}`
-  console.log(`🌐 Fetching: ${url}`)
-  const response = await fetch(url)
-  console.log(`📡 Response status: ${response.status} ${response.statusText}`)
-  if (!response.ok) throw new Error(`API error: ${response.statusText}`)
-  const data = await response.json()
-  console.log(`📦 Data received:`, data)
-  console.log(`📊 Rows count: ${data.rows ? data.rows.length : 'no rows property'}`)
+  const data = await requestJson(endpoint)
   return data.rows || data
 }
 
 async function postJson(endpoint, body) {
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  })
-  if (!response.ok) throw new Error(`API error: ${response.statusText}`)
-  return response.json()
+  return requestJson(endpoint, { method: 'POST', body })
 }
 
 async function deleteRequest(endpoint) {
-  const response = await fetch(`${API_BASE}${endpoint}`, { method: 'DELETE' })
-  if (!response.ok) throw new Error(`API error: ${response.statusText}`)
-  return response.json()
+  return requestJson(endpoint, { method: 'DELETE' })
 }
 
 // =====================

@@ -146,6 +146,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, onMounted } from 'vue'
 
 const cargando = ref(false)
@@ -159,7 +161,7 @@ async function cargar() {
   cargando.value = true
   error.value = null
   try {
-    const res = await fetch('/api/dashboard/narrativa-costos')
+    const res = await apiFetch('/api/dashboard/narrativa-costos')
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
     totales.value          = data.totales

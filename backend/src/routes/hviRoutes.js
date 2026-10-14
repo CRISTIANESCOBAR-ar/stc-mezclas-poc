@@ -1,3 +1,8 @@
+import { logEvent } from '../http.js';
+import { withTransaction } from '../db/transaction.js';
+import { recordBackupRequest } from '../services/backupRequests.js';
+import { validateHviFiles } from '../helpers/importValidation.js';
+import { optionalNumber } from '../../../shared/numbers.js';
 import express from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import pool, { query } from '../db/pg.js';
@@ -13,58 +18,16 @@ const cachedAnalysis = new Map();
 // Guarda datos de archivos HVI en la base de datos
 // =====================================================
 router.post('/save', async (req, res) => {
-  const { files } = req.body;
-
-  if (!files || !Array.isArray(files)) {
-    return res.status(400).json({ success: false, error: 'No se enviaron datos de archivos' });
-  }
-
-  const client = await pool.connect();
+  let files;
+  try { files = validateHviFiles(req.body); }
+  catch (err) { return res.status(400).json({ success: false, error: err.message }); }
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
     const savedFiles = [];
 
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS tb_hvi_ensayos (
-          id SERIAL PRIMARY KEY,
-          lote TEXT NOT NULL,
-          proveedor TEXT,
-          grado TEXT,
-          fecha TEXT,
-          muestra TEXT,
-          archivo_fuente TEXT,
-          creado_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
 
-      DO $$
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='tipo') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN tipo TEXT;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='cantidad') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN cantidad INTEGER;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='color') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN color TEXT;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='cort') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN cort INTEGER;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='obs') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN obs TEXT;
-        END IF;
-      END $$;
-
-      CREATE TABLE IF NOT EXISTS tb_hvi_detalles (
-          id SERIAL PRIMARY KEY,
-          ensayo_id INTEGER REFERENCES tb_hvi_ensayos(id) ON DELETE CASCADE,
-          fardo TEXT,
-          sci NUMERIC, mst NUMERIC, mic NUMERIC, mat NUMERIC, uhml NUMERIC,
-          ui NUMERIC, sf NUMERIC, str NUMERIC, elg NUMERIC, rd NUMERIC,
-          plus_b NUMERIC, tipo TEXT, tr_cnt NUMERIC, tr_ar NUMERIC, trid NUMERIC,
-          estado_fardo TEXT DEFAULT 'OK'
-      );
-    `);
 
     for (const file of files) {
       const { metadata, details } = file;
@@ -106,8 +69,8 @@ router.post('/save', async (req, res) => {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id`,
         [
           metadata.tipo, metadata.loteEntrada, metadata.proveedor, metadata.grado,
-          metadata.fecha, metadata.muestra, metadata.cantidad || null,
-          metadata.color || null, metadata.cort || null, metadata.obs || null,
+          metadata.fecha, metadata.muestra, metadata.cantidad ?? null,
+          metadata.color || null, metadata.cort ?? null, metadata.obs || null,
           metadata.fileName
         ]
       );
@@ -116,11 +79,7 @@ router.post('/save', async (req, res) => {
       savedFiles.push({ id: ensayoId, fileName: metadata.fileName, lote: metadata.loteEntrada });
 
       for (const row of details) {
-        const toNum = (v) => {
-          if (v === null || v === undefined || v === '-' || v === '') return null;
-          const n = parseFloat(String(v).replace(',', '.'));
-          return isNaN(n) ? null : n;
-        };
+        const toNum = optionalNumber;
 
         await client.query(
           `INSERT INTO tb_hvi_detalles (
@@ -141,15 +100,16 @@ router.post('/save', async (req, res) => {
       }
     }
 
+    await recordBackupRequest(client, 'hvi');
     await client.query('COMMIT');
     scheduleDatabaseBackup(`hvi:${savedFiles.length}`);
     res.json({ success: true, message: 'Se han guardado los datos correctamente.', savedFiles });
   } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('Error guardando datos HVI:', err);
+    await client?.query('ROLLBACK');
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(err.statusCode || 500).json({ success: false, error: err.message });
   } finally {
-    client.release();
+    client?.release();
   }
 });
 
@@ -175,7 +135,7 @@ router.post('/check-files', async (req, res) => {
     );
     res.json({ success: true, existingNames: result.rows.map(r => r.archivo_fuente) });
   } catch (err) {
-    console.error('Error checking HVI files:', err);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -191,23 +151,7 @@ router.post('/get-metadata', async (req, res) => {
   }
 
   try {
-    await query(`
-      DO $$
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='cantidad') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN cantidad INTEGER;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='color') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN color TEXT;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='cort') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN cort INTEGER;
-        END IF;
-        IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='tb_hvi_ensayos' AND column_name='obs') THEN
-          ALTER TABLE tb_hvi_ensayos ADD COLUMN obs TEXT;
-        END IF;
-      END $$;
-    `);
+
 
     const result = await query(
       `SELECT archivo_fuente, tipo, lote, proveedor, grado, fecha, muestra, cantidad, color, cort, obs
@@ -233,7 +177,7 @@ router.post('/get-metadata', async (req, res) => {
 
     res.json({ success: true, metadata: map });
   } catch (err) {
-    console.error('Error getting HVI metadata:', err);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -347,7 +291,7 @@ router.get('/comparacion-muestra', async (req, res) => {
 
     res.json({ success: true, data: formatted });
   } catch (err) {
-    console.error('Error en comparación HVI:', err);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -368,7 +312,7 @@ router.get('/saved', async (req, res) => {
     );
     res.json({ success: true, data: result.rows });
   } catch (err) {
-    console.error('Error getting saved HVI:', err);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -389,12 +333,16 @@ router.delete('/saved/:id', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Tabla tb_hvi_ensayos no encontrada' });
     }
 
-    const result = await query(
+    const result = await withTransaction(pool, async client => {
+      const deleted = await client.query(
       `DELETE FROM tb_hvi_ensayos
        WHERE id = $1
        RETURNING id, tipo, lote, proveedor, archivo_fuente`,
       [id]
-    );
+      );
+      if (deleted.rowCount) await recordBackupRequest(client, 'hvi-deleted');
+      return deleted;
+    });
 
     if (result.rowCount === 0) {
       return res.status(404).json({ success: false, error: 'Ensayo no encontrado' });
@@ -402,7 +350,7 @@ router.delete('/saved/:id', async (req, res) => {
 
     res.json({ success: true, deleted: result.rows[0] });
   } catch (err) {
-    console.error('Error deleting HVI saved record:', err);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -427,7 +375,7 @@ router.post('/details', async (req, res) => {
     );
     res.json({ success: true, details: result.rows });
   } catch (err) {
-    console.error('Error getting HVI details:', err);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -546,7 +494,7 @@ NOTA: Si solo recibes 'lote_recibido' sin 'referencia_muestra', realiza la evalu
     cachedAnalysis.set(cacheKey, finalInsight);
     res.json({ success: true, insight: finalInsight });
   } catch (error) {
-    console.error('Error Gemini:', error);
+    logEvent('route_error', { requestId: req.requestId, code: error.code || 'ERROR' });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -650,7 +598,7 @@ Sé conciso y técnico. No repitas datos ya presentes en el análisis.`;
     cachedAnalysis.set(cacheKey, finalInsight);
     res.json({ success: true, insight: finalInsight });
   } catch (error) {
-    console.error('Error Gemini blend:', error);
+    logEvent('route_error', { requestId: req.requestId, code: error.code || 'ERROR' });
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -747,7 +695,7 @@ No agregues secciones extra.`;
       model: modelName
     });
   } catch (error) {
-    console.error('Error Gemini relato integral:', error);
+    logEvent('route_error', { requestId: req.requestId, code: error.code || 'ERROR' });
     res.status(500).json({ success: false, error: error.message });
   }
 });

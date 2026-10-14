@@ -1,3 +1,9 @@
+import { logEvent } from '../http.js';
+import { updateManual } from '../services/usterManual.js';
+import { withTransaction } from '../db/transaction.js';
+import { recordBackupRequest } from '../services/backupRequests.js';
+import { validateTestImport } from '../helpers/importValidation.js';
+import { optionalNumber } from '../../../shared/numbers.js';
 import express from 'express';
 import pool, { query } from '../db/pg.js';
 import { scheduleDatabaseBackup } from '../services/backupTrigger.js';
@@ -12,107 +18,27 @@ function uppercaseKeys(obj) {
   return out;
 }
 
-async function ensureUsterSchema() {
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_uster_par (
-      testnr TEXT PRIMARY KEY,
-      nomcount TEXT,
-      maschnr TEXT,
-      lote TEXT,
-      laborant TEXT,
-      time_stamp TEXT,
-      matclass TEXT,
-      estiraje TEXT,
-      pasador TEXT,
-      obs TEXT,
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      updated_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
+const toNum = optionalNumber;
 
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_uster_tbl (
-      id BIGSERIAL PRIMARY KEY,
-      testnr TEXT NOT NULL REFERENCES tb_uster_par(testnr) ON DELETE CASCADE,
-      seqno INTEGER,
-      no_ TEXT,
-      u_percent NUMERIC,
-      cvm_percent NUMERIC,
-      indice_percent NUMERIC,
-      cvm_1m_percent NUMERIC,
-      cvm_3m_percent NUMERIC,
-      cvm_10m_percent NUMERIC,
-      titulo NUMERIC,
-      titulo_rel_perc NUMERIC,
-      h NUMERIC,
-      sh NUMERIC,
-      sh_1m NUMERIC,
-      sh_3m NUMERIC,
-      sh_10m NUMERIC,
-      delg_minus30_km NUMERIC,
-      delg_minus40_km NUMERIC,
-      delg_minus50_km NUMERIC,
-      delg_minus60_km NUMERIC,
-      grue_35_km NUMERIC,
-      grue_50_km NUMERIC,
-      grue_70_km NUMERIC,
-      grue_100_km NUMERIC,
-      neps_140_km NUMERIC,
-      neps_200_km NUMERIC,
-      neps_280_km NUMERIC,
-      neps_400_km NUMERIC
-    )
-  `);
+// One statement keeps header and detail on the same PostgreSQL snapshot.
+router.get('/tests/:testnr', async (req, res, next) => {
+  try {
+    const result = await query(`
+      SELECT to_jsonb(p) AS par, p.xmin::text AS version,
+        COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY t.seqno)
+          FROM tb_uster_tbl t WHERE t.testnr = p.testnr), '[]'::jsonb) AS tbl
+      FROM tb_uster_par p WHERE p.testnr = $1
+    `, [req.params.testnr]);
+    if (!result.rows.length) return res.status(404).json({ error: 'El ensayo ya no existe en la base.' });
+    const { par, tbl } = result.rows[0];
+    return res.json({ par: uppercaseKeys(par), tbl: tbl.map(uppercaseKeys), version: result.rows[0].version });
+  } catch (error) { next(error); }
+});
 
-  await query(`CREATE INDEX IF NOT EXISTS idx_uster_tbl_testnr ON tb_uster_tbl(testnr)`);
-  await query(`CREATE INDEX IF NOT EXISTS idx_uster_tbl_testnr_seqno ON tb_uster_tbl(testnr, seqno)`);
-
-  await query(`
-    DO $$
-    BEGIN
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='tb_uster_par' AND column_name='estiraje'
-      ) THEN
-        ALTER TABLE tb_uster_par ADD COLUMN estiraje TEXT;
-      END IF;
-
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='tb_uster_par' AND column_name='pasador'
-      ) THEN
-        ALTER TABLE tb_uster_par ADD COLUMN pasador TEXT;
-      END IF;
-
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='tb_uster_par' AND column_name='obs'
-      ) THEN
-        ALTER TABLE tb_uster_par ADD COLUMN obs TEXT;
-      END IF;
-
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='tb_uster_par' AND column_name='created_at'
-      ) THEN
-        ALTER TABLE tb_uster_par ADD COLUMN created_at TIMESTAMPTZ DEFAULT NOW();
-      END IF;
-
-      IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name='tb_uster_par' AND column_name='updated_at'
-      ) THEN
-        ALTER TABLE tb_uster_par ADD COLUMN updated_at TIMESTAMPTZ DEFAULT NOW();
-      END IF;
-    END $$;
-  `);
-}
-
-const toNum = (val) => {
-  if (val == null || val === '') return null;
-  const parsed = parseFloat(String(val).replace(',', '.'));
-  return Number.isNaN(parsed) ? null : parsed;
-};
+router.patch('/tests/:testnr/manual', async (req, res, next) => {
+  try { res.json(await updateManual(pool, req.params.testnr, req.body)); }
+  catch (error) { next(error); }
+});
 
 router.post('/status', async (req, res) => {
   const { testnrs } = req.body;
@@ -121,19 +47,18 @@ router.post('/status', async (req, res) => {
   }
 
   try {
-    await ensureUsterSchema();
-    const placeholders = testnrs.map((_, i) => `$${i + 1}`).join(',');
-    const result = await query(`SELECT testnr FROM tb_uster_par WHERE testnr IN (${placeholders})`, testnrs);
+
+    const result = await query('SELECT testnr FROM tb_uster_par WHERE testnr = ANY($1::text[])', [testnrs]);
     return res.json({ existing: result.rows.map((r) => r.testnr) });
   } catch (err) {
-    console.error('Error en /api/uster/status:', err.message);
-    return res.json({ existing: [] });
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
+    return res.status(503).json({ error: 'No se pudo verificar cuáles ensayos están guardados. Reintenta actualizar la carpeta.' });
   }
 });
 
 router.get('/par', async (req, res) => {
   try {
-    await ensureUsterSchema();
+
     const result = await query(`
       SELECT testnr, nomcount, maschnr, lote, laborant, time_stamp, matclass, estiraje, pasador, obs, created_at, updated_at
       FROM tb_uster_par
@@ -149,7 +74,7 @@ router.get('/tbl', async (req, res) => {
   const { testnr } = req.query;
 
   try {
-    await ensureUsterSchema();
+
     const sql = testnr
       ? `SELECT * FROM tb_uster_tbl WHERE testnr = $1 ORDER BY seqno`
       : `SELECT * FROM tb_uster_tbl ORDER BY testnr, seqno`;
@@ -165,7 +90,7 @@ router.post('/husos', async (req, res) => {
   if (!testnr) return res.status(400).json({ error: 'testnr is required' });
 
   try {
-    await ensureUsterSchema();
+
     const result = await query(`SELECT no_ FROM tb_uster_tbl WHERE testnr = $1 ORDER BY seqno`, [testnr]);
     return res.json({ husos: result.rows.map((r) => r.no_).filter(Boolean) });
   } catch (err) {
@@ -174,12 +99,15 @@ router.post('/husos', async (req, res) => {
 });
 
 router.post('/upload', async (req, res) => {
-  const { par, tbl } = req.body;
-  if (!par?.TESTNR) return res.status(400).json({ error: 'Missing PAR data or TESTNR' });
+  let payload;
+  try { payload = validateTestImport(req.body, 'uster'); }
+  catch (err) { return res.status(400).json({ error: err.message }); }
+  const { par, tbl } = payload;
 
-  const client = await pool.connect();
+  let client;
   try {
-    await ensureUsterSchema();
+    client = await pool.connect();
+
     await client.query('BEGIN');
 
     await client.query(`
@@ -241,22 +169,27 @@ router.post('/upload', async (req, res) => {
       }
     }
 
+    await recordBackupRequest(client, 'uster');
     await client.query('COMMIT');
     scheduleDatabaseBackup(`uster:${par.TESTNR}`);
     return res.json({ success: true, testnr: par.TESTNR, tblRows: tbl?.length || 0 });
   } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('Error uploading Uster:', err.message);
+    await client?.query('ROLLBACK');
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     return res.status(500).json({ error: err.message });
   } finally {
-    client.release();
+    client?.release();
   }
 });
 
 router.delete('/delete/:testnr', async (req, res) => {
   try {
-    await ensureUsterSchema();
-    const result = await query('DELETE FROM tb_uster_par WHERE testnr = $1', [req.params.testnr]);
+
+    const result = await withTransaction(pool, async client => {
+      const deleted = await client.query('DELETE FROM tb_uster_par WHERE testnr = $1', [req.params.testnr]);
+      if (deleted.rowCount) await recordBackupRequest(client, 'ensayo-deleted');
+      return deleted;
+    });
     if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' });
     return res.json({ success: true });
   } catch (err) {

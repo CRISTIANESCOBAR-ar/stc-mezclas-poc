@@ -679,6 +679,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, reactive, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import Swal from 'sweetalert2';
@@ -1273,7 +1275,7 @@ const verificarContrato = async (isManual = false) => {
   auditResult.value = null; // Reset
   
   try {
-    const response = await fetch('/api/config/audit', {
+    const response = await apiFetch('/api/config/audit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1385,7 +1387,7 @@ const solicitarAnalisisAI = async () => {
       .filter(f => f.loteEntrada === lote)
       .map(f => f.tipo);
 
-    const response = await fetch('/api/hvi/predecir-hilatura', {
+    const response = await apiFetch('/api/hvi/predecir-hilatura', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -1598,7 +1600,7 @@ async function scanDirectory(dirHandle) {
     // Verificar estado en la DB antes de mostrar
     if (results.length > 0) {
       try {
-        const response = await fetch('/api/hvi/check-files', {
+        const response = await apiFetch('/api/hvi/check-files', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileNames: results.map(f => f.fileName) })
@@ -1615,7 +1617,7 @@ async function scanDirectory(dirHandle) {
           // Traer metadatos guardados para los archivos procesados y mezclarlos
           if (result.existingNames.length > 0) {
             try {
-              const metaResp = await fetch('/api/hvi/get-metadata', {
+              const metaResp = await apiFetch('/api/hvi/get-metadata', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ fileNames: result.existingNames })
@@ -1694,7 +1696,7 @@ const handleFolderChange = async (event) => {
   // Verificar estado en la DB antes de mostrar
   if (results.length > 0) {
     try {
-      const response = await fetch('/api/hvi/check-files', {
+      const response = await apiFetch('/api/hvi/check-files', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ fileNames: results.map(f => f.fileName) })
@@ -1711,7 +1713,7 @@ const handleFolderChange = async (event) => {
         // Traer metadatos guardados y mezclarlos
         if (result.existingNames.length > 0) {
           try {
-            const metaResp = await fetch('/api/hvi/get-metadata', {
+            const metaResp = await apiFetch('/api/hvi/get-metadata', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ fileNames: result.existingNames })
@@ -1889,7 +1891,7 @@ const selectFile = async (item) => {
       latestParseReport.value = null;
       // Sin archivo local: intentar cargar detalles desde la BD
       try {
-        const resp = await fetch('/api/hvi/details', {
+        const resp = await apiFetch('/api/hvi/details', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fileName: item.fileName })
@@ -1957,11 +1959,11 @@ const handleDeleteFromRow = async (item) => {
 
   try {
     if (item.estado === 'Procesado' && item.id) {
-      let resp = await fetch(`/api/hvi/saved/${item.id}`, { method: 'DELETE' });
+      let resp = await apiFetch(`/api/hvi/saved/${item.id}`, { method: 'DELETE' });
       let json = await resp.json();
 
       if (resp.status === 404 && item.fileName) {
-        const savedResp = await fetch('/api/hvi/saved');
+        const savedResp = await apiFetch('/api/hvi/saved');
         const savedJson = await savedResp.json();
         const current = savedJson?.success
           ? savedJson.data.find((row) => row.archivo_fuente === item.fileName)
@@ -1972,7 +1974,7 @@ const handleDeleteFromRow = async (item) => {
           if (selectedFileItem.value?.fileName === item.fileName) {
             selectedFileItem.value.id = current.id;
           }
-          resp = await fetch(`/api/hvi/saved/${item.id}`, { method: 'DELETE' });
+          resp = await apiFetch(`/api/hvi/saved/${item.id}`, { method: 'DELETE' });
           json = await resp.json();
         }
       }
@@ -2406,7 +2408,7 @@ const processFiles = async () => {
       ]
     };
 
-    const response = await fetch('/api/hvi/save', {
+    const response = await apiFetch('/api/hvi/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -2465,7 +2467,7 @@ const processFiles = async () => {
 onMounted(async () => {
   // 1. Cargar ensayos guardados en la BD
   try {
-    const resp = await fetch('/api/hvi/saved');
+    const resp = await apiFetch('/api/hvi/saved');
     const json = await resp.json();
     if (json.success && json.data.length > 0) {
       const savedItems = json.data.map(r => ({

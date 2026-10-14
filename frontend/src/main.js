@@ -27,4 +27,8 @@ app.use(VueTippy, {
   }
 })
 
+window.addEventListener('stc-session-expired', () => {
+  if (router.currentRoute.value.path !== '/ingresar') router.replace('/ingresar').catch(() => {});
+});
+
 app.mount('#app')

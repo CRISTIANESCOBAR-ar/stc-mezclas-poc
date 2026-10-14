@@ -244,6 +244,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, onMounted, watch } from "vue";
 
 const props = defineProps({
@@ -389,7 +391,7 @@ const realizarAuditoria = async () => {
     if (!props.pacas || props.pacas.length === 0) return;
     cargando.value = true;
     try {
-        const response = await fetch('http://localhost:3001/api/config/audit', {
+        const response = await apiFetch('/api/config/audit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -1,3 +1,6 @@
+import { normalizeMixingRules } from '../../helpers/mixingRules.js';
+import { optionalNumber, requiredNumber, weightedAverage, baleWeight } from '../../../../shared/numbers.js';
+
 /**
  * optimizer.js — stc-mezclas-poc
  * Full port from stc-produccion-v2/backend/services/blendomat-optimizer.js
@@ -9,11 +12,30 @@
 // =================================================================================================
 
 export function optimizeBlend(stock, rules, supervisionSettings, blendSize, algorithm = 'standard') {
-    if (!blendSize || blendSize <= 0) {
-        throw new Error('El tamaño de la mezcla (fardos) debe ser mayor a 0.');
+    blendSize = requiredNumber(blendSize, 'Tamaño de mezcla', { integer: true, min: 1 });
+    if (!Array.isArray(stock) || stock.length === 0 || !Array.isArray(rules)) {
+        throw Object.assign(new Error('Se requieren stock y reglas válidos.'), { statusCode: 400 });
     }
-    if (!stock || stock.length === 0) {
-        throw new Error('No hay stock disponible para procesar.');
+    if (!['standard', 'stability', 'stability-strict'].includes(algorithm)) {
+        throw Object.assign(new Error('Algoritmo desconocido.'), { statusCode: 400 });
+    }
+    supervisionSettings = supervisionSettings || {};
+    rules = normalizeMixingRules(rules);
+    stock = stock.map((lot, index) => {
+        if (!lot || typeof lot !== 'object' || Array.isArray(lot)) {
+            throw Object.assign(new Error(`Lote ${index + 1} inválido.`), { statusCode: 400 });
+        }
+        const normalized = { ...lot, _lotId: lot._lotId || `L${index}` };
+        normalized.QTDE_ESTOQUE = requiredNumber(lot.QTDE_ESTOQUE ?? lot['QTDE ESTOQUE'] ?? lot.qtde_estoque, `Lote ${index + 1}: stock`, { integer: true });
+        for (const field of ['PESO', 'PESO_MEDIO', 'MIC', 'STR', 'ELG', 'SCI', 'MST', 'MAT', 'UI', 'SF', 'RD', 'PLUS_B', 'TRASH', 'CG']) {
+            normalized[field] = optionalNumber(lot[field]);
+        }
+        normalized.UHML = optionalNumber(lot.UHML ?? lot.LEN);
+        normalized.PLUS_B = optionalNumber(lot.PLUS_B ?? lot['+b']);
+        return normalized;
+    });
+    if (new Set(stock.map(lot => lot._lotId)).size !== stock.length) {
+        throw Object.assign(new Error('Hay identificadores de lote duplicados.'), { statusCode: 400 });
     }
 
     let result;
@@ -33,10 +55,24 @@ export function optimizeBlend(stock, rules, supervisionSettings, blendSize, algo
 // HELPERS / UTILS
 // =================================================================================================
 
-function toOptionalNumber(value) {
-    if (value === null || value === undefined || value === '') return null;
-    const n = Number(value);
-    return Number.isNaN(n) ? null : n;
+const toOptionalNumber = optionalNumber;
+const recipeAverage = (recipe, key) => weightedAverage(recipe, lot => lot[key], baleWeight);
+
+// Relative distance lets replacements improve all enabled targets together,
+// instead of fixing one parameter while silently breaking another.
+function targetPenalty(recipe, rules, settings) {
+    let score = 0;
+    for (const rule of rules) {
+        const key = rule.parametro === 'LEN' ? 'UHML' : rule.parametro === '+b' ? 'PLUS_B' : rule.parametro;
+        if (!settings[key]?.target) continue;
+        const average = recipeAverage(recipe, key);
+        if (average === null) return Infinity;
+        const min = toOptionalNumber(rule.valor_ideal_min);
+        const max = toOptionalNumber(rule.promedio_objetivo_max);
+        if (min !== null && average < min) score += (min - average) / Math.max(1, Math.abs(min));
+        if (max !== null && average > max) score += (average - max) / Math.max(1, Math.abs(max));
+    }
+    return score;
 }
 
 function summarizeActiveRules(activeRules) {
@@ -52,7 +88,7 @@ function buildNoFeasibleBlockDiagnostics(blendSize, activeRules, specificReason 
     if (specificReason) details.push(specificReason);
     return {
         code: 'NO_FEASIBLE_BLOCK',
-        message: 'No se pudo armar ningún bloque con el stock y las reglas activas.',
+        message: 'La búsqueda no encontró un bloque que cumpla el stock y las reglas activas.',
         details
     };
 }
@@ -110,6 +146,9 @@ function assertFeasibleBlendPlan(result) {
         }
 
         const reportedUsed = Number(row?.Usados);
+        if (row.Categoria === 'C' && projectedUsed > 0) {
+            issues.push(`Lote rechazado utilizado: ${row.PRODUTOR}/${row.LOTE}.`);
+        }
         if (!Number.isNaN(reportedUsed) && Math.round(projectedUsed) !== Math.round(reportedUsed)) {
             issues.push(`Inconsistencia de usados en ${row.PRODUTOR}/${row.LOTE}: proyectado ${projectedUsed}, reportado ${reportedUsed}.`);
         }
@@ -139,18 +178,24 @@ function classifyStock(stock, rules, supervisionSettings = {}) {
     });
 
     return stock.map((bale, index) => {
-        let isRejected = false;
-        let rejectReason = '';
+        // There is no defensible mass-weighted average without a real mass.
+        let isRejected = bale.QTDE_ESTOQUE > 0 && baleWeight(bale) === null;
+        let rejectReason = isRejected ? 'Peso de lote/fardo ausente o inválido' : '';
         let isTolerance = false;
         const toleranceReasons = [];
 
         for (const rule of activeRules) {
+            if (isRejected) break;
             const uiKey = rule.parametro === 'LEN' ? 'UHML' : (rule.parametro === '+b' ? 'PLUS_B' : rule.parametro);
             const settings = safeSettings[uiKey];
             if (!settings) continue;
 
-            const val = Number(bale[uiKey]);
-            if (isNaN(val)) continue;
+            const val = toOptionalNumber(bale[uiKey]);
+            if (val === null) {
+                isRejected = true;
+                rejectReason = `${rule.parametro}: medición ausente o inválida`;
+                break;
+            }
 
             if (settings.hardCap) {
                 const maxAbs = toOptionalNumber(rule.limite_max_absoluto);
@@ -238,6 +283,11 @@ function optimizeBlendStability(stock, rules, supervisionSettings = {}, blendSiz
     };
 
     // Construye la receta proporcional para un horizonte dado
+    // Between capacity breakpoints the recipe is identical. Skip repeated
+    // failed attempts, especially for large stocks with an unattainable target.
+    const nextHorizon = (lots, horizon) => Math.min(horizon - 1, Math.max(0, ...lots.map(lot =>
+        Math.floor(lot._availableCount / (Math.floor(lot._availableCount / horizon) + 1))
+    )));
     const buildRecipeForHorizon = (lots, horizon) => {
         const totalStock = lots.reduce((sum, l) => sum + l._availableCount, 0);
 
@@ -258,6 +308,14 @@ function optimizeBlendStability(stock, rules, supervisionSettings = {}, blendSiz
         });
 
         let needed = blendSize - assignedTotal;
+        if (needed < 0) {
+            for (const c of [...capableLots].sort((a, b) => b.assigned - a.assigned)) {
+                const remove = Math.min(c.assigned, -needed);
+                c.assigned -= remove;
+                needed += remove;
+                if (needed === 0) break;
+            }
+        }
         if (needed > 0) {
             capableLots.sort((a, b) => {
                 const slackA = a.capacity - a.assigned;
@@ -370,11 +428,11 @@ function optimizeBlendStability(stock, rules, supervisionSettings = {}, blendSiz
 
         while (blockDuration > 0) {
             const rawRecipe = buildRecipeForHorizon(remainingLots, blockDuration);
-            if (!rawRecipe) { blockDuration--; continue; }
+            if (!rawRecipe) { blockDuration = nextHorizon(remainingLots, blockDuration); continue; }
 
             if (enforceToleranceCap) {
                 const capped = capToleranceInRecipe(rawRecipe.rows);
-                if (!capped) { blockDuration--; continue; }
+                if (!capped) { blockDuration = nextHorizon(remainingLots, blockDuration); continue; }
                 activeRecipe = { ...rawRecipe, rows: capped };
             } else {
                 activeRecipe = rawRecipe;
@@ -390,12 +448,22 @@ function optimizeBlendStability(stock, rules, supervisionSettings = {}, blendSiz
                 });
             }
 
+            if (!activeRecipe.smallAssignments?.length) {
+                recipeFardos = improveRecipe(recipeFardos, remainingLots,
+                    lot => Math.floor(lot._availableCount / blockDuration),
+                    activeRules, safeSettings, blendSize, !enforceToleranceCap);
+                const counts = new Map();
+                recipeFardos.forEach(lot => counts.set(lot._lotId, (counts.get(lot._lotId) || 0) + 1));
+                activeRecipe.rows = remainingLots.filter(lot => counts.has(lot._lotId))
+                    .map(lot => ({ lot, assigned: counts.get(lot._lotId) }));
+            }
+
             const validationFailure = getRecipeValidationFailure(
                 recipeFardos, activeRules, supervisionSettings, blendSize, !enforceToleranceCap
             );
             if (!validationFailure) break;
             stopReason = validationFailure;
-            blockDuration--;
+            blockDuration = nextHorizon(remainingLots, blockDuration);
         }
 
         if (!activeRecipe || blockDuration <= 0) break;
@@ -445,19 +513,26 @@ function optimizeBlendStability(stock, rules, supervisionSettings = {}, blendSiz
 // VALIDACIÓN DE RECETA
 // =================================================================================================
 
-function validateRecipeAgainstRules(recipeFardos, activeRules, supervisionSettings, blendSize, hardCapOnly = false) {
-    return getRecipeValidationFailure(recipeFardos, activeRules, supervisionSettings, blendSize, hardCapOnly) === null;
-}
-
-function getRecipeValidationFailure(recipeFardos, activeRules, supervisionSettings = {}, blendSize, hardCapOnly = false) {
+function getRecipeValidationFailure(recipeFardos, activeRules, supervisionSettings = {}, blendSize, informationalTolerance = false) {
     const safeSettings = supervisionSettings || {};
+    if (recipeFardos.length !== blendSize) return 'La receta no completa la cantidad de fardos solicitada.';
+    if (recipeFardos.some(f => f._category === 'C' || baleWeight(f) === null)) return 'La receta contiene lotes rechazados o sin peso válido.';
     for (const rule of activeRules) {
         const uiKey = rule.parametro === 'LEN' ? 'UHML' : (rule.parametro === '+b' ? 'PLUS_B' : rule.parametro);
         const settings = safeSettings[uiKey];
         if (!settings) continue;
 
-        const values = recipeFardos.map(f => Number(f[uiKey])).filter(v => !Number.isNaN(v));
-        if (values.length === 0) continue;
+        const values = recipeFardos.map(f => toOptionalNumber(f[uiKey]));
+        if (values.some(v => v === null)) return `${rule.parametro}: falta una medición válida.`;
+
+        if (settings.target) {
+            const average = recipeAverage(recipeFardos, uiKey);
+            const min = toOptionalNumber(rule.valor_ideal_min);
+            const max = toOptionalNumber(rule.promedio_objetivo_max);
+            if ((min !== null && average < min - 1e-9) || (max !== null && average > max + 1e-9)) {
+                return `El promedio ponderado de ${rule.parametro} (${average}) no cumple el objetivo.`;
+            }
+        }
 
         if (settings.hardCap) {
             const maxAbs = toOptionalNumber(rule.limite_max_absoluto);
@@ -470,7 +545,7 @@ function getRecipeValidationFailure(recipeFardos, activeRules, supervisionSettin
             }
         }
 
-        if (!hardCapOnly && settings.tolerance) {
+        if (!informationalTolerance && settings.tolerance) {
             const minIdealPct = toOptionalNumber(rule.porcentaje_min_ideal);
             if (minIdealPct !== null) {
                 const maxTolerancePct   = 100 - minIdealPct;
@@ -493,68 +568,36 @@ function getRecipeValidationFailure(recipeFardos, activeRules, supervisionSettin
 // OPTIMIZACIÓN DE CALIDAD (HILL CLIMBING)
 // =================================================================================================
 
-function optimizeRecipeQuality(candidates, activeRules, supervisionSettings) {
-    const paramAvg = (cands, uiKey) => {
-        let sum = 0, count = 0;
-        cands.forEach(c => {
-            if (c.assigned <= 0) return;
-            const v = Number(c.lot[uiKey]);
-            if (!Number.isNaN(v)) { sum += v * c.assigned; count += c.assigned; }
-        });
-        return count > 0 ? sum / count : 0;
-    };
-
-    let improved = true;
-    let maxIter = candidates.length * 5;
-
-    while (improved && maxIter-- > 0) {
-        improved = false;
-
-        for (const rule of activeRules) {
-            const uiKey = rule.parametro === 'LEN' ? 'UHML' : (rule.parametro === '+b' ? 'PLUS_B' : rule.parametro);
-            const settings = supervisionSettings ? supervisionSettings[uiKey] : null;
-            if (!settings || !settings.target) continue;
-
-            const targetMin = toOptionalNumber(rule.valor_ideal_min);
-            const targetMax = toOptionalNumber(rule.promedio_objetivo_max);
-
-            const avg         = paramAvg(candidates, uiKey);
-            const belowTarget = targetMin !== null && avg < targetMin;
-            const aboveTarget = targetMax !== null && avg > targetMax;
-
-            if (!belowTarget && !aboveTarget) continue;
-
-            let worstIdx = -1;
-            let worstVal = belowTarget ? Infinity : -Infinity;
-            candidates.forEach((c, idx) => {
-                if (c.assigned <= 0) return;
-                const v = Number(c.lot[uiKey]);
-                if (Number.isNaN(v)) return;
-                if (belowTarget && v < worstVal) { worstVal = v; worstIdx = idx; }
-                if (aboveTarget && v > worstVal) { worstVal = v; worstIdx = idx; }
-            });
-            if (worstIdx === -1) continue;
-
-            let bestIdx = -1;
-            let bestVal = belowTarget ? -Infinity : Infinity;
-            candidates.forEach((c, idx) => {
-                if (idx === worstIdx) return;
-                if (c.assigned >= c.capacity) return;
-                const v = Number(c.lot[uiKey]);
-                if (Number.isNaN(v)) return;
-                if (belowTarget && v > worstVal && v > bestVal) { bestVal = v; bestIdx = idx; }
-                if (aboveTarget && v < worstVal && v < bestVal) { bestVal = v; bestIdx = idx; }
-            });
-            if (bestIdx === -1) continue;
-
-            candidates[worstIdx].assigned -= 1;
-            candidates[bestIdx].assigned  += 1;
-            improved = true;
-            break;
+function improveRecipe(recipe, lots, capacityOf, rules, settings, blendSize, informationalTolerance = false) {
+    let score = targetPenalty(recipe, rules, settings);
+    const structuralSettings = Object.fromEntries(Object.entries(settings)
+        .map(([key, value]) => [key, { ...value, target: false }]));
+    for (let iteration = 0; score > 1e-9 && iteration < blendSize * 2; iteration++) {
+        const counts = new Map();
+        recipe.forEach(lot => counts.set(lot._lotId, (counts.get(lot._lotId) || 0) + 1));
+        let best = null;
+        let bestScore = score;
+        for (let index = 0; index < recipe.length; index++) {
+            // Identical lots need only one replacement attempt.
+            if (recipe.findIndex(lot => lot._lotId === recipe[index]._lotId) !== index) continue;
+            for (const lot of lots) {
+                if (lot._category === 'C' || lot._lotId === recipe[index]._lotId) continue;
+                if ((counts.get(lot._lotId) || 0) >= capacityOf(lot)) continue;
+                const next = [...recipe];
+                next[index] = { ...lot };
+                if (getRecipeValidationFailure(next, rules, structuralSettings, blendSize, informationalTolerance)) continue;
+                const nextScore = targetPenalty(next, rules, settings);
+                if (nextScore < bestScore - 1e-12) {
+                    bestScore = nextScore;
+                    best = next;
+                }
+            }
         }
+        if (!best) break;
+        recipe = best;
+        score = bestScore;
     }
-
-    return candidates.filter(c => c.assigned > 0);
+    return recipe;
 }
 
 // =================================================================================================
@@ -620,21 +663,14 @@ function optimizeBlendStandard(stock, rules, supervisionSettings = {}, blendSize
         return s && (s.target || s.hardCap || s.tolerance);
     });
 
-    const calculateRecipeAverage = (recipe, paramKey) => {
-        let total = 0, count = 0;
-        recipe.forEach(b => {
-            const val = Number(b[paramKey]);
-            if (!isNaN(val)) { total += val; count++; }
-        });
-        return count > 0 ? total / count : 0;
-    };
-
     const canAddToleranceBaleToRecipe = (bale, currentRecipe) => {
+        if (bale._category === 'C') return false;
         if (bale._category === 'A') return true;
         for (const param of bale._toleranceReasons) {
             const rule = activeRules.find(r => r.parametro === param);
             if (!rule) continue;
-            const minIdealPct      = Number(rule.porcentaje_min_ideal) || 100;
+            const minIdealPct      = toOptionalNumber(rule.porcentaje_min_ideal);
+            if (minIdealPct === null) continue;
             const maxTolerancePct  = 100 - minIdealPct;
             const maxToleranceCount = Math.floor(blendSize * (maxTolerancePct / 100));
             const currentTolCount  = currentRecipe.filter(b =>
@@ -672,73 +708,13 @@ function optimizeBlendStandard(stock, rules, supervisionSettings = {}, blendSize
             lotIndex = (lotIndex + 1) % availableLots.length;
         }
 
-        // Fase 2: optimización de promedios hacia targets (hill climbing)
-        if (recipe.length === blendSize) {
-            let improvementMade = true;
-            let iterations = 0;
-            const maxIterations = blendSize * 2;
-
-            while (improvementMade && iterations < maxIterations) {
-                improvementMade = false;
-                iterations++;
-
-                for (const rule of activeRules) {
-                    const uiKey    = rule.parametro === 'LEN' ? 'UHML' : (rule.parametro === '+b' ? 'PLUS_B' : rule.parametro);
-                    const targetMin = Number(rule.valor_ideal_min);
-                    const targetMax = Number(rule.promedio_objetivo_max);
-                    const currentAvg = calculateRecipeAverage(recipe, uiKey);
-
-                    const failMin = !isNaN(targetMin) && currentAvg < targetMin;
-                    const failMax = !isNaN(targetMax) && currentAvg > targetMax;
-
-                    if (!failMin && !failMax) continue;
-
-                    let worstBaleIndex = -1;
-                    let worstValue     = failMin ? Infinity : -Infinity;
-                    recipe.forEach((b, idx) => {
-                        const val = Number(b[uiKey]);
-                        if (failMin && val < worstValue) { worstValue = val; worstBaleIndex = idx; }
-                        else if (failMax && val > worstValue) { worstValue = val; worstBaleIndex = idx; }
-                    });
-                    if (worstBaleIndex === -1) continue;
-
-                    const candidates = availableLots.filter(l => {
-                        const used = tempCounts.get(l) || 0;
-                        if (used >= l._availableCount) return false;
-                        const val = Number(l[uiKey]);
-                        if (failMin && val <= worstValue) return false;
-                        if (failMax && val >= worstValue) return false;
-                        return true;
-                    });
-
-                    candidates.sort((a, b) => {
-                        const valA = Number(a[uiKey]);
-                        const valB = Number(b[uiKey]);
-                        return failMin ? valB - valA : valA - valB;
-                    });
-
-                    for (const candidate of candidates) {
-                        const tempRecipe = [...recipe];
-                        tempRecipe.splice(worstBaleIndex, 1);
-
-                        if (candidate._category === 'A' || canAddToleranceBaleToRecipe(candidate, tempRecipe)) {
-                            const oldBale = recipe[worstBaleIndex];
-                            tempCounts.set(oldBale, tempCounts.get(oldBale) - 1);
-                            tempCounts.set(candidate, (tempCounts.get(candidate) || 0) + 1);
-                            recipe[worstBaleIndex] = { ...candidate };
-                            improvementMade = true;
-                            break;
-                        }
-                    }
-                    if (improvementMade) break;
-                }
-            }
-        }
-
-        return recipe.length === blendSize ? recipe : null;
+        if (recipe.length !== blendSize) return null;
+        recipe = improveRecipe(recipe, availableLots, lot => lot._availableCount,
+            activeRules, safeSettings, blendSize);
+        return getRecipeValidationFailure(recipe, activeRules, safeSettings, blendSize) ? null : recipe;
     };
 
-    let availableLots = classifiedStock.filter(b => b._availableCount > 0);
+    let availableLots = classifiedStock.filter(b => b._category !== 'C' && b._availableCount > 0);
     let currentRecipe = buildRecipe(availableLots);
 
     while (currentRecipe) {
@@ -766,7 +742,7 @@ function optimizeBlendStandard(stock, rules, supervisionSettings = {}, blendSize
             lot._usedCount      += totalUsed;
         }
 
-        availableLots = classifiedStock.filter(b => b._availableCount > 0);
+        availableLots = classifiedStock.filter(b => b._category !== 'C' && b._availableCount > 0);
         currentRecipe = buildRecipe(availableLots);
     }
 
@@ -820,9 +796,11 @@ function buildFullStockPlanRows(classifiedStock) {
         MIC: lot.MIC,
         STR: lot.STR,
         ELG: lot.ELG,
-        LEN: lot.UHML || lot.LEN,
+        LEN: lot.UHML ?? lot.LEN,
         UHML: lot.UHML,
         PLUS_B: lot.PLUS_B,
+        PESO: lot.PESO,
+        PESO_MEDIO: baleWeight(lot),
         CG: lot.CG,
         TRASH: lot.TRASH,
         MotivoLogistico: getMotivoLogisticoFromLot(lot),
@@ -860,9 +838,9 @@ function generateResult(classifiedStock, groupedBlends, rules, supervisionSettin
                 MIC:      b.MIC,
                 STR:      b.STR,
                 ELG:      b.ELG,
-                LEN:      b.UHML || b.LEN,
+                LEN:      b.UHML ?? b.LEN,
                 Fardos:   b._category === 'C' ? Number(b.QTDE_ESTOQUE) : b._availableCount,
-                Peso:     (Number(b.PESO) / (Number(b.QTDE_ESTOQUE) || 1)) *
+                Peso:     baleWeight(b) === null ? null : baleWeight(b) *
                           (b._category === 'C' ? Number(b.QTDE_ESTOQUE) : b._availableCount),
                 Motivo:   motivo
             });
@@ -937,11 +915,7 @@ function calcularEstadisticas(blends, activeRules) {
         const fardos = blend.fardos;
         const totalFardos = fardos.length;
 
-        const pesoUnitario = (f) => {
-            const p = Number(f.PESO);
-            const q = Number(f.QTDE_ESTOQUE) || 1;
-            return p > 0 ? p / q : 1;
-        };
+        const pesoUnitario = baleWeight;
 
         const pesoPorMezcla   = fardos.reduce((sum, f) => sum + pesoUnitario(f), 0);
         const mezclasBloque   = Number(blend.mezclasBloque) || getMixesFromBlockId(bId);
@@ -995,12 +969,7 @@ function calcularEstadisticas(blends, activeRules) {
             const vKey = ruleParam === 'LEN' ? 'UHML' : (ruleParam === '+b' ? 'PLUS_B' : ruleParam);
             const rule = (activeRules || []).find(r => r.parametro === ruleParam);
 
-            const sumPonderada = fardos.reduce(
-                (s, f) => s + ((Number(f[vKey]) || 0) * pesoUnitario(f)), 0
-            );
-            const prom = pesoPorMezcla > 0 ? sumPonderada / pesoPorMezcla : 0;
-
-            stats[bId].variables[ruleParam] = { promedioGeneral: prom };
+            stats[bId].variables[ruleParam] = { promedioGeneral: recipeAverage(fardos, vKey) };
 
             if (rule) {
                 const fardosA = fardos.filter(f => {
@@ -1012,13 +981,8 @@ function calcularEstadisticas(blends, activeRules) {
                     return f._category === 'B' && reasons.includes(ruleParam);
                 });
 
-                const sumPesoA = fardosA.reduce((s, f) => s + pesoUnitario(f), 0);
-                const sumPesoB = fardosB.reduce((s, f) => s + pesoUnitario(f), 0);
-                const sumA     = fardosA.reduce((s, f) => s + ((Number(f[vKey]) || 0) * pesoUnitario(f)), 0);
-                const sumB     = fardosB.reduce((s, f) => s + ((Number(f[vKey]) || 0) * pesoUnitario(f)), 0);
-
-                stats[bId].variables[ruleParam].promedioIdeal      = sumPesoA > 0 ? sumA / sumPesoA : 0;
-                stats[bId].variables[ruleParam].promedioTolerancia = sumPesoB > 0 ? sumB / sumPesoB : 0;
+                stats[bId].variables[ruleParam].promedioIdeal = recipeAverage(fardosA, vKey);
+                stats[bId].variables[ruleParam].promedioTolerancia = recipeAverage(fardosB, vKey);
                 stats[bId].variables[ruleParam].pctIdeal           = totalFardos > 0 ? (fardosA.length / totalFardos) * 100 : 0;
                 stats[bId].variables[ruleParam].pctTolerancia      = totalFardos > 0 ? (fardosB.length / totalFardos) * 100 : 0;
             }

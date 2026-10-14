@@ -436,6 +436,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, onMounted } from 'vue'
 import { fetchCalidadFibra } from '../../services/dataService'
 import ExcelJS from 'exceljs'
@@ -1218,8 +1220,8 @@ const filteredRows = computed(() => {
 async function cargarParametrosHVI() {
   try {
     console.log('⚙️ Cargando parámetros HVI...')
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
-    const response = await fetch(`${API_URL}/parametros-hvi?activo=true`)
+    const API_URL = '/api'
+    const response = await apiFetch(`${API_URL}/parametros-hvi?activo=true`)
     const data = await response.json()
     
     if (data.success && data.parametros) {

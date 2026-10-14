@@ -4,6 +4,12 @@ frontend/dev-dist/
 .env
 **/.env
 *.local
+backend/backups/
+backend/data/
+*.dump
+*.dump.json
+*.dump.*
+*.partial
 
 # Archivos de prueba con secretos
 test-gemini*

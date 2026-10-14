@@ -1,48 +1,12 @@
+import { logEvent } from '../http.js';
+import { recordBackupRequest } from '../services/backupRequests.js';
+import { validateRawHvi } from '../helpers/importValidation.js';
 import express from 'express'
 import pool, { query } from '../db/pg.js'
 
 const router = express.Router()
 
 // Ensure schema
-async function ensureHviCrudoSchema() {
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_hvi_crudo_archivos (
-      filename TEXT PRIMARY KEY,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `)
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_hvi_crudo_datos (
-      id BIGSERIAL PRIMARY KEY,
-      filename TEXT NOT NULL REFERENCES tb_hvi_crudo_archivos(filename) ON DELETE CASCADE,
-      fecha TEXT,
-      tipo TEXT,
-      proveedor TEXT,
-      lote TEXT,
-      bale_id TEXT,
-      sci NUMERIC,
-      mst NUMERIC,
-      mic NUMERIC,
-      mat NUMERIC,
-      uhml NUMERIC,
-      ui NUMERIC,
-      sf NUMERIC,
-      str NUMERIC,
-      elg NUMERIC,
-      rd NUMERIC,
-      plus_b NUMERIC,
-      cgrd TEXT,
-      trcnt NUMERIC,
-      trar NUMERIC,
-      trid TEXT,
-      amt NUMERIC,
-      calidad_fibra_id INTEGER,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `)
-}
-ensureHviCrudoSchema().catch(err => console.error('[hvi-crudo] schema error:', err.message))
-
 // GET /status - returns filenames already uploaded
 router.post('/status', async (req, res) => {
   const { filenames } = req.body
@@ -76,13 +40,14 @@ router.get('/nfe-disponibles', async (req, res) => {
 
 // POST /upload - upload batch
 router.post('/upload', async (req, res) => {
-  const { filename, data, calidad_fibra_id } = req.body
-  if (!filename || !Array.isArray(data)) {
-    return res.status(400).json({ error: 'filename and data array required' })
-  }
-
-  const client = await pool.connect()
+  let payload;
+  try { payload = validateRawHvi(req.body); }
+  catch (err) { return res.status(400).json({ error: err.message }); }
+  const { filename, data, calidad_fibra_id } = payload;
+  let client;
   try {
+    client = await pool.connect();
+
     await client.query('BEGIN')
 
     await client.query(`
@@ -91,6 +56,8 @@ router.post('/upload', async (req, res) => {
       ON CONFLICT (filename) DO NOTHING
     `, [filename])
 
+    // Serialize replacements of the same file before deleting its detail rows.
+    await client.query('SELECT filename FROM tb_hvi_crudo_archivos WHERE filename = $1 FOR UPDATE', [filename])
     await client.query(`DELETE FROM tb_hvi_crudo_datos WHERE filename = $1`, [filename])
 
     for (const r of data) {
@@ -107,14 +74,15 @@ router.post('/upload', async (req, res) => {
       ])
     }
 
+    await recordBackupRequest(client, 'hvi-crudo');
     await client.query('COMMIT')
     res.json({ success: true, uploadedRows: data.length })
   } catch (err) {
-    await client.query('ROLLBACK')
-    console.error('Error in POST /upload hvi-crudo:', err)
+    await client?.query('ROLLBACK')
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ error: err.message })
   } finally {
-    client.release()
+    client?.release()
   }
 })
 

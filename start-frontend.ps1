@@ -1,9 +1,9 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-Set-Location "C:\stc-mezclas-poc\frontend"
+Set-Location (Join-Path $PSScriptRoot 'frontend')
 if (-not (Test-Path "node_modules")) {
-  npm install
+  npm ci
 }
 
 npm run dev

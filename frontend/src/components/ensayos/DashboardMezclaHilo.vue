@@ -725,6 +725,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, watch } from 'vue'
 import CustomDatepicker from '@/components/CustomDatepicker.vue'
 import { marked } from 'marked'
@@ -1823,7 +1825,7 @@ async function analizar() {
     const params = new URLSearchParams({ lotes: lotesClean })
     if (fechaCorte.value) params.set('fecha', fechaCorte.value)
 
-    const res = await fetch(`/api/dashboard/mezcla-lotes?${params}`)
+    const res = await apiFetch(`/api/dashboard/mezcla-lotes?${params}`)
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Error al obtener datos')
     rows.value = data.rows || []
@@ -1881,7 +1883,7 @@ async function generarNarrativa(soloLocal = false, forzar = false) {
   geminiCuotaDiariaAgotada.value = false
 
   try {
-    const res = await fetch('/api/dashboard/narrativa-lotes', {
+    const res = await apiFetch('/api/dashboard/narrativa-lotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(usarLocal ? payload : { ...payload, modo: undefined, forceRefresh: forzar })

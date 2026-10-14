@@ -177,6 +177,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -707,7 +709,7 @@ async function cargar(force = false) {
   try {
     const lotesClean = lotesInput.value.replace(/[^0-9,]/g, '').replace(/,+/g, ',').replace(/^,|,$/g, '')
     const params = new URLSearchParams({ lotes: lotesClean, fecha: fechaInput.value })
-    const dashRes = await fetch(`/api/dashboard/mezcla-lotes?${params}`)
+    const dashRes = await apiFetch(`/api/dashboard/mezcla-lotes?${params}`)
     const dashData = await dashRes.json()
     if (!dashRes.ok) throw new Error(dashData.error || 'Error al obtener datos del dashboard')
 
@@ -728,7 +730,7 @@ async function cargar(force = false) {
     }
     payloadParaIA.value = payload
 
-    const narrRes = await fetch('/api/dashboard/narrativa-lotes', {
+    const narrRes = await apiFetch('/api/dashboard/narrativa-lotes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -754,7 +756,7 @@ async function cargar(force = false) {
 async function sugerirLotesAutomatico() {
   try {
     // Aumentamos el límite a 10 para poder descartar duplicados y obtener suficientes lotes únicos
-    const response = await fetch('/api/inventory/lote-fiac-reference-summary?limit=10')
+    const response = await apiFetch('/api/inventory/lote-fiac-reference-summary?limit=10')
     if (response.ok) {
       const data = await response.json()
       const refs = Array.isArray(data?.referencias) ? data.referencias : []

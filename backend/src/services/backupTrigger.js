@@ -1,133 +1,76 @@
-import { existsSync } from 'node:fs'
-import path from 'node:path'
-import { spawn } from 'node:child_process'
+import pool from '../db/pg.js';
+import { config } from '../config.js';
+import { createBackup } from './backups.js';
+import { logEvent } from '../http.js';
 
-const DEFAULT_SCRIPT_PATH = 'C:\\stc-produccion-v2\\backup-database.ps1'
-const QUIET_WINDOW_MS = Number.parseInt(process.env.STC_BACKUP_QUIET_WINDOW_MS || '', 10) || (15 * 60 * 1000)
-const MIN_INTERVAL_MS = Number.parseInt(process.env.STC_BACKUP_MIN_INTERVAL_MS || '', 10) || (2 * 60 * 60 * 1000)
-
-class BackupTrigger {
-  constructor() {
-    this.scriptPath = process.env.STC_BACKUP_SCRIPT || DEFAULT_SCRIPT_PATH
-    this.timer = null
-    this.running = false
-    this.pending = false
-    this.lastRunAt = 0
-    this.lastReason = ''
-    this.pendingReasons = new Set()
+export class BackupTrigger {
+  constructor(database, settings, runBackup = createBackup) {
+    this.pool = database; this.config = settings; this.runBackup = runBackup;
+    this.timer = null; this.running = false; this.task = null; this.stopped = true;
   }
-
-  isEnabled() {
-    return existsSync(this.scriptPath)
+  start() {
+    if (!this.config.backup.enabled || this.timer) return;
+    this.stopped = false;
+    this.timer = setInterval(() => this.schedule(), 30000);
+    this.timer.unref();
+    this.schedule();
   }
-
-  schedule(reason) {
-    if (!this.isEnabled()) {
-      console.warn(`[backup-trigger] Script no disponible: ${this.scriptPath}`)
-      return false
-    }
-
-    this.pending = true
-    if (reason) this.pendingReasons.add(reason)
-
-    if (this.timer) clearTimeout(this.timer)
-    this.timer = setTimeout(() => {
-      this.timer = null
-      this.flush().catch((error) => {
-        console.error('[backup-trigger] Error ejecutando backup:', error)
-      })
-    }, QUIET_WINDOW_MS)
-
-    console.log(`[backup-trigger] Backup programado en ${Math.round(QUIET_WINDOW_MS / 60000)} min por: ${Array.from(this.pendingReasons).join(', ')}`)
-    return true
+  schedule() {
+    if (this.stopped || this.running || !this.config.backup.enabled) return false;
+    this.task = this.tick().catch(error => logEvent('backup_poll_failed', { code: error.code || 'ERROR' }));
+    return true;
   }
-
-  async flush() {
-    if (!this.pending) return false
-
-    const now = Date.now()
-    const elapsed = now - this.lastRunAt
-    if (this.running) return false
-
-    if (this.lastRunAt && elapsed < MIN_INTERVAL_MS) {
-      const waitMs = MIN_INTERVAL_MS - elapsed
-      if (this.timer) clearTimeout(this.timer)
-      this.timer = setTimeout(() => {
-        this.timer = null
-        this.flush().catch((error) => {
-          console.error('[backup-trigger] Error reintentando backup:', error)
-        })
-      }, waitMs)
-      console.log(`[backup-trigger] Backup diferido ${Math.round(waitMs / 60000)} min por cooldown`)
-      return false
-    }
-
-    return this.runNow()
-  }
-
-  async runNow() {
-    if (!this.pending || this.running) return false
-
-    this.running = true
-    this.pending = false
-    this.lastReason = Array.from(this.pendingReasons).join(', ') || 'manual'
-    this.pendingReasons.clear()
-
+  async tick() {
+    if (this.running) return false;
+    this.running = true;
+    this.controller = new AbortController();
+    let client;
+    let locked = false;
     try {
-      await new Promise((resolve, reject) => {
-        const child = spawn('powershell.exe', [
-          '-NoProfile',
-          '-ExecutionPolicy', 'Bypass',
-          '-File', this.scriptPath,
-          '-Mode', 'Focused',
-          '-Reason', this.lastReason,
-        ], {
-          windowsHide: true,
-          detached: false,
-          cwd: path.dirname(this.scriptPath),
-          stdio: ['ignore', 'pipe', 'pipe'],
-        })
-
-        let stderr = ''
-        child.stderr.on('data', (chunk) => {
-          stderr += String(chunk)
-        })
-
-        child.on('error', reject)
-        child.on('close', (code) => {
-          if (code === 0) return resolve()
-          reject(new Error(stderr.trim() || `backup-database.ps1 finalizó con código ${code}`))
-        })
-      })
-
-      this.lastRunAt = Date.now()
-      console.log(`[backup-trigger] Backup completado por: ${this.lastReason}`)
-      return true
-    } finally {
-      this.running = false
-      if (this.pending && !this.timer) {
-        this.schedule('post-run-pending')
+      client = await this.pool.connect();
+      locked = (await client.query("SELECT pg_try_advisory_lock(hashtext('stc_database_backup')) AS locked")).rows[0]?.locked;
+      if (!locked) return false;
+      const state = (await client.query('SELECT * FROM stc_backup_state WHERE id = 1')).rows[0];
+      if (!state) throw new Error('Falta el estado de backups.');
+      const now = Date.now();
+      const last = state.last_success_at ? new Date(state.last_success_at).getTime() : 0;
+      const periodic = now - last >= this.config.backup.periodicMs;
+      const quiet = !state.last_change_at || now - new Date(state.last_change_at).getTime() >= this.config.backup.quietMs;
+      const retryAllowed = !state.last_error || !state.last_attempt_at || now - new Date(state.last_attempt_at).getTime() >= 300000;
+      if (!retryAllowed || (!periodic && (!state.pending || !quiet || now - last < this.config.backup.intervalMs))) return false;
+      await client.query('UPDATE stc_backup_state SET last_attempt_at = NOW() WHERE id = 1');
+      try {
+        const backup = await this.runBackup(this.config, undefined, { signal: this.controller.signal });
+        await client.query('UPDATE stc_backup_state SET last_success_at = NOW(), last_file = $1, last_error = NULL, pending = (request_version > $2) WHERE id = 1', [backup.file, state.request_version]);
+        logEvent('backup_completed', { file: backup.file });
+        return true;
+      } catch (error) {
+        await client.query('UPDATE stc_backup_state SET pending = TRUE, last_error = $1 WHERE id = 1', ['Falló la creación/verificación del backup.']);
+        logEvent('backup_failed', { code: error.code || 'ERROR' });
+        return false;
       }
+    } finally {
+      if (locked) await client.query("SELECT pg_advisory_unlock(hashtext('stc_database_backup'))").catch(() => {});
+      client?.release(); this.running = false;
     }
   }
-
-  getStatus() {
+  async stop() {
+    this.stopped = true;
+    clearInterval(this.timer); this.timer = null;
+    this.controller?.abort();
+    await this.task;
+  }
+  async getStatus() {
+    const state = (await this.pool.query('SELECT * FROM stc_backup_state WHERE id = 1')).rows[0] || {};
     return {
-      enabled: this.isEnabled(),
-      running: this.running,
-      pending: this.pending,
-      scriptPath: this.scriptPath,
-      quietWindowMs: QUIET_WINDOW_MS,
-      minIntervalMs: MIN_INTERVAL_MS,
-      lastRunAt: this.lastRunAt ? new Date(this.lastRunAt).toISOString() : null,
-      lastReason: this.lastReason || null,
-      pendingReasons: Array.from(this.pendingReasons),
-    }
+      enabled: this.config.backup.enabled, running: this.running, pending: Boolean(state.pending),
+      quietWindowMs: this.config.backup.quietMs, minIntervalMs: this.config.backup.intervalMs,
+      periodicMs: this.config.backup.periodicMs, lastRunAt: state.last_success_at || null,
+      lastAttemptAt: state.last_attempt_at || null, lastError: state.last_error || null,
+      lastFile: state.last_file || null, lastReason: state.last_reason || null,
+    };
   }
 }
 
-export const backupTrigger = new BackupTrigger()
-
-export function scheduleDatabaseBackup(reason) {
-  return backupTrigger.schedule(reason)
-}
+export const backupTrigger = new BackupTrigger(pool, config);
+export function scheduleDatabaseBackup() { return backupTrigger.schedule(); }

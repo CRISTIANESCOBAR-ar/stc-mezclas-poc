@@ -693,6 +693,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, watch, onMounted } from 'vue'
 import { fetchAllStatsData } from '../../services/dataService'
 // import HusoDetailModal from './uster-stats/HusoDetailModal.vue'
@@ -1531,7 +1533,7 @@ async function copyModalAsImage() {
         if (closeBtn) closeBtn.style.display = closeBtnDisplay
 
         // Convert dataURL to blob
-        const blob = await (await fetch(dataUrl)).blob()
+        const blob = await (await apiFetch(dataUrl)).blob()
 
         // Copy to clipboard
         await navigator.clipboard.write([

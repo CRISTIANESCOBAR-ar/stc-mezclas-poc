@@ -1,28 +1,12 @@
+import { optionalNumber, baleWeight } from '../../../shared/numbers.js';
+
 export class CottonBale {
   /**
    * @param {Object} data - Datos iniciales basados en tb_est_mp
    */
   constructor(data = {}) {
     // Helper para parsear números locales (ej: "1.234,56" -> 1234.56)
-    const parseLocalNum = (val) => {
-      if (val === null || val === undefined || val === '') return 0;
-      if (typeof val === 'number') return val;
-      
-      let cleanVal = val.toString().trim();
-      
-      // Si tiene puntos y comas, asumimos formato europeo 1.000,00
-      if (cleanVal.includes('.') && cleanVal.includes(',')) {
-        // Eliminar puntos de miles y reemplazar coma por punto decimal
-        cleanVal = cleanVal.replace(/\./g, '').replace(',', '.');
-      } 
-      // Si solo tiene comas, asumimos decimal 4,34 o 110,00 (sin miles)
-      else if (cleanVal.includes(',')) {
-        cleanVal = cleanVal.replace(',', '.');
-      }
-      
-      const num = parseFloat(cleanVal);
-      return isNaN(num) ? 0 : num;
-    };
+    const parseLocalNum = optionalNumber;
 
     // Mapeo flexible de propiedades (DB keys pueden variar en formato)
     const getVal = (keys) => {
@@ -65,6 +49,7 @@ export class CottonBale {
     this.TRID = parseLocalNum(getVal(['TRID', 'trid']));
     this.PESO = parseLocalNum(getVal(['PESO', 'peso']));
     this.PESO_MEDIO = parseLocalNum(getVal(['PESO_MEDIO', 'PESO MEDIO', 'peso_medio']));
+    this.PESO_MEDIO = baleWeight(this);
     this.CORTEZA = parseLocalNum(getVal(['CORTEZA', 'corteza']));
   }
 

@@ -1,3 +1,4 @@
+import { logEvent } from '../http.js';
 import pool from '../db/pg.js';
 
 /**
@@ -16,7 +17,7 @@ export class StockRepository {
             const { rows } = await pool.query(queryText);
             return rows;
         } catch (error) {
-            console.error('Error fetching stock from PostgreSQL. Details:', error.message, error.stack);
+            logEvent('database_error', { code: error.code || 'ERROR' });
             throw new Error(`Database Error: Could not fetch stock. Details: ${error.message}`);
         }
     }

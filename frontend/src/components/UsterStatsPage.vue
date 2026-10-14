@@ -618,6 +618,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import StatsChart from './ensayos/uster-stats/StatsChart.vue'
 import HusoDetailModal from './ensayos/uster-stats/HusoDetailModal.vue'
@@ -1534,7 +1536,7 @@ async function copyChartAsImage() {
             cacheBust: true
         })
 
-        const blob = await (await fetch(dataUrl)).blob()
+        const blob = await (await apiFetch(dataUrl)).blob()
         await navigator.clipboard.write([
             new ClipboardItem({ 'image/png': blob })
         ])
@@ -1620,7 +1622,7 @@ async function copyModalAsImage() {
             if (closeBtn) closeBtn.style.visibility = originalCloseVis
 
             // Convert data URL to blob
-            const response = await fetch(dataUrl)
+            const response = await apiFetch(dataUrl)
             const blob = await response.blob()
 
             // Try to copy to clipboard

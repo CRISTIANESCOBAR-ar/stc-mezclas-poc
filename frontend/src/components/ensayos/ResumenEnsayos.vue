@@ -841,6 +841,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import Swal from 'sweetalert2'
 import { toPng } from 'html-to-image'
@@ -1938,7 +1940,7 @@ async function copyModalAsImage() {
       if (closeBtn) closeBtn.style.display = closeBtnDisplay || ''
 
       // Convert data URL to blob
-      const response = await fetch(dataUrl)
+      const response = await apiFetch(dataUrl)
       const blob = await response.blob()
 
       try {

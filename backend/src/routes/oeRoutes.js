@@ -1,3 +1,4 @@
+import { logEvent } from '../http.js';
 import express from 'express';
 import crypto from 'crypto';
 import { GoogleGenerativeAI } from '@google/generative-ai';
@@ -718,7 +719,7 @@ router.get('/trazabilidad', async (req, res) => {
       cardaTurno = cardaTurnoResult.rows;
     } catch (cardaTurnoError) {
       cardaTurno = [];
-      console.warn('[oe/trazabilidad] Cobertura turno/style cardas no disponible:', cardaTurnoError.message);
+      logEvent('query_warning', { requestId: req.requestId, code: cardaTurnoError.code || 'ERROR' });
     }
 
     // Producción Kg/h por turno — directo de tb_produccion_carda, sin depender
@@ -767,7 +768,7 @@ router.get('/trazabilidad', async (req, res) => {
       cardaProdTurno = cardaProdResult.rows;
     } catch (cardaProdError) {
       cardaProdTurno = [];
-      console.warn('[oe/trazabilidad] Producción Kg/h cardas no disponible:', cardaProdError.message);
+      logEvent('query_warning', { requestId: req.requestId, code: cardaProdError.code || 'ERROR' });
     }
 
     let cardas = [];
@@ -895,7 +896,7 @@ router.get('/trazabilidad', async (req, res) => {
       }));
     } catch (cardaError) {
       cardas = [];
-      console.warn('[oe/trazabilidad] Contexto de cardas no disponible:', cardaError.message);
+      logEvent('query_warning', { requestId: req.requestId, code: cardaError.code || 'ERROR' });
     }
 
     const cardaByTurnoStyle = new Map(
@@ -974,7 +975,7 @@ router.get('/trazabilidad', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('[oe/trazabilidad] Error:', error);
+    logEvent('route_error', { requestId: req.requestId, code: error.code || 'ERROR' });
     res.status(500).json({ error: error.message });
   }
 });
@@ -1119,7 +1120,7 @@ NO inventes valores que no estén en los datos. Si un campo es null, ignoralo.`;
       cache_hit: false,
     });
   } catch (error) {
-    console.error('[oe/diagnostico-ia] Error:', error);
+    logEvent('route_error', { requestId: req.requestId, code: error.code || 'ERROR' });
     res.status(500).json({ success: false, error: error.message, latencia_ms: Date.now() - t0 });
   }
 });

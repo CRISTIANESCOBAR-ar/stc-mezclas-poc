@@ -93,6 +93,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, onMounted } from 'vue'
 import { parseHviText } from '../utils/hviParser.js'
 
@@ -109,7 +111,7 @@ onMounted(async () => {
 
 async function fetchNfes() {
   try {
-    const res = await fetch('/api/hvi-crudo/nfe-disponibles')
+    const res = await apiFetch('/api/hvi-crudo/nfe-disponibles')
     const json = await res.json()
     if (json.rows) {
       nfeList.value = json.rows
@@ -127,10 +129,17 @@ async function onFolderSelect(e) {
   if (!files.length) return
 
   const parsedFiles = []
+  const parseErrors = []
   
   for (const file of files) {
     const text = await file.text()
-    const rows = parseHviText(text, validProducers.value, file.name)
+    let rows
+    try {
+      rows = parseHviText(text, validProducers.value, file.name).filter(row => row.Tipo === 'ENTRADA')
+    } catch (err) {
+      parseErrors.push(`${file.name}: ${err.message}`)
+      continue
+    }
     if (rows.length > 0) {
       // Infer common properties for the file from the first row
       const inferredProducer = rows[0].Proveedor
@@ -148,9 +157,12 @@ async function onFolderSelect(e) {
     }
   }
 
+  if (parseErrors.length) alert(`Archivos rechazados por datos inválidos:\n${parseErrors.join('\n')}`)
+  if (!parsedFiles.length) return
+
   // Check which are already uploaded
   try {
-    const res = await fetch('/api/hvi-crudo/status', {
+    const res = await apiFetch('/api/hvi-crudo/status', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({ filenames: parsedFiles.map(f => f.name) })
@@ -183,7 +195,7 @@ async function onFolderSelect(e) {
 
 async function uploadSingle(file) {
   try {
-    const res = await fetch('/api/hvi-crudo/upload', {
+    const res = await apiFetch('/api/hvi-crudo/upload', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({

@@ -543,6 +543,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, reactive, computed, onMounted, onBeforeUnmount } from 'vue';
 import { useI18n } from 'vue-i18n';
 import CustomDatepicker from '../CustomDatepicker.vue';
@@ -604,7 +606,7 @@ async function generarDiagnosticoIA() {
   diagIAError.value = null;
   diagIA.value = null;
   try {
-    const res = await fetch('/api/oe/diagnostico-ia', {
+    const res = await apiFetch('/api/oe/diagnostico-ia', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -940,7 +942,7 @@ async function cargar() {
     const params = new URLSearchParams({ fecha: filtros.fecha });
     if (filtros.lote.trim()) params.set('lote', filtros.lote.trim());
     if (filtros.ne.trim()) params.set('ne', filtros.ne.trim());
-    const res = await fetch(`/api/oe/trazabilidad?${params}`);
+    const res = await apiFetch(`/api/oe/trazabilidad?${params}`);
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || 'Error del servidor');
     data.value = json;

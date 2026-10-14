@@ -1488,9 +1488,13 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, reactive, onMounted, onBeforeUnmount, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { storeToRefs } from 'pinia';
+import { optionalNumber, weightedAverage, baleWeight } from '@shared/numbers.js';
+import { withStockQuantity, aggregateStock, expandStockGroups } from '@shared/blendStock.js';
 import { CottonBale } from '../models/CottonBale.js';
 import ExcelJS from 'exceljs';
 import Swal from 'sweetalert2';
@@ -1996,7 +2000,7 @@ const getCellClass = (item, colKey) => {
 const fetchData = async () => {
   loading.value = true;
   try {
-    const response = await fetch('/api/inventory/cotton-bales');
+    const response = await apiFetch('/api/inventory/cotton-bales');
     if (!response.ok) throw new Error('Error al cargar datos');
     const data = await response.json();
     
@@ -2216,11 +2220,11 @@ const toggleSelectAllStockRows = (checked) => {
 };
 
 const selectedStockRowsForBlend = computed(() => {
-  return sortedFilteredData.value.filter((row) => isStockRowSelected(row));
+  return expandStockGroups(sortedFilteredData.value.filter((row) => isStockRowSelected(row)));
 });
 
 const excludedStockRowsForBlend = computed(() => {
-  return sortedFilteredData.value.filter((row) => !isStockRowSelected(row));
+  return expandStockGroups(sortedFilteredData.value.filter((row) => !isStockRowSelected(row)));
 });
 
 const buildExcludedBlendRows = (rows, columnasMezcla = []) => {
@@ -3204,7 +3208,7 @@ const solicitarAnalisisBlend = async () => {
       // no-op: localStorage puede no estar disponible
     }
 
-    const response = await fetch('/api/hvi/analizar-mezcla', {
+    const response = await apiFetch('/api/hvi/analizar-mezcla', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ payload: geminiBlendPayload.value, model: 'gemini-2.5-pro' })
@@ -3354,7 +3358,7 @@ const loadLoteFiacReferenceSummary = async () => {
   };
 
   try {
-    const response = await fetch('/api/inventory/lote-fiac-reference-summary?limit=3');
+    const response = await apiFetch('/api/inventory/lote-fiac-reference-summary?limit=3');
     if (!response.ok) throw new Error('No se pudo cargar referencias LOTE_FIAC');
 
     const data = await response.json();
@@ -3385,7 +3389,7 @@ const loadLoteFiacReferenceSummary = async () => {
           fechaFin = new Date().toISOString().slice(0, 10);
         }
         if (!fechaInicio || !fechaFin) { ref.pctResiduos = null; continue; }
-        const r = await fetch(`/api/inventory/residuos-lote-blendomar?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
+        const r = await apiFetch(`/api/inventory/residuos-lote-blendomar?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`);
         if (!r.ok) { ref.pctResiduos = null; continue; }
         const d = await r.json();
         const kgResiduos = Number(d.kgResiduos || 0);
@@ -3465,7 +3469,8 @@ const saldoDisponibleRows = computed(() => {
     .filter(item => item.SALDO_DISPONIVEL > 0)
     .map(item => {
       const saldo = item.SALDO_DISPONIVEL;
-      const pesoTotal = saldo * item.PESO_MEDIO;
+      const unitWeight = baleWeight(item);
+      const pesoTotal = unitWeight === null ? null : saldo * unitWeight;
       return {
         PRODUTOR:  item.PRODUTOR,
         LOTE:      item.LOTE,
@@ -3478,7 +3483,7 @@ const saldoDisponibleRows = computed(() => {
         SALDO_DISPONIVEL: saldo,
         Kilogramos: pesoTotal,
         PESO:      pesoTotal,  // para que resolveRowWeight lo tome
-        PesoMedio: item.PESO_MEDIO,
+        PesoMedio: unitWeight,
         // HVI
         MIC:  item.MIC,
         STR:  item.STR,
@@ -3546,19 +3551,19 @@ const projectionSourceTableTotals = computed(() => {
     acc.fardos += fardos;
     acc.kilogramos += kilograms;
 
-    if (fardos > 0 && micValue !== null) {
-      acc.micWeighted += (micValue * fardos);
-      acc.micWeight += fardos;
+    if (kilograms > 0 && micValue !== null) {
+      acc.micWeighted += (micValue * kilograms);
+      acc.micWeight += kilograms;
     }
 
-    if (fardos > 0 && strValue !== null) {
-      acc.strWeighted += (strValue * fardos);
-      acc.strWeight += fardos;
+    if (kilograms > 0 && strValue !== null) {
+      acc.strWeighted += (strValue * kilograms);
+      acc.strWeight += kilograms;
     }
 
-    if (fardos > 0 && lenValue !== null) {
-      acc.lenWeighted += (lenValue * fardos);
-      acc.lenWeight += fardos;
+    if (kilograms > 0 && lenValue !== null) {
+      acc.lenWeighted += (lenValue * kilograms);
+      acc.lenWeight += kilograms;
     }
 
     return acc;
@@ -3707,20 +3712,7 @@ const getProjectionAvailableBales = (row) => (
     : (Number(row?.Stock) || 0)
 );
 
-const parseMaybeLocalizedNumber = (value) => {
-  if (value === null || value === undefined || value === '') return null;
-  if (typeof value === 'number') return Number.isNaN(value) ? null : value;
-
-  const asString = String(value).trim();
-  if (!asString) return null;
-
-  const normalized = asString.replace(/\./g, '').replace(',', '.');
-  const parsed = Number(normalized);
-  if (!Number.isNaN(parsed)) return parsed;
-
-  const direct = Number(asString);
-  return Number.isNaN(direct) ? null : direct;
-};
+const parseMaybeLocalizedNumber = optionalNumber;
 
 const buildInventoryLookupKey = (produtor, lote) => {
   const p = normalizeSortText(produtor).toUpperCase();
@@ -3761,26 +3753,12 @@ const resolveRowWeight = (row) => {
 
 const getVariableValueForRow = (row, uiKey) => {
   if (!row || !uiKey) return null;
-
-  if (uiKey === 'UHML') {
-    const value = Number(row?.LEN ?? row?.UHML);
-    return Number.isNaN(value) ? null : value;
-  }
-
-  if (uiKey === 'PLUS_B') {
-    const value = Number(row?.PLUS_B);
-    return Number.isNaN(value) ? null : value;
-  }
-
-  const value = Number(row?.[uiKey]);
-  return Number.isNaN(value) ? null : value;
+  return optionalNumber(uiKey === 'UHML' ? (row.LEN ?? row.UHML) : row[uiKey]);
 };
 
 const parseRuleThresholds = (rule) => {
   const parseOrNull = (value) => {
-    if (value === null || value === undefined || value === '') return null;
-    const numericValue = Number(value);
-    return Number.isNaN(numericValue) ? null : numericValue;
+    return optionalNumber(value);
   };
 
   return {
@@ -3794,12 +3772,12 @@ const parseRuleThresholds = (rule) => {
 };
 
 const computeRequiredPurchaseValue = ({ targetValue, existingQty, existingAverage, purchaseQty }) => {
-  const target = Number(targetValue);
-  const availableQty = Number(existingQty);
-  const currentAverage = Number(existingAverage);
-  const buyQty = Number(purchaseQty);
+  const target = optionalNumber(targetValue);
+  const availableQty = optionalNumber(existingQty);
+  const currentAverage = optionalNumber(existingAverage);
+  const buyQty = optionalNumber(purchaseQty);
 
-  if ([target, availableQty, currentAverage, buyQty].some((value) => Number.isNaN(value))) return null;
+  if ([target, availableQty, buyQty].some(value => value === null) || (availableQty > 0 && currentAverage === null)) return null;
   if (buyQty <= 0) return null;
 
   return ((target * (availableQty + buyQty)) - (currentAverage * availableQty)) / buyQty;
@@ -3825,16 +3803,17 @@ const averageByQualityForVariable = computed(() => {
       const qualityKey = getQualityKey(row);
       const qty = getProjectionAvailableBales(row);
       const variableValue = getVariableValueForRow(row, uiKey);
+      const mass = resolveRowWeight(row);
 
-      if (qty <= 0 || variableValue === null) return;
+      if (qty <= 0 || variableValue === null || !(mass > 0)) return;
 
       const current = grouped.get(qualityKey) || { qty: 0, weighted: 0 };
-      current.qty += qty;
-      current.weighted += (variableValue * qty);
+      current.qty += mass;
+      current.weighted += (variableValue * mass);
       grouped.set(qualityKey, current);
 
-      globalQty += qty;
-      globalWeighted += (variableValue * qty);
+      globalQty += mass;
+      globalWeighted += (variableValue * mass);
     });
 
     const byQuality = new Map();
@@ -3954,12 +3933,12 @@ const remanenteMixingRuleAnalysis = computed(() => {
       const val = getHvi(row);
       const f   = Number(row.Fardos) || 0;
       const kg  = Number(row.Kilogramos) || 0;
-      if (val === null || f <= 0) return;
+      if (val === null || f <= 0 || kg <= 0) return;
 
       if      (val < tolMin)   { descF += f; descKg += kg; }
-      else if (val < tolMax)   { tolF  += f; tolKg  += kg; tolWsum += val * f; }
-      else if (val < idealMin) { subF  += f; subKg  += kg; subWsum += val * f; }
-      else                     { ideF  += f; ideKg  += kg; ideWsum += val * f; }
+      else if (val < tolMax)   { tolF  += f; tolKg  += kg; tolWsum += val * kg; }
+      else if (val < idealMin) { subF  += f; subKg  += kg; subWsum += val * kg; }
+      else                     { ideF  += f; ideKg  += kg; ideWsum += val * kg; }
     });
 
     // ── Usable de la zona tolerancia: asignación greedy de enteros (mejor HVI primero) ──
@@ -3984,7 +3963,7 @@ const remanenteMixingRuleAnalysis = computed(() => {
       const use = Math.min(lot.f, remainingTolCap);
       usableTolF  += use;
       usableTolKg += use * (lot.f > 0 ? lot.kg / lot.f : 0);
-      usableTolW  += lot.val * use;
+      usableTolW  += lot.val * use * (lot.kg / lot.f);
       remainingTolCap -= use;
     });
 
@@ -4008,21 +3987,23 @@ const remanenteMixingRuleAnalysis = computed(() => {
     // ── PROBLEMA 2: Promedio ─────────────────────────────────────────────
     // Construyo la mezcla óptima: uso ideal+sub primero, luego tolerancia
     // Para no necesitar ordenar por lote, trabajo con promedios de zona.
-    let bloqueF, bloqueW;
+    let bloqueF, bloqueW, bloqueKg;
     if (freeF >= totalBloqueF) {
       // El bloque se llena íntegramente con fardos sub-ideal + ideal
       // Aproximación: promedio proporcional de freeF (sin poder excluir los peores)
       bloqueF = totalBloqueF;
-      bloqueW = freeF > 0 ? (freeW / freeF) * totalBloqueF : 0;
+      bloqueKg = freeF > 0 ? freeKg * totalBloqueF / freeF : 0;
+      bloqueW = freeKg > 0 ? (freeW / freeKg) * bloqueKg : 0;
     } else {
       // Necesito llenar con tolerancia lo que no alcanza con freeF
       const tolToUse   = Math.min(totalBloqueF - freeF, usableTolF);
       const tolRatioUse = usableTolF > 0 ? tolToUse / usableTolF : 0;
       bloqueF = freeF + tolToUse;
       bloqueW = freeW + usableTolW * tolRatioUse;
+      bloqueKg = freeKg + usableTolKg * tolRatioUse;
     }
 
-    const avgBloque = bloqueF > 0 ? bloqueW / bloqueF : 0;
+    const avgBloque = bloqueKg > 0 ? bloqueW / bloqueKg : null;
 
     // ── Cantidad a comprar por promedio (cuando hay cantidad suficiente) ──
     // Fórmula regla de mezclas inversa:
@@ -4055,7 +4036,7 @@ const remanenteMixingRuleAnalysis = computed(() => {
     let valorCompraFaltante = null;
     if (faltanteF > 0) {
       const usadosStockF      = totalBloqueF - faltanteF;
-      const rawValorCompra    = (idealMin * totalBloqueF - avgBloque * usadosStockF) / faltanteF;
+      const rawValorCompra    = faltanteKg > 0 ? (idealMin * (bloqueKg + faltanteKg) - bloqueW) / faltanteKg : null;
 
       // Cupo restante de tolerancia disponible para fardos a comprar
       const remainingTolCap   = Math.max(0, tolLimitF - usableTolF);
@@ -4077,9 +4058,9 @@ const remanenteMixingRuleAnalysis = computed(() => {
       idealMin, tolMin, tolMax, tolLimitPct,
       // Stock por zona
       descF, descKg,
-      tolF, tolKg, tolAvg: tolF > 0 ? tolWsum / tolF : 0,
-      subF, subKg, subAvg: subF > 0 ? subWsum / subF : 0,
-      ideF, ideKg, ideAvg: ideF > 0 ? ideWsum / ideF : 0,
+      tolF, tolKg, tolAvg: tolKg > 0 ? tolWsum / tolKg : null,
+      subF, subKg, subAvg: subKg > 0 ? subWsum / subKg : null,
+      ideF, ideKg, ideAvg: ideKg > 0 ? ideWsum / ideKg : null,
       // Usable
       usableTolF, usableTolKg,
       sobranteTolF, sobranteTolKg,
@@ -4199,14 +4180,17 @@ const mixPlanSimulation = computed(() => {
     const faltanteKg  = faltanteF * avgKgPerBale;
 
     // Promedio actual (sin compra)
-    let wFree = 0;
+    let wFree = 0, kgFree = 0;
     saldoRows.forEach(row => {
       const val = getHvi(row);
       const f   = Number(row.Fardos) || 0;
       if (val === null || f <= 0 || val < tolMax) return;
-      wFree += val * f;
+      const mass = optionalNumber(row.Kilogramos);
+      if (!(mass > 0)) return;
+      wFree += val * mass;
+      kgFree += mass;
     });
-    const avgFree = existingFreeF > 0 ? wFree / existingFreeF : 0;
+    const avgFree = kgFree > 0 ? wFree / kgFree : null;
 
     let compraFPromedio = 0;
     let valorMinCompra  = null;
@@ -4219,7 +4203,8 @@ const mixPlanSimulation = computed(() => {
     }
     if (faltanteF > 0) {
       const usadosStockF   = totalBloqueF - faltanteF;
-      const rawValor       = (idealMin * totalBloqueF - avgFree * usadosStockF) / faltanteF;
+      const usedMass = existingFreeF > 0 ? kgFree * usadosStockF / existingFreeF : 0;
+      const rawValor = faltanteKg > 0 ? (idealMin * (usedMass + faltanteKg) - (avgFree ?? 0) * usedMass) / faltanteKg : null;
       const remTolCap      = Math.max(0, totalBloqueF * tolLimitPct / 100 - usableTolForBuy);
       const umbral         = remTolCap >= faltanteF ? tolMin : tolMax;
       valorMinCompra       = Math.max(rawValor, umbral);
@@ -4307,7 +4292,7 @@ const mixPlanSimulation = computed(() => {
               type: 'lot',
               estado: lot.estado,
               stock: 0,
-              sumSTR: 0, sumUHML: 0, sumMIC: 0,
+              components: [],
               pesoMedio: lot.pesoMedio,
               isFicticio: true,
               componentProds: [],
@@ -4320,9 +4305,7 @@ const mixPlanSimulation = computed(() => {
       }
       
       currentGroup.stock += lot.stock;
-      currentGroup.sumSTR += (lot.STR || 0) * lot.stock;
-      currentGroup.sumUHML += (lot.UHML || 0) * lot.stock;
-      currentGroup.sumMIC += (lot.MIC || 0) * lot.stock;
+      currentGroup.components.push(lot);
       if (!currentGroup.componentProds.includes(lot.PRODUTOR)) currentGroup.componentProds.push(lot.PRODUTOR);
       if (!currentGroup.componentLotes.includes(lot.LOTE)) currentGroup.componentLotes.push(lot.LOTE);
   });
@@ -4335,9 +4318,7 @@ const mixPlanSimulation = computed(() => {
           if (last.stock < minRequiredStock) {
               const prev = groups[groups.length - 2];
               prev.stock += last.stock;
-              prev.sumSTR += last.sumSTR;
-              prev.sumUHML += last.sumUHML;
-              prev.sumMIC += last.sumMIC;
+              prev.components.push(...last.components);
               last.componentProds.forEach(p => { if (!prev.componentProds.includes(p)) prev.componentProds.push(p); });
               last.componentLotes.forEach(l => { if (!prev.componentLotes.includes(l)) prev.componentLotes.push(l); });
               fictionalLots.splice(fictionalLots.indexOf(last), 1);
@@ -4346,9 +4327,8 @@ const mixPlanSimulation = computed(() => {
   });
 
   fictionalLots.forEach(g => {
-      g.STR = parseFloat((g.sumSTR / g.stock).toFixed(1));
-      g.UHML = parseFloat((g.sumUHML / g.stock).toFixed(2));
-      g.MIC = parseFloat((g.sumMIC / g.stock).toFixed(2));
+      for (const key of ['STR', 'UHML', 'MIC']) g[key] = weightedAverage(g.components, lot => lot[key], lot => lot.pesoMedio * lot.stock);
+      g.pesoMedio = g.stock > 0 ? g.components.reduce((sum, lot) => sum + lot.pesoMedio * lot.stock, 0) / g.stock : null;
       
       let prodsStr = g.componentProds.join(', ');
       let lotesStr = g.componentLotes.join(', ');
@@ -4514,13 +4494,15 @@ const mixPlanSimulation = computed(() => {
     });
 
     varResults.forEach(v => {
-      let sumIdeal = 0, weightIdeal = 0;
-      let sumTol = 0, weightTol = 0;
+      let sumIdeal = 0, weightIdeal = 0, countIdeal = 0;
+      let sumTol = 0, weightTol = 0, countTol = 0;
       
       candidates.forEach(c => {
         if(c.recipe > 0 && c[v.uiKey] !== null) {
           const val = c[v.uiKey];
           const qty = c.recipe;
+          const mass = qty * c.pesoMedio;
+          if (!(mass > 0)) return;
           const isLowerBetter = v.uiKey === 'PLUS_B';
           let isIdeal = false;
           
@@ -4531,11 +4513,13 @@ const mixPlanSimulation = computed(() => {
           }
 
           if(isIdeal) {
-            sumIdeal += (val * qty);
-            weightIdeal += qty;
+            sumIdeal += (val * mass);
+            weightIdeal += mass;
+            countIdeal += qty;
           } else {
-            sumTol += (val * qty);
-            weightTol += qty;
+            sumTol += (val * mass);
+            weightTol += mass;
+            countTol += qty;
           }
         }
       });
@@ -4544,8 +4528,8 @@ const mixPlanSimulation = computed(() => {
       v.promedioGeneral = totalWeight > 0 ? (sumIdeal + sumTol) / totalWeight : null;
       v.promedioIdeal = weightIdeal > 0 ? sumIdeal / weightIdeal : 0;
       v.promedioTolerancia = weightTol > 0 ? sumTol / weightTol : 0;
-      v.pctIdeal = totalWeight > 0 ? (weightIdeal / totalWeight) * 100 : 0;
-      v.pctTolerancia = totalWeight > 0 ? (weightTol / totalWeight) * 100 : 0;
+      v.pctIdeal = countIdeal + countTol > 0 ? countIdeal / (countIdeal + countTol) * 100 : 0;
+      v.pctTolerancia = countIdeal + countTol > 0 ? countTol / (countIdeal + countTol) * 100 : 0;
     });
 
   return {
@@ -4767,54 +4751,54 @@ const purchaseProjectionRows = computed(() => {
       const targetMinBuy = settings.target && thresholds.targetMin !== null
         ? computeRequiredPurchaseValue({
           targetValue: thresholds.targetMin,
-          existingQty: available,
+          existingQty: available * avgWeightPerBale,
           existingAverage: avgAvailable,
-          purchaseQty: suggestedPurchaseBales
+          purchaseQty: suggestedPurchaseWeight
         })
         : null;
 
       const targetMaxBuy = settings.target && thresholds.targetMax !== null
         ? computeRequiredPurchaseValue({
           targetValue: thresholds.targetMax,
-          existingQty: available,
+          existingQty: available * avgWeightPerBale,
           existingAverage: avgAvailable,
-          purchaseQty: suggestedPurchaseBales
+          purchaseQty: suggestedPurchaseWeight
         })
         : null;
 
       const toleranceMinBuy = settings.tolerance && thresholds.toleranceMin !== null
         ? computeRequiredPurchaseValue({
           targetValue: thresholds.toleranceMin,
-          existingQty: available,
+          existingQty: available * avgWeightPerBale,
           existingAverage: avgAvailable,
-          purchaseQty: suggestedPurchaseBales
+          purchaseQty: suggestedPurchaseWeight
         })
         : null;
 
       const toleranceMaxBuy = settings.tolerance && thresholds.toleranceMax !== null
         ? computeRequiredPurchaseValue({
           targetValue: thresholds.toleranceMax,
-          existingQty: available,
+          existingQty: available * avgWeightPerBale,
           existingAverage: avgAvailable,
-          purchaseQty: suggestedPurchaseBales
+          purchaseQty: suggestedPurchaseWeight
         })
         : null;
 
       const hardMinBuy = settings.hardCap && thresholds.hardMin !== null
         ? computeRequiredPurchaseValue({
           targetValue: thresholds.hardMin,
-          existingQty: available,
+          existingQty: available * avgWeightPerBale,
           existingAverage: avgAvailable,
-          purchaseQty: suggestedPurchaseBales
+          purchaseQty: suggestedPurchaseWeight
         })
         : null;
 
       const hardMaxBuy = settings.hardCap && thresholds.hardMax !== null
         ? computeRequiredPurchaseValue({
           targetValue: thresholds.hardMax,
-          existingQty: available,
+          existingQty: available * avgWeightPerBale,
           existingAverage: avgAvailable,
-          purchaseQty: suggestedPurchaseBales
+          purchaseQty: suggestedPurchaseWeight
         })
         : null;
 
@@ -4897,54 +4881,54 @@ const projectionGlobalGuidance = computed(() => {
     const targetMinBuy = settings.target && thresholds.targetMin !== null
       ? computeRequiredPurchaseValue({
         targetValue: thresholds.targetMin,
-        existingQty: totalAvailable,
+        existingQty: projectionSourceTotals.value.stockPeso,
         existingAverage: sourceAverage,
-        purchaseQty: totalToBuy
+        purchaseQty: totalKgToBuy
       })
       : null;
 
     const targetMaxBuy = settings.target && thresholds.targetMax !== null
       ? computeRequiredPurchaseValue({
         targetValue: thresholds.targetMax,
-        existingQty: totalAvailable,
+        existingQty: projectionSourceTotals.value.stockPeso,
         existingAverage: sourceAverage,
-        purchaseQty: totalToBuy
+        purchaseQty: totalKgToBuy
       })
       : null;
 
     const toleranceMinBuy = settings.tolerance && thresholds.toleranceMin !== null
       ? computeRequiredPurchaseValue({
         targetValue: thresholds.toleranceMin,
-        existingQty: totalAvailable,
+        existingQty: projectionSourceTotals.value.stockPeso,
         existingAverage: sourceAverage,
-        purchaseQty: totalToBuy
+        purchaseQty: totalKgToBuy
       })
       : null;
 
     const toleranceMaxBuy = settings.tolerance && thresholds.toleranceMax !== null
       ? computeRequiredPurchaseValue({
         targetValue: thresholds.toleranceMax,
-        existingQty: totalAvailable,
+        existingQty: projectionSourceTotals.value.stockPeso,
         existingAverage: sourceAverage,
-        purchaseQty: totalToBuy
+        purchaseQty: totalKgToBuy
       })
       : null;
 
     const hardMinBuy = settings.hardCap && thresholds.hardMin !== null
       ? computeRequiredPurchaseValue({
         targetValue: thresholds.hardMin,
-        existingQty: totalAvailable,
+        existingQty: projectionSourceTotals.value.stockPeso,
         existingAverage: sourceAverage,
-        purchaseQty: totalToBuy
+        purchaseQty: totalKgToBuy
       })
       : null;
 
     const hardMaxBuy = settings.hardCap && thresholds.hardMax !== null
       ? computeRequiredPurchaseValue({
         targetValue: thresholds.hardMax,
-        existingQty: totalAvailable,
+        existingQty: projectionSourceTotals.value.stockPeso,
         existingAverage: sourceAverage,
-        purchaseQty: totalToBuy
+        purchaseQty: totalKgToBuy
       })
       : null;
 
@@ -4976,12 +4960,12 @@ const normalizeRecommendedValue = (value, comparator) => {
 };
 
 const calculateFinalAverageAfterPurchase = ({ currentAverage, availableQty, buyQty, buyValue }) => {
-  const current = Number(currentAverage);
-  const available = Number(availableQty);
-  const toBuy = Number(buyQty);
-  const purchaseValue = Number(buyValue);
+  const current = optionalNumber(currentAverage);
+  const available = optionalNumber(availableQty);
+  const toBuy = optionalNumber(buyQty);
+  const purchaseValue = optionalNumber(buyValue);
 
-  if ([current, available, toBuy, purchaseValue].some((value) => Number.isNaN(value))) return null;
+  if ([available, toBuy].some(value => value === null) || (available > 0 && current === null) || (toBuy > 0 && purchaseValue === null)) return null;
   if ((available + toBuy) <= 0) return null;
 
   return ((current * available) + (purchaseValue * toBuy)) / (available + toBuy);
@@ -5045,8 +5029,8 @@ const projectionVariablePurchaseRows = computed(() => {
     const finalAverage = (recommended !== null)
       ? calculateFinalAverageAfterPurchase({
         currentAverage: item.sourceAverage,
-        availableQty: available,
-        buyQty: missing,
+        availableQty: projectionSourceTotals.value.stockPeso,
+        buyQty: purchaseProjectionTotals.value.compraSugeridaPeso,
         buyValue: recommended
       })
       : null;
@@ -5085,7 +5069,7 @@ const itemsWithStock = computed(() => {
     // Crear copia shallow para no mutar el original en items.value
     // Preservamos el prototipo de CottonBale y propiedades
     const copy = Object.assign(Object.create(Object.getPrototypeOf(item)), item);
-    copy.QTDE_ESTOQUE = targetQty;
+    Object.assign(copy, withStockQuantity(item, targetQty));
     return copy;
   });
 });
@@ -5237,9 +5221,8 @@ const groupedItems = computed(() => {
       // Ajustar saldo disponible tambien si estamos agrupando
       if (obj.SALDO_DISPONIVEL !== undefined) obj.SALDO_DISPONIVEL = g.stock;
       
-      numFields.forEach(k => {
-        obj[k] = g.stock > 0 ? parseFloat((g.acc[k] / g.stock).toFixed(2)) : 0;
-      });
+      Object.assign(obj, aggregateStock(g.items, numFields));
+      obj._sourceLots = g.items;
 
       const pList = Array.from(g.prods).join(', ');
       const lList = g.lotes.join(', ');
@@ -5313,41 +5296,14 @@ const summaryRow = computed(() => {
   // Calculos de totales
   const totalWeight = data.reduce((sum, item) => sum + (Number(item.PESO) || 0), 0);
   const totalStock = data.reduce((sum, item) => sum + (Number(item.QTDE_ESTOQUE) || 0), 0);
-  const count = data.length;
-
-  const weightedFields = ['MIC', 'STR', 'UHML', 'SCI', 'MST', 'MAT', 'UI', 'SF', 'ELG', 'RD', 'PLUS_B', 'TrCNT', 'TrAR', 'TRID', 'PESO_MEDIO', 'CORTEZA'];
-  
-  const weightedSums = {};
-  weightedFields.forEach(field => weightedSums[field] = 0);
-  
-  // Acumular valores ponderados
-  data.forEach(item => {
-    // Si PESO > 0 usarlo, sino 0
-    const weight = (Number(item.PESO) > 0) ? Number(item.PESO) : 0; 
-    
-    weightedFields.forEach(field => {
-       const val = Number(item[field]) || 0;
-       weightedSums[field] += (val * weight);
-    });
-  });
-
-  const averages = {};
-  weightedFields.forEach(field => {
-    // Dividir por peso total si es > 0
-    if (totalWeight > 0) {
-      averages[field] = weightedSums[field] / totalWeight;
-    } else {
-       // Fallback a promedio simple si no hay pesos
-       const simpleSum = data.reduce((s, i) => s + (Number(i[field]) || 0), 0);
-       averages[field] = count > 0 ? simpleSum / count : 0;
-    }
-  });
+  const weightedFields = ['MIC', 'STR', 'UHML', 'SCI', 'MST', 'MAT', 'UI', 'SF', 'ELG', 'RD', 'PLUS_B', 'TrCNT', 'TrAR', 'TRID', 'CORTEZA'];
+  const averages = aggregateStock(expandStockGroups(data), weightedFields);
 
   return {
     PRODUTOR: 'TOTALES / PROMEDIOS', 
     QTDE_ESTOQUE: totalStock,
     PESO: totalWeight,
-    ...averages // incluye PESO_MEDIO ponderado, que matematicamente es igual al total/count si todos los pesos son reales.
+    ...averages
   };
 });
 
@@ -5617,7 +5573,7 @@ const handleMezclas = async ({ silent = false } = {}) => {
       : 'Estándar (Round Robin)';
   appliedCalculationTimestamp.value = new Date().toLocaleString('es-ES');
   try {
-    const response = await fetch('/api/inventory/blendomat', {
+    const response = await apiFetch('/api/inventory/blendomat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

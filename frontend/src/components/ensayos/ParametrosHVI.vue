@@ -398,9 +398,11 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, onMounted } from 'vue'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+const API_URL = '/api'
 
 // Estado
 const parametros = ref([])
@@ -468,7 +470,7 @@ const ordenGrupos = [
 async function cargarParametros() {
   cargando.value = true
   try {
-    const response = await fetch(`${API_URL}/parametros-hvi`)
+    const response = await apiFetch(`${API_URL}/parametros-hvi`)
     const data = await response.json()
     
     if (data.success) {
@@ -547,7 +549,7 @@ async function guardarParametro() {
     
     const method = modoEdicion.value ? 'PUT' : 'POST'
     
-    const response = await fetch(url, {
+    const response = await apiFetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(datos)
@@ -577,7 +579,7 @@ async function eliminarParametro(param) {
   }
 
   try {
-    const response = await fetch(`${API_URL}/parametros-hvi/${param.id}`, {
+    const response = await apiFetch(`${API_URL}/parametros-hvi/${param.id}`, {
       method: 'DELETE'
     })
     

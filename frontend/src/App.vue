@@ -2,7 +2,7 @@
   <div class="h-screen flex flex-row bg-gray-100 overflow-hidden font-sans">
 
     <!-- Sidebar izquierdo -->
-    <aside class="relative z-120 flex-none w-12 flex flex-col items-center bg-gray-100 border-r border-gray-200 py-3 shadow-sm select-none">
+    <aside v-if="authState.user" class="relative z-120 flex-none w-12 flex flex-col items-center bg-gray-100 border-r border-gray-200 py-3 shadow-sm select-none">
 
       <!-- Separador -->
       <div class="w-5 h-px bg-gray-300 mb-2"></div>
@@ -48,7 +48,7 @@
 
         <!-- Configuración -->
         <router-link
-          to="/configuracion-estandares"
+          v-if="can('administrador')" to="/configuracion-estandares"
           class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
           :class="$route.path === '/configuracion-estandares'
             ? 'bg-indigo-100 text-indigo-700'
@@ -65,7 +65,7 @@
 
         <!-- HVI -->
         <router-link
-          to="/hvi"
+          v-if="can('operador')" to="/hvi"
           class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
           :class="$route.path === '/hvi'
             ? 'bg-indigo-100 text-indigo-700'
@@ -81,7 +81,7 @@
 
         <!-- Uster -->
         <router-link
-          to="/uster"
+          v-if="can('operador')" to="/uster"
           class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
           :class="$route.path === '/uster'
             ? 'bg-indigo-100 text-indigo-700'
@@ -100,7 +100,7 @@
 
         <!-- Uster Cardas -->
         <router-link
-          to="/uster-cardas"
+          v-if="can('operador')" to="/uster-cardas"
           class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
           :class="$route.path === '/uster-cardas'
             ? 'bg-indigo-100 text-indigo-700'
@@ -119,7 +119,7 @@
 
         <!-- HVI Crudo Import -->
         <router-link
-          to="/hvi-crudo"
+          v-if="can('operador')" to="/hvi-crudo"
           class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
           :class="$route.path === '/hvi-crudo'
             ? 'bg-indigo-100 text-indigo-700'
@@ -136,7 +136,7 @@
 
         <!-- TensoRapid -->
         <router-link
-          to="/tensorapid"
+          v-if="can('operador')" to="/tensorapid"
           class="group relative w-full flex items-center justify-center h-10 rounded-lg transition-all"
           :class="$route.path === '/tensorapid'
             ? 'bg-indigo-100 text-indigo-700'
@@ -258,11 +258,11 @@
                 Gráficos Ensayos
               </router-link>
               <div class="border-t border-gray-100 my-1"></div>
-              <router-link to="/narrativa-costos" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+              <router-link v-if="can('administrador')" to="/narrativa-costos" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
                 <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 Costos Análisis IA
               </router-link>
-              <router-link to="/backups" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
+              <router-link v-if="can('administrador')" to="/backups" @click="reportsOpen = false" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 transition-colors">
                 <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M6 11h12a2 2 0 012 2v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5a2 2 0 012-2zm3 4h6"></path></svg>
                 Visibilidad Backups
               </router-link>
@@ -307,6 +307,8 @@
         </div>
       </div>
 
+      <router-link v-if="can('administrador')" to="/usuarios" class="mt-2 rounded px-1 py-2 text-[10px] text-indigo-700" title="Usuarios y permisos">Usuarios</router-link>
+      <button @click="signOut" class="mt-2 rounded px-1 py-2 text-[10px] text-slate-600" :title="authState.user.username + ' · ' + authState.user.role">Salir</button>
     </aside>
 
     <!-- Contenido principal -->
@@ -319,10 +321,16 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onBeforeUnmount } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
+import { authState, can, logout } from './services/authSession.js';
 import { useI18n } from 'vue-i18n';
 
 const $route = useRoute();
+const router = useRouter();
+async function signOut() {
+  try { await logout(); await router.replace('/ingresar'); }
+  catch (error) { window.alert(error.message); }
+}
 const { t, locale } = useI18n();
 
 const currentLocale = locale;

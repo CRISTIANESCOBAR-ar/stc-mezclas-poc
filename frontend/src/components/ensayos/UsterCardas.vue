@@ -6,8 +6,8 @@
   </div>
 
   <div class="hidden md:flex w-full h-screen flex-col p-1">
-    <main class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col overflow-hidden">
-      <div class="shrink-0 mb-3 flex items-center gap-3">
+    <main class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col overflow-y-auto cardas-component">
+      <div class="shrink-0 mb-3 flex flex-wrap items-center gap-3 cardas-toolbar">
         <div class="text-2xl font-semibold text-slate-800 mr-4 inline-flex items-center gap-2">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M4 4h16v4H4z"/>
@@ -22,15 +22,15 @@
         <div class="flex-1 min-w-0">
           <div
             class="px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm text-slate-800 truncate shadow-sm"
-            :title="folderPathFull"
+            v-tippy="{ content: folderPathFull, allowHTML: false, theme: 'light' }"
           >
-            {{ folderPathFull || selectedFolderName || 'Ninguna carpeta seleccionada' }}
+            {{ folderPathFull || selectedFolderName || (initialLoadBannerState === 'checking-folder' ? 'Comprobando carpeta recordada...' : 'Ninguna carpeta seleccionada') }}
           </div>
         </div>
 
         <div class="flex items-center gap-2">
           <button
-            @click="selectFolder"
+            :disabled="initialLoadBannerState === 'checking-folder' || initialLoadBannerState === 'loading' || isSaving || batchImporting" @click="selectFolder"
             v-tippy="{ content: 'Seleccionar carpeta de ensayos', theme: 'light', placement: 'bottom' }"
             class="inline-flex items-center gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
           >
@@ -66,19 +66,36 @@
         </div>
       </div>
 
-      <div class="grid gap-4 flex-1 min-h-0" style="grid-template-columns: 624px 1fr;">
+      <Teleport to="body">
+        <div class="fixed bottom-4 right-4 z-[150] max-w-[min(360px,calc(100vw-2rem))] pointer-events-none text-sm">
+          <div v-if="loadError" role="alert" class="pointer-events-auto flex gap-3 rounded-xl border border-red-400 bg-red-950 p-4 text-white shadow-2xl ring-2 ring-white/80">
+            <ExclamationTriangleIcon class="h-6 w-6 shrink-0 text-red-300" aria-hidden="true"/>
+            <div><p class="font-semibold">No se pudo completar la carga</p><p class="mt-1 text-xs">{{ loadError }}</p><p class="mt-1 text-xs">Volvé a seleccionar el ensayo o actualizar la carpeta.</p></div>
+          </div>
+          <div v-else-if="isLoadingSaved" role="status" class="flex gap-3 rounded-xl border border-blue-300 bg-blue-100 p-4 text-blue-900 shadow-2xl ring-2 ring-white/80">
+            <ArrowPathIcon class="h-6 w-6 shrink-0 animate-spin motion-reduce:animate-none text-blue-600" aria-hidden="true"/>
+            <div><p class="font-semibold">Abriendo {{ selectedTestnr }}</p><p class="mt-1 text-xs">Recuperando mediciones y títulos guardados.</p></div>
+          </div>
+          <div v-else-if="hasUnsavedChanges" role="status" class="pointer-events-auto flex gap-3 rounded-xl border border-amber-400 bg-amber-950 p-4 text-white shadow-2xl ring-2 ring-white/80">
+            <PencilSquareIcon class="h-6 w-6 shrink-0 text-amber-300" aria-hidden="true"/>
+            <div><p class="font-semibold">{{ selectedTestnr }} · edición pendiente</p><p class="mt-1 text-xs">Tus títulos todavía no están guardados.</p>
+              <button :disabled="isSaving" @click="discardChanges" v-tippy="{ content:'Restaurar títulos anteriores a esta edición',theme:'light' }" class="mt-2 underline">Descartar cambios</button></div>
+          </div>
+        </div>
+      </Teleport>
+      <div class="grid cardas-grid">
         <div class="flex flex-col gap-3 min-h-0">
           <div class="bg-slate-50 rounded-lg border border-slate-200 p-3 flex items-center gap-4 text-sm">
             <label class="flex items-center gap-2">
-              <input type="radio" value="not" v-model="filterMode" />
+              <input type="radio" :checked="filterMode === 'not'" @change="changeFilter('not')" />
               <span>No guardados</span>
             </label>
             <label class="flex items-center gap-2">
-              <input type="radio" value="saved" v-model="filterMode" />
+              <input type="radio" :checked="filterMode === 'saved'" @change="changeFilter('saved')" />
               <span>Guardados</span>
             </label>
             <label class="flex items-center gap-2">
-              <input type="radio" value="all" v-model="filterMode" />
+              <input type="radio" :checked="filterMode === 'all'" @change="changeFilter('all')" />
               <span>Todos</span>
             </label>
           </div>
@@ -95,8 +112,8 @@
             </div>
           </div>
 
-          <div class="rounded-xl border border-slate-200 overflow-auto bg-white min-h-0 flex-1">
-            <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs">
+          <div class="rounded-xl border border-slate-200 overflow-auto bg-white cardas-scan-list">
+            <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs cardas-scan-table">
               <thead>
                 <tr class="bg-gradient-to-r from-slate-50 to-slate-100 sticky top-0 z-10 shadow-sm">
                   <th class="px-2 py-2 text-center font-semibold text-slate-700">Ensayo</th>
@@ -143,7 +160,7 @@
         </div>
 
         <div class="flex flex-col gap-3 min-h-0">
-          <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <div class="rounded-xl border border-slate-200 bg-white p-3 space-y-2 cardas-detail">
             <div class="text-lg font-semibold text-slate-800">Datos Ensayo Cinta</div>
             <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <div><span class="font-semibold">TESTNR:</span> {{ selectedTestnrLabel || '-' }}</div>
@@ -154,10 +171,11 @@
               <div><span class="font-semibold">Style:</span> {{ parData.STYLE || '-' }}</div>
               <div><span class="font-semibold">Tipo Carda:</span> {{ machineFamily || '-' }}</div>
               <div><span class="font-semibold">Laboratorista:</span> {{ parData.LABORANT || '-' }}</div>
+              <div class="cardas-observations"><span class="font-semibold">Observaciones:</span> {{ parData.OBS || '—' }}</div>
             </div>
           </div>
 
-          <div class="rounded-xl border border-slate-200 bg-white p-4 space-y-3">
+          <div class="rounded-xl border border-slate-200 bg-white p-3 space-y-2 cardas-detail">
             <div class="text-lg font-semibold text-slate-800">Titulos de Cinta (3 repeticiones)</div>
             <div class="grid grid-cols-3 gap-3">
               <div>
@@ -165,7 +183,7 @@
                 <input
                   ref="tituloInput1"
                   v-model="tituloInputs[0]"
-                  :disabled="!selectedTestnr"
+                  :disabled="!selectedTestnr || isLoadingSaved || isSaving || !!loadError || batchImporting"
                   inputmode="decimal"
                   autocomplete="off"
                   @input="onTituloInput(0, $event)"
@@ -181,7 +199,7 @@
                 <input
                   ref="tituloInput2"
                   v-model="tituloInputs[1]"
-                  :disabled="!selectedTestnr"
+                  :disabled="!selectedTestnr || isLoadingSaved || isSaving || !!loadError || batchImporting"
                   inputmode="decimal"
                   autocomplete="off"
                   @input="onTituloInput(1, $event)"
@@ -197,7 +215,7 @@
                 <input
                   ref="tituloInput3"
                   v-model="tituloInputs[2]"
-                  :disabled="!selectedTestnr"
+                  :disabled="!selectedTestnr || isLoadingSaved || isSaving || !!loadError || batchImporting"
                   inputmode="decimal"
                   autocomplete="off"
                   @input="onTituloInput(2, $event)"
@@ -219,7 +237,7 @@
             <div class="flex gap-2">
               <button
                 ref="saveButton"
-                @click="saveCurrentTest"
+                @click="saveCurrentTest" v-tippy="{ content: 'Guardar títulos del ensayo seleccionado', theme: 'light' }"
                 :disabled="!canSave || isSaving"
                 @keydown.enter.prevent="handleSaveButtonEnter"
                 @keydown.up.prevent="focusLastTitulo"
@@ -229,7 +247,7 @@
               </button>
 
               <button
-                @click="deleteCurrentTest"
+                v-if="can('administrador')" @click="deleteCurrentTest" v-tippy="{ content: 'Eliminar el ensayo guardado', theme: 'light' }"
                 :disabled="!isTestSaved || isDeleting"
                 class="inline-flex items-center gap-2 px-3 py-1 border border-red-300 bg-white text-red-700 rounded-md text-sm font-medium hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -238,8 +256,8 @@
             </div>
           </div>
 
-          <div class="rounded-xl border border-slate-200 bg-white overflow-hidden min-h-0">
-            <table class="w-full text-xs table-auto divide-y divide-slate-200">
+          <div class="rounded-xl border border-slate-200 bg-white overflow-auto min-h-0 cardas-measurements">
+            <table class="w-full text-xs table-auto divide-y divide-slate-200 cardas-measurements-table">
               <thead>
                 <tr class="bg-gradient-to-r from-slate-50 to-slate-100">
                   <th class="px-2 py-2 text-center font-semibold text-slate-700">SEQ</th>
@@ -278,7 +296,14 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref } from 'vue'
+import { apiFetch, can } from '@/services/authSession.js';
+import { requestJson } from '@/services/apiClient.js';
+import { scanUsterFiles } from '@/services/usterScan.js';
+import { ArrowPathIcon, ExclamationTriangleIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import { onBeforeRouteLeave } from 'vue-router';
+
+import { optionalNumber } from '@shared/numbers.js'
+import { computed, nextTick, onMounted, onBeforeUnmount, ref } from 'vue'
 import Swal from 'sweetalert2'
 
 const folderInput = ref(null)
@@ -286,7 +311,23 @@ const selectedFolderName = ref('')
 const folderPathFull = ref('')
 const hasPersistedHandle = ref(false)
 const scanStatus = ref('')
-const initialLoadBannerState = ref('loading')
+const initialLoadBannerState = ref('checking-folder')
+const isLoadingSaved = ref(false)
+const loadError = ref('')
+const savedVersion = ref(null)
+const confirmedTitles = ref(null)
+const scanProgress = ref({ completed: 0, total: 0, detected: 0, verified: false })
+const hasUnsavedChanges = computed(() => confirmedTitles.value !== null && JSON.stringify(tituloInputs.value) !== JSON.stringify(confirmedTitles.value))
+function allowDiscard() { return !hasUnsavedChanges.value || window.confirm('Hay títulos sin guardar. ¿Descartarlos?') }
+function discardChanges() { if (confirmedTitles.value && !isSaving.value) tituloInputs.value = [...confirmedTitles.value] }
+function changeFilter(mode) {
+  if (isSaving.value || batchImporting.value || isLoadingSaved.value || !allowDiscard()) return
+  confirmedTitles.value = null; filterMode.value = mode; clearSelection()
+}
+function beforeUnload(e) { if (hasUnsavedChanges.value || isSaving.value || batchImporting.value) { e.preventDefault(); e.returnValue = '' } }
+onMounted(() => window.addEventListener('beforeunload', beforeUnload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
+onBeforeRouteLeave(() => !isSaving.value && !batchImporting.value && allowDiscard())
 
 const scanList = ref([])
 const selectedTestnr = ref('')
@@ -674,7 +715,7 @@ const isTestSaved = computed(() => {
 
 const tituloStats = computed(() => {
   const values = tituloInputs.value
-    .map((v) => parseFloat(String(v).replace(',', '.')))
+    .map((v) => optionalNumber(v))
     .filter((v) => Number.isFinite(v))
 
   if (!values.length) return { avg: null, stddev: null, cv: null }
@@ -689,10 +730,10 @@ const tituloStats = computed(() => {
 })
 
 const canSave = computed(() => {
-  if (!selectedTestnr.value) return false
+  if (!selectedTestnr.value || isLoadingSaved.value || loadError.value || batchImporting.value) return false
   if (!tblData.value.length) return false
   const validTitulos = tituloInputs.value
-    .map((v) => parseFloat(String(v).replace(',', '.')))
+    .map((v) => optionalNumber(v))
     .filter((v) => Number.isFinite(v))
   return validTitulos.length === 3
 })
@@ -786,103 +827,47 @@ function formatDateTime(value) {
   return formatDateTimeFromDate(date)
 }
 
-async function checkExistingTests(testnrs) {
-  if (!Array.isArray(testnrs) || !testnrs.length) return []
-  try {
-    const entries = testnrs
-      .map((entry) => ({
-        testnr: String(entry?.testnr ?? entry ?? '').trim(),
-        sourcePrefix: String(entry?.sourcePrefix || entry?.source_prefix || '').trim().toUpperCase(),
-      }))
-      .filter((entry) => entry.testnr)
-
-    const resp = await fetch('/api/uster-cardas/status', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entries }),
-      credentials: 'include',
-    })
-    const data = await resp.json()
-    return Array.isArray(data?.existing) ? data.existing.map((x) => String(x || '').trim()) : []
-  } catch {
-    return []
-  }
+async function checkExistingTests(entries) {
+  if (!entries.length) return []
+  const data = await requestJson('/uster-cardas/status', { method: 'POST', body: { entries } })
+  if (!Array.isArray(data.existing)) throw new Error('No se pudo verificar el estado de los ensayos.')
+  return data.existing
 }
-
+async function scanEntries(entries) {
+  loadError.value = ''
+  scanProgress.value = { completed: 0, total: 0, detected: entries.filter(f => /\.(par|tbl)$/i.test(f.name)).length, verified: false }
+  const items = await scanUsterFiles(entries, {
+    getTestnr: name => { const id=getTestnrFromName(name); return id ? makeRecordKey(id, getPrefixFromName(name)) : null },
+    readHeader: (text, name) => {
+      const par=parseParText(text,name,name)
+      if (!isCardasPar(par)) return null
+      const testnr=getTestnrFromName(name), sourcePrefix=String(par.SOURCE_PREFIX || getPrefixFromName(name)).toUpperCase()
+      return { testnr, sourcePrefix, recordKey: makeRecordKey(testnr,sourcePrefix), nomcount: par.NOMCOUNT,
+        maschnr: par.MASCHNR, machineFamily: par.MACHINE_FAMILY,
+        parTimeMs: Number.isFinite(par.TIME_MS) ? par.TIME_MS : null, parTimeDisplay: par.TIME_DISPLAY || '', turno: par.TURNO || '' }
+    },
+    onProgress: ({ completed,total }) => { scanProgress.value.completed=completed; scanProgress.value.total=total }
+  })
+  const existing=new Set(await checkExistingTests(items.map(i => ({ testnr:i.testnr,sourcePrefix:i.sourcePrefix }))))
+  scanProgress.value.verified=true
+  scanList.value=sortScanItems(items.map(item => ({ ...item, imp:existing.has(item.recordKey) })))
+  const saved=scanList.value.filter(item=>item.imp).length
+  scanStatus.value=`${items.length} ensayos · ${saved} guardados · ${items.length-saved} no guardados`
+}
 async function scanDirectory(dirHandle) {
-  const map = {}
-
-  for await (const [name, handle] of dirHandle.entries()) {
-    if (!handle || handle.kind !== 'file') continue
-    const lower = String(name || '').toLowerCase()
-    if (!lower.endsWith('.par') && !lower.endsWith('.tbl')) continue
-
-    const testnr = getTestnrFromName(name)
-    if (!testnr) continue
-    const sourcePrefix = getPrefixFromName(name)
-    const recordKey = makeRecordKey(testnr, sourcePrefix)
-
-    if (!map[recordKey]) {
-      map[recordKey] = {
-        recordKey,
-        sourcePrefix,
-        testnr,
-        hasPar: false,
-        hasTbl: false,
-        parHandle: null,
-        tblHandle: null,
-        imp: false,
-        nomcount: '',
-        maschnr: '',
-        machineFamily: '',
-        parTimeMs: null,
-        parTimeDisplay: '',
-        turno: '',
-      }
-    }
-
-    if (lower.endsWith('.par')) {
-      try {
-        const txt = await (await handle.getFile()).text()
-        const par = parseParText(txt, name, name)
-        if (!isCardasPar(par)) {
-          delete map[recordKey]
-          continue
-        }
-        map[recordKey].sourcePrefix = String(par.SOURCE_PREFIX || sourcePrefix || '').trim().toUpperCase()
-        map[recordKey].hasPar = true
-        map[recordKey].parHandle = handle
-        map[recordKey].nomcount = par.NOMCOUNT || ''
-        map[recordKey].maschnr = par.MASCHNR || ''
-        map[recordKey].machineFamily = par.MACHINE_FAMILY || ''
-        map[recordKey].parTimeMs = Number.isFinite(par.TIME_MS) ? par.TIME_MS : null
-        map[recordKey].parTimeDisplay = par.TIME_DISPLAY || ''
-        map[recordKey].turno = par.TURNO || ''
-      } catch {
-        // ignore parse errors during scan
-      }
-    }
-
-    if (lower.endsWith('.tbl')) {
-      map[recordKey].hasTbl = true
-      map[recordKey].tblHandle = handle
-    }
-  }
-
-  const list = sortScanItems(Object.values(map).filter((item) => item.hasPar))
-  const existing = await checkExistingTests(list.map((i) => ({ testnr: i.testnr, sourcePrefix: i.sourcePrefix })))
-  const existingSet = new Set(existing)
-  for (const item of list) {
-    item.imp = existingSet.has(makeRecordKey(item.testnr, item.sourcePrefix))
-  }
-
-  scanList.value = list
-  scanStatus.value = list.length ? `Encontrados ${list.length} ensayos.` : 'No se encontraron archivos PAR/TBL validos.'
-  selectedFolderName.value = dirHandle.name || 'Carpeta seleccionada'
-  folderPathFull.value = selectedFolderName.value
+  initialLoadBannerState.value='loading'
+  selectedFolderName.value=dirHandle.name || 'Carpeta seleccionada'
+  folderPathFull.value=selectedFolderName.value
+  try {
+    const entries=[]
+    for await (const [name,handle] of dirHandle.entries()) if (handle.kind==='file' && /\.(par|tbl)$/i.test(name)) entries.push(handle)
+    await scanEntries(entries)
+  } catch(error) { loadError.value=error.message; scanList.value=[] }
+  finally { initialLoadBannerState.value='hidden' }
 }
 
 function clearSelection() {
+  confirmedTitles.value=null; savedVersion.value=null; loadError.value=''
   selectedTestnr.value = ''
   fileText.value = ''
   tblText.value = ''
@@ -902,22 +887,32 @@ async function readFileFromHandle(handle) {
   return ''
 }
 
-async function selectRow(testnr) {
-  const item = scanList.value.find((x) => x.recordKey === testnr)
+async function selectRow(recordKey) {
+  if (isSaving.value || batchImporting.value || isLoadingSaved.value || !allowDiscard()) return
+  const item=scanList.value.find(x=>x.recordKey===recordKey)
   if (!item) return
-
-  selectedTestnr.value = testnr
-
-  fileText.value = item.parHandle ? await readFileFromHandle(item.parHandle) : ''
-  tblText.value = item.tblHandle ? await readFileFromHandle(item.tblHandle) : ''
-
-  parData.value = parseParText(fileText.value, item.parHandle?.name || '')
-  machineFamily.value = parData.value.MACHINE_FAMILY || item.machineFamily || ''
-  tblData.value = parseTblText(tblText.value, testnr)
-
-  tituloInputs.value = ['', '', '']
-  await nextTick()
-  focusTituloInput(0)
+  confirmedTitles.value=null; savedVersion.value=null; loadError.value=''; isLoadingSaved.value=true
+  selectedTestnr.value=recordKey
+  try {
+    fileText.value=item.parHandle ? await readFileFromHandle(item.parHandle) : ''
+    tblText.value=item.tblHandle ? await readFileFromHandle(item.tblHandle) : ''
+    parData.value=parseParText(fileText.value,item.parHandle?.name || '')
+    machineFamily.value=parData.value.MACHINE_FAMILY || item.machineFamily || ''
+    tblData.value=parseTblText(tblText.value,recordKey)
+    tituloInputs.value=['','','']
+    if (item.imp) {
+      const saved=await requestJson(`/uster-cardas/tests/${encodeURIComponent(item.sourcePrefix)}/${encodeURIComponent(item.testnr)}`)
+      if (tblData.value.length !== saved.tbl.length || tblData.value.some((row,i)=>Number(row.NO_)!==Number(saved.tbl[i].NO_))) throw new Error('Las mediciones del TBL no coinciden con el ensayo guardado.')
+      parData.value={ ...saved.par, TIME:saved.par.TIME_STAMP }
+      machineFamily.value=saved.par.MACHINE_FAMILY || ''
+      tblData.value=saved.tbl
+      tituloInputs.value=[1,2,3].map(rep=>saved.titulos.find(row=>Number(row.REPNO)===rep)?.TITULO ?? '')
+      savedVersion.value=saved.version
+    }
+    confirmedTitles.value=[...tituloInputs.value]
+  } catch(error) { loadError.value=error.message }
+  finally { isLoadingSaved.value=false }
+  await nextTick(); if (!loadError.value) focusTituloInput(0)
 }
 
 async function saveCurrentTest() {
@@ -945,18 +940,15 @@ async function saveCurrentTest() {
 
     const titulos = tituloInputs.value.map((v, idx) => ({
       REPNO: idx + 1,
-      TITULO: Number.parseFloat(String(v).replace(',', '.')),
+      TITULO: v,
     }))
 
-    const resp = await fetch('/api/uster-cardas/upload', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ par, tbl: tblData.value, titulos }),
-      credentials: 'include',
-    })
-
-    const data = await resp.json()
-    if (!resp.ok) throw new Error(data?.error || `HTTP ${resp.status}`)
+    const data = savedVersion.value
+      ? await requestJson(`/uster-cardas/tests/${encodeURIComponent(item.sourcePrefix)}/${encodeURIComponent(item.testnr)}/manual`, { method:'PATCH',body:{ version:savedVersion.value,titulos } })
+      : await requestJson('/uster-cardas/upload',{ method:'POST',body:{ par,tbl:tblData.value,titulos } })
+    if (data.version) savedVersion.value=data.version
+    confirmedTitles.value=[...tituloInputs.value]
+    isSaving.value=false
 
     const current = selectedScanItem.value
     if (current) current.imp = true
@@ -993,6 +985,8 @@ async function saveCurrentTest() {
 }
 
 async function deleteCurrentTest() {
+  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || !allowDiscard()) return
+  discardChanges()
   if (!selectedTestnr.value || !isTestSaved.value || isDeleting.value) return
 
   const item = selectedScanItem.value
@@ -1010,7 +1004,7 @@ async function deleteCurrentTest() {
 
   isDeleting.value = true
   try {
-    const resp = await fetch(`/api/uster-cardas/delete/${encodeURIComponent(item.testnr)}?source_prefix=${encodeURIComponent(item.sourcePrefix)}`, {
+    const resp = await apiFetch(`/api/uster-cardas/delete/${encodeURIComponent(item.testnr)}?source_prefix=${encodeURIComponent(item.sourcePrefix)}`, {
       method: 'DELETE',
       credentials: 'include',
     })
@@ -1036,6 +1030,8 @@ async function deleteCurrentTest() {
 }
 
 async function batchImportPending() {
+  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || !allowDiscard()) return
+  discardChanges()
   const pending = scanList.value.filter((i) => !i.imp && i.hasPar && i.hasTbl)
   if (!pending.length) {
     await Swal.fire({ icon: 'info', title: 'Sin pendientes', text: 'No hay ensayos con PAR y TBL sin guardar.' })
@@ -1080,7 +1076,7 @@ async function batchImportPending() {
         OBS: parsedPar.OBS || null,
       }
 
-      const resp = await fetch('/api/uster-cardas/upload', {
+      const resp = await apiFetch('/api/uster-cardas/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ par, tbl: parsedTbl }),
@@ -1160,9 +1156,10 @@ async function verifyPermission(handle, mode = 'read') {
 }
 
 async function selectFolder() {
+  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || !allowDiscard()) return
+  discardChanges()
   try {
     if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
-      initialLoadBannerState.value = 'loading'
       const dirHandle = await window.showDirectoryPicker()
       await saveDirHandleToIDB(dirHandle)
       hasPersistedHandle.value = true
@@ -1177,6 +1174,8 @@ async function selectFolder() {
 }
 
 async function refreshFolder() {
+  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || !allowDiscard()) return
+  discardChanges()
   initialLoadBannerState.value = 'loading'
   const dirHandle = await getDirHandleFromIDB()
   if (!dirHandle) {
@@ -1193,82 +1192,20 @@ async function refreshFolder() {
 }
 
 async function onFolderInputChange(event) {
-  initialLoadBannerState.value = 'loading'
-  const files = Array.from(event?.target?.files || [])
-  const map = {}
-
-  for (const f of files) {
-    const lower = String(f.name || '').toLowerCase()
-    if (!lower.endsWith('.par') && !lower.endsWith('.tbl')) continue
-
-    const testnr = getTestnrFromName(f.name)
-    if (!testnr) continue
-    const sourcePrefix = getPrefixFromName(f.name)
-    const recordKey = makeRecordKey(testnr, sourcePrefix)
-
-    if (!map[recordKey]) {
-      map[recordKey] = {
-        recordKey,
-        sourcePrefix,
-        testnr,
-        hasPar: false,
-        hasTbl: false,
-        parHandle: null,
-        tblHandle: null,
-        imp: false,
-        nomcount: '',
-        maschnr: '',
-        machineFamily: '',
-        parTimeMs: null,
-        parTimeDisplay: '',
-        turno: '',
-      }
-    }
-
-    if (lower.endsWith('.par')) {
-      const txt = await f.text()
-      const par = parseParText(txt, f.name, f.webkitRelativePath || f.name)
-      if (!isCardasPar(par)) {
-        delete map[recordKey]
-        continue
-      }
-      map[recordKey].sourcePrefix = String(par.SOURCE_PREFIX || sourcePrefix || '').trim().toUpperCase()
-      map[recordKey].hasPar = true
-      map[recordKey].parHandle = f
-      map[recordKey].nomcount = par.NOMCOUNT || ''
-      map[recordKey].maschnr = par.MASCHNR || ''
-      map[recordKey].machineFamily = par.MACHINE_FAMILY || ''
-      map[recordKey].parTimeMs = Number.isFinite(par.TIME_MS) ? par.TIME_MS : null
-      map[recordKey].parTimeDisplay = par.TIME_DISPLAY || ''
-      map[recordKey].turno = par.TURNO || ''
-    }
-
-    if (lower.endsWith('.tbl')) {
-      map[recordKey].hasTbl = true
-      map[recordKey].tblHandle = f
-    }
-  }
-
-  const list = sortScanItems(Object.values(map).filter((item) => item.hasPar))
-  const existing = await checkExistingTests(list.map((i) => ({ testnr: i.testnr, sourcePrefix: i.sourcePrefix })))
-  const existingSet = new Set(existing)
-  for (const item of list) {
-    item.imp = existingSet.has(makeRecordKey(item.testnr, item.sourcePrefix))
-  }
-
-  scanList.value = list
-  selectedFolderName.value = 'Carpeta local seleccionada'
-  folderPathFull.value = selectedFolderName.value
-  hasPersistedHandle.value = false
-  scanStatus.value = list.length ? `Encontrados ${list.length} ensayos.` : 'No se encontraron archivos PAR/TBL validos.'
-  initialLoadBannerState.value = 'hidden'
+  initialLoadBannerState.value='loading'
+  const files=Array.from(event?.target?.files || [])
+  selectedFolderName.value=files[0]?.webkitRelativePath?.split('/')[0] || 'Carpeta local seleccionada'
+  folderPathFull.value=selectedFolderName.value; hasPersistedHandle.value=false
+  try { await scanEntries(files) } catch(error) { loadError.value=error.message; scanList.value=[] }
+  finally { initialLoadBannerState.value='hidden' }
 }
 
 const initialLoadBanner = computed(() => {
+  if (initialLoadBannerState.value==='checking-folder') return { title:'Comprobando carpeta recordada...',message:'Comprobando si este navegador tiene una carpeta seleccionada.',containerClass:'border border-slate-200 bg-slate-50 text-slate-900',messageClass:'text-slate-700',iconClass:'h-5 w-5 animate-spin text-slate-500' }
   if (initialLoadBannerState.value === 'loading') {
     return {
       title: 'Recopilando datos de Cardas y Manuares...',
-      message: 'Se está validando la carpeta guardada y cargando los ensayos pendientes.',
+      message: `PAR leídos: ${scanProgress.value.completed} de ${scanProgress.value.total}. ${scanProgress.value.verified ? 'Estado verificado en la base.' : 'Verificando cuáles están guardados...'}`,
       containerClass: 'border border-blue-200 bg-blue-50 text-blue-900',
       messageClass: 'text-blue-800/80',
       iconClass: 'h-5 w-5 animate-spin text-blue-600'
@@ -1305,6 +1242,7 @@ onMounted(async () => {
       initialLoadBannerState.value = 'needs-folder'
       return
     }
+    selectedFolderName.value=dirHandle.name || 'Carpeta recordada'; folderPathFull.value=selectedFolderName.value
     const ok = await verifyPermission(dirHandle, 'read')
     if (!ok) {
       initialLoadBannerState.value = 'needs-permission'
@@ -1316,7 +1254,30 @@ onMounted(async () => {
   } catch {
     // ignore load errors
   } finally {
-    if (initialLoadBannerState.value === 'loading') initialLoadBannerState.value = 'hidden'
+    if (initialLoadBannerState.value === 'checking-folder') initialLoadBannerState.value = 'needs-folder'
+    else if (initialLoadBannerState.value === 'loading') initialLoadBannerState.value = 'hidden'
   }
 })
 </script>
+
+<style scoped>
+.cardas-component { container-type: inline-size; }
+.cardas-grid { grid-template-columns: minmax(400px, 560px) minmax(340px, 620px); gap:16px; width:100%; max-width:1196px; align-items:start; }
+.cardas-toolbar > .flex-1 { min-width:180px; }
+.cardas-scan-list { max-height:calc(100dvh - 200px); min-height:220px; }
+.cardas-scan-table th, .cardas-scan-table td { padding:6px 4px; }
+.cardas-scan-table td:nth-child(7) { white-space:normal; font-size:10px; }
+.cardas-measurements { max-height:320px; }
+.cardas-measurements-table { min-width:540px; }
+.cardas-observations { grid-column:1/-1; min-height:56px; white-space:pre-wrap; overflow-wrap:anywhere; line-height:1.4; }
+@container (max-width:1400px) { .cardas-grid { grid-template-columns:minmax(360px,500px) minmax(320px,540px); max-width:1052px; gap:12px; } }
+@container (max-width:780px) {
+  .cardas-grid { grid-template-columns:minmax(300px,1fr) minmax(310px,1fr); gap:8px; max-width:736px; }
+  .cardas-detail { padding:10px; }
+  .cardas-detail .grid { column-gap:8px; }
+  .cardas-detail .text-lg { font-size:15px; }
+  .cardas-detail .text-sm { font-size:12px; }
+  .cardas-scan-table th,.cardas-scan-table td { padding-left:2px; padding-right:2px; }
+}
+@container (max-width:630px) { .cardas-grid { grid-template-columns:1fr; max-width:540px; } }
+</style>

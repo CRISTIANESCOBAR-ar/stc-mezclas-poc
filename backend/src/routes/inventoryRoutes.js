@@ -1,3 +1,4 @@
+import { logEvent } from '../http.js';
 import express from 'express';
 import pool from '../db/pg.js';
 import { StockRepository } from '../repositories/stockRepository.js';
@@ -32,6 +33,9 @@ router.post('/blendomat', async (req, res) => {
         } = req.body;
 
         const supervisionSettings = rawSupervisionSettings || {};
+        if (!Array.isArray(selectedLots) || !Array.isArray(uiRules)) {
+            return res.status(400).json({ success: false, message: 'Stock y reglas deben ser arreglos.' });
+        }
 
         if (!blendSize || blendSize <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid blendSize' });
@@ -41,7 +45,7 @@ router.post('/blendomat', async (req, res) => {
         const stock = selectedLots.length > 0 
             ? selectedLots 
             : await StockRepository.getAllAvailable();
-            
+
         // Use UI rules if provided, otherwise fetch from DB
         const rules = uiRules.length > 0 
             ? uiRules 
@@ -52,8 +56,8 @@ router.post('/blendomat', async (req, res) => {
 
         res.json(result);
     } catch (error) {
-        console.error('Core Logic failure:', error);
-        res.status(500).json({ 
+        logEvent('route_error', { requestId: req.requestId, code: error.code || 'ERROR' });
+        res.status(error.statusCode || 500).json({
             success: false, 
             message: 'Error en el cálculo estratégico: ' + error.message 
         });
@@ -188,7 +192,7 @@ router.get('/lote-fiac-reference-summary', async (req, res) => {
 
     res.json({ referencias });
   } catch (err) {
-    console.error('[lote-fiac-reference-summary] Error:', err.message);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ referencias: [], error: err.message });
   }
 });
@@ -235,7 +239,7 @@ router.get('/residuos-lote-blendomar', async (req, res) => {
     const kgCardas   = Math.round(Number(resCardas.rows[0]?.kg_cardas   || 0));
     res.json({ kgResiduos, kgCardas });
   } catch (err) {
-    console.error('[residuos-lote-blendomar] Error:', err.message);
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ kgResiduos: 0, kgCardas: 0, error: err.message });
   }
 });

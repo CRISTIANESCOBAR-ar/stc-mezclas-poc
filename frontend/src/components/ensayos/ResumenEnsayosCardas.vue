@@ -230,6 +230,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, computed, onMounted, watch } from 'vue'
 import Swal from 'sweetalert2'
 import ExcelJS from 'exceljs'
@@ -456,7 +458,7 @@ async function openDetail(row) {
   detailVisible.value = true
 
   try {
-    const response = await fetch(`/api/uster-cardas/titulos?testnr=${encodeURIComponent(row.Ensayo)}`)
+    const response = await apiFetch(`/api/uster-cardas/titulos?testnr=${encodeURIComponent(row.Ensayo)}`)
     const data = await response.json()
     detailTitulos.value = Array.isArray(data?.rows) ? data.rows.map((r) => formatMetric(r.TITULO, 3)) : []
   } catch {
@@ -475,8 +477,8 @@ async function loadRows() {
   loading.value = true
   try {
     const [parResponse, tblResponse] = await Promise.all([
-      fetch('/api/uster-cardas/par'),
-      fetch('/api/uster-cardas/tbl'),
+      apiFetch('/api/uster-cardas/par'),
+      apiFetch('/api/uster-cardas/tbl'),
     ])
 
     const parData = await parResponse.json()

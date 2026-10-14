@@ -88,3 +88,37 @@ test('parseHviText large block (ENTRADA)', (t) => {
   assert.strictEqual(result[0].Tipo, 'ENTRADA', 'Should be ENTRADA because count > 25');
   assert.strictEqual(result[0].Proveedor, 'CARAM', 'Fuzzy matched CARAN to CARAM');
 });
+
+test('parseDateFallback validates calendar dates and ISO input', () => {
+  assert.strictEqual(parseDateFallback('2026-10-13'), '2026-10-13');
+  assert.strictEqual(parseDateFallback('29/02/2024'), '2024-02-29');
+  for (const date of ['29/02/2026', '31/04/2026', '00/01/2026', '2026-13-01', null]) assert.strictEqual(parseDateFallback(date), null);
+});
+
+const rawRow = (bale, str = '30,5') => `${bale} 145 7,5 4,2 0,88 1,15 82,5 8,1 ${str} 6,5 75,5 8,5 21-1 25 0,45 02 0`;
+
+test('raw Lot ID exports accept decimal commas and preserve missing data', () => {
+  const text = `Lot ID 13-10-26 TEST LOTE 123\nBale ID SCI Mst Mic Mat UHML UI SF Str Elg Rd +b CGrd TrCnt TrAr TrID Amt\n${rawRow('.3708', '-')}`;
+  const result = parseHviText(text, ['TEST']);
+  assert.strictEqual(result.length, 1);
+  assert.strictEqual(result[0].SCI, 145);
+  assert.strictEqual(result[0].Mst, 7.5);
+  assert.strictEqual(result[0].Str, null);
+  assert.strictEqual(result[0].Fecha, '2026-10-13');
+  assert.strictEqual(result[0].Bale_ID, '3708');
+});
+
+test('raw exports support optional Grade and metadata from the filename', () => {
+  const values = rawRow('1').split(' ');
+  values.splice(2, 0, '41-2');
+  const result = parseHviText(`Bale ID SCI Mst\n${values.join(' ')}`, ['TEST'], '13-10-26 TEST lote 123.txt');
+  assert.strictEqual(result[0].Str, 30.5);
+  assert.strictEqual(result[0].Lote, '123');
+  assert.strictEqual(result[0].Fecha, '2026-10-13');
+});
+
+test('malformed numeric rows fail the whole parse instead of silently importing a partial file', () => {
+  const header = 'Lot ID 13-10-26 TEST LOTE 123\nBale ID SCI Mst';
+  assert.throws(() => parseHviText(`${header}\n${rawRow('1')}\n${rawRow('2', '30abc')}`, ['TEST']), /línea 4/);
+  assert.throws(() => parseHviText(`${header}\n${rawRow('1')}\n${rawRow('1')}`, ['TEST']), /duplicado/);
+});

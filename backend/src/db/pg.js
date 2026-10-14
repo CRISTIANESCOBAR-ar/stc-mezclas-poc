@@ -1,15 +1,10 @@
 import pg from 'pg';
-import 'dotenv/config';
+import { config } from '../config.js';
 
 const { Pool } = pg;
 
-const pool = new Pool({
-    host: process.env.PG_HOST || 'localhost',
-    port: process.env.PG_PORT || 5433,
-    database: process.env.PG_DATABASE || 'stc_produccion',
-    user: process.env.PG_USER || 'stc_user',
-    password: process.env.PG_PASSWORD || 'stc_password_2026'
-});
+const pool = new Pool(config.pg);
+pool.on('error', error => console.error(JSON.stringify({ event: 'db_pool_error', code: error.code || 'UNKNOWN' })));
 
 export const query = (text, params) => pool.query(text, params);
 export default pool;

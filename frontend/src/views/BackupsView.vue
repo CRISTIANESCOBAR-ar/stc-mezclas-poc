@@ -16,13 +16,14 @@
     <div v-if="error" class="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">{{ error }}</div>
 
     <div v-if="data" class="space-y-6">
+      <p class="rounded-lg bg-blue-50 p-3 text-sm text-slate-700">Última restauración de prueba: {{ data.lastRestoreTestAt ? formatFecha(data.lastRestoreTestAt) : 'Sin ejecutar' }}. La creación y el checksum se verifican por separado.</p>
       <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div class="bg-white rounded-xl shadow p-4">
           <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Trigger</p>
           <p class="text-xl font-bold" :class="data.trigger.enabled ? 'text-emerald-600' : 'text-red-600'">
             {{ data.trigger.enabled ? 'Habilitado' : 'Deshabilitado' }}
           </p>
-          <p class="text-xs text-gray-400 mt-2 break-all">{{ data.trigger.scriptPath }}</p>
+          <p class="text-xs text-gray-400 mt-2">Backup completo con catálogo y checksum.</p>
         </div>
 
         <div class="bg-white rounded-xl shadow p-4">
@@ -40,16 +41,16 @@
         </div>
 
         <div class="bg-white rounded-xl shadow p-4">
-          <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Último enfocado</p>
-          <p class="text-lg font-bold text-slate-800">{{ data.latestFocused?.name || '—' }}</p>
-          <p class="text-xs text-gray-400 mt-2">{{ fileMeta(data.latestFocused) }}</p>
+          <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Última ejecución correcta</p>
+          <p class="text-lg font-bold text-slate-800">{{ formatFecha(data.trigger.lastRunAt) }}</p>
+          <p v-if="data.trigger.lastError" class="text-xs text-red-700 mt-2">{{ data.trigger.lastError }}</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div
           v-for="dir in data.directories"
-          :key="dir.disk"
+          :key="dir.dir"
           class="bg-white rounded-xl shadow p-4"
         >
           <div class="flex items-center justify-between mb-3">
@@ -100,7 +101,7 @@
             <tbody>
               <tr
                 v-for="file in data.recent"
-                :key="`${file.disk}-${file.fullPath}`"
+                :key="`${file.disk}-${file.name}`"
                 class="border-b border-gray-100 hover:bg-gray-50"
               >
                 <td class="py-2 pr-3 text-gray-500 whitespace-nowrap">{{ formatFecha(file.modifiedAt) }}</td>
@@ -125,6 +126,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { computed, onMounted, ref } from 'vue'
 
 const cargando = ref(false)
@@ -149,7 +152,7 @@ async function cargar() {
   cargando.value = true
   error.value = null
   try {
-    const res = await fetch('/api/dashboard/backups')
+    const res = await apiFetch('/api/dashboard/backups')
     const payload = await res.json()
     if (!res.ok || !payload.ok) throw new Error(payload.error || `HTTP ${res.status}`)
     data.value = payload

@@ -1,3 +1,9 @@
+import { logEvent } from '../http.js';
+import { updateTensorapidLink } from '../services/tensorapidLink.js';
+import { withTransaction } from '../db/transaction.js';
+import { recordBackupRequest } from '../services/backupRequests.js';
+import { validateTestImport } from '../helpers/importValidation.js';
+import { optionalNumber } from '../../../shared/numbers.js';
 import express from 'express'
 import pool, { query } from '../db/pg.js'
 import { scheduleDatabaseBackup } from '../services/backupTrigger.js'
@@ -7,41 +13,6 @@ const router = express.Router()
 // ---------------------------------------------------------------------------
 // Schema auto-provisioning
 // ---------------------------------------------------------------------------
-async function ensureTensorapidSchema() {
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_tensorapid_par (
-      testnr        TEXT PRIMARY KEY,
-      ne_titulo     NUMERIC,
-      titulo        TEXT,
-      comment_text  TEXT,
-      long_prueba   NUMERIC,
-      time_stamp    TEXT,
-      lote          TEXT,
-      ne_titulo_type TEXT,
-      uster_testnr  TEXT,
-      laborant      TEXT
-    )
-  `)
-  await query(`
-    CREATE TABLE IF NOT EXISTS tb_tensorapid_tbl (
-      id            SERIAL PRIMARY KEY,
-      testnr        TEXT REFERENCES tb_tensorapid_par(testnr) ON DELETE CASCADE,
-      huso_number   INTEGER,
-      tiempo_rotura NUMERIC,
-      fuerza_b      NUMERIC,
-      elongacion    NUMERIC,
-      tenacidad     NUMERIC,
-      trabajo       NUMERIC,
-      huso_ensayos  INTEGER
-    )
-  `)
-}
-
-// Run once on startup (non-blocking)
-ensureTensorapidSchema().catch(err =>
-  console.error('[tensorapid] Schema setup error:', err.message)
-)
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -51,10 +22,20 @@ function uppercaseKeys(row) {
   return out
 }
 
-function toNum(v) {
-  const n = parseFloat(v)
-  return isNaN(n) ? null : n
-}
+const toNum = optionalNumber;
+
+router.get('/tests/:testnr', async (req,res,next)=>{
+  try {
+    const found=await query(`SELECT to_jsonb(p) AS par,p.xmin::text AS version,
+      COALESCE((SELECT jsonb_agg(to_jsonb(t) ORDER BY id) FROM tb_tensorapid_tbl t WHERE t.testnr=p.testnr),'[]'::jsonb) AS tbl
+      FROM tb_tensorapid_par p WHERE testnr=$1`,[req.params.testnr]);
+    if(!found.rows.length) return res.status(404).json({error:'El ensayo ya no existe.'});
+    const row=found.rows[0]; res.json({par:uppercaseKeys(row.par),tbl:row.tbl.map(uppercaseKeys),version:row.version});
+  } catch(error){next(error)}
+});
+router.patch('/tests/:testnr/link',async(req,res,next)=>{
+  try {res.json(await updateTensorapidLink(pool,req.params.testnr,req.body))} catch(error){next(error)}
+});
 
 // ---------------------------------------------------------------------------
 // Routes
@@ -68,13 +49,13 @@ router.post('/status', async (req, res) => {
   }
   try {
     const result = await query(
-      `SELECT testnr, uster_testnr FROM tb_tensorapid_par WHERE testnr = ANY($1::text[])`,
+      `SELECT testnr, uster_testnr, xmin::text AS version FROM tb_tensorapid_par WHERE testnr = ANY($1::text[])`,
       [testnrs]
     )
     const existing = result.rows.map(r => r.testnr)
     const details = {}
     result.rows.forEach(r => {
-      details[r.testnr] = { usterTestnr: r.uster_testnr || '' }
+      details[r.testnr] = { usterTestnr: r.uster_testnr || '', version: r.version }
     })
     res.json({ existing, details })
   } catch (err) {
@@ -113,14 +94,18 @@ router.get('/tbl', async (req, res) => {
 
 // POST /api/tensorapid/upload — upsert PAR + delete/reinsert TBL (transaction)
 router.post('/upload', async (req, res) => {
-  const { par, tbl } = req.body
-  if (!par?.TESTNR) return res.status(400).json({ error: 'Missing data' })
+  let payload;
+  try { payload = validateTestImport(req.body, 'tenso'); }
+  catch (err) { return res.status(400).json({ error: err.message }); }
+  const { par, tbl } = payload;
 
-  const client = await pool.connect()
+  let client;
   try {
+    client = await pool.connect();
+
     await client.query('BEGIN')
 
-    await client.query(`
+    const headerResult = await client.query(`
       INSERT INTO tb_tensorapid_par
         (testnr, ne_titulo, titulo, comment_text, long_prueba, time_stamp,
          lote, ne_titulo_type, uster_testnr, laborant)
@@ -135,6 +120,7 @@ router.post('/upload', async (req, res) => {
         ne_titulo_type = EXCLUDED.ne_titulo_type,
         uster_testnr   = EXCLUDED.uster_testnr,
         laborant       = EXCLUDED.laborant
+      RETURNING xmin::text AS version
     `, [
       par.TESTNR, toNum(par.NE_TITULO), par.TITULO, par.COMMENT_TEXT,
       toNum(par.LONG_PRUEBA), par.TIME_STAMP, par.LOTE,
@@ -163,25 +149,30 @@ router.post('/upload', async (req, res) => {
       }
     }
 
+    await recordBackupRequest(client, 'tensorapid');
     await client.query('COMMIT')
     scheduleDatabaseBackup(`tensorapid:${par.TESTNR}`)
-    res.json({ success: true, testnr: par.TESTNR })
+    res.json({ success: true, testnr: par.TESTNR, version: headerResult.rows[0]?.version })
   } catch (err) {
-    await client.query('ROLLBACK')
-    console.error('[tensorapid] upload error:', err.message)
+    await client?.query('ROLLBACK')
+    logEvent('route_error', { requestId: req.requestId, code: err.code || 'ERROR' });
     res.status(500).json({ error: err.message })
   } finally {
-    client.release()
+    client?.release()
   }
 })
 
 // DELETE /api/tensorapid/delete/:testnr
 router.delete('/delete/:testnr', async (req, res) => {
   try {
-    const result = await query(
+    const result = await withTransaction(pool, async client => {
+      const deleted = await client.query(
       'DELETE FROM tb_tensorapid_par WHERE testnr = $1',
       [req.params.testnr]
-    )
+      );
+      if (deleted.rowCount) await recordBackupRequest(client, 'tensorapid-deleted');
+      return deleted;
+    })
     if (result.rowCount === 0) return res.status(404).json({ error: 'Not found' })
     res.json({ success: true })
   } catch (err) {

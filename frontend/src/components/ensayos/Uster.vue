@@ -10,7 +10,7 @@
       class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col overflow-y-auto uster-component">
       <!-- Top: compact carpeta selector on a single line for desktop -->
           <div class="shrink-0 mb-3">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 uster-toolbar">
           <div class="text-2xl font-semibold text-slate-800 mr-4 inline-flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <path d="M4 7h16"/>
@@ -25,15 +25,15 @@
           <div class="flex-1 min-w-0">
             <div
               class="px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm text-slate-800 truncate shadow-sm focus-within:ring-2 focus-within:ring-blue-500"
-              :title="folderPathFull">
-              {{ folderPathFull || folderPath || selectedFolderName || 'Ninguna carpeta seleccionada' }}
-              <span v-if="!isAbsolutePath" class="text-xs text-slate-500 ml-2">(ruta no absoluta disponible por
+              v-tippy="{ content: folderPathFull, allowHTML: false, theme: 'light' }">
+              {{ folderPathFull || folderPath || selectedFolderName || (initialLoadBannerState === 'checking-folder' ? 'Comprobando carpeta recordada...' : 'Ninguna carpeta seleccionada') }}
+              <span v-if="!isAbsolutePath && (folderPathFull || folderPath || selectedFolderName)" class="text-xs text-slate-500 ml-2">(ruta no absoluta disponible por
                 seguridad)</span>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
-            <button @click="selectFolder" title="Seleccionar carpeta con archivos de Uster"
+            <button :disabled="initialLoadBannerState === 'checking-folder' || initialLoadBannerState === 'loading'" @click="selectFolder" v-tippy="{ content: 'Seleccionar carpeta con archivos de Uster', theme: 'light' }"
               class="hidden md:inline-flex items-center gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -43,7 +43,7 @@
               Seleccionar
             </button>
 
-            <button @click="selectFolder" title="Seleccionar carpeta con archivos de Uster"
+            <button :disabled="initialLoadBannerState === 'checking-folder' || initialLoadBannerState === 'loading'" @click="selectFolder" v-tippy="{ content: 'Seleccionar carpeta con archivos de Uster', theme: 'light' }"
               class="inline-flex md:hidden items-center p-2 border border-slate-200 bg-white text-slate-700 rounded-md hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
               aria-label="Seleccionar carpeta">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -53,7 +53,7 @@
               </svg>
             </button>
 
-            <button v-if="hasPersistedHandle" @click="refreshFolder" title="Actualizar archivos de Uster"
+            <button v-if="hasPersistedHandle" @click="refreshFolder" v-tippy="{ content: 'Actualizar archivos de Uster', theme: 'light' }"
               class="hidden md:inline-flex items-center gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor">
@@ -62,7 +62,7 @@
               </svg>
               Actualizar
             </button>
-            <button v-if="hasPersistedHandle" @click="refreshFolder" title="Actualizar archivos de Uster"
+            <button v-if="hasPersistedHandle" @click="refreshFolder" v-tippy="{ content: 'Actualizar archivos de Uster', theme: 'light' }"
               class="inline-flex md:hidden items-center p-2 border border-slate-200 bg-white text-slate-700 rounded-md hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md"
               aria-label="Actualizar carpeta">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -82,7 +82,30 @@
       <!-- scanStatus moved below the left list as per UX request -->
 
       <!-- Middle: three columns (left: list, middle: compact preview, right: Nro/Titulo) -->
-      <div class="grid uster-grid" style="grid-template-columns: 440px 220px 270px;">
+      <!-- Floating status consumes no space in the working layout. -->
+      <Teleport to="body">
+      <div class="fixed bottom-4 right-4 z-[150] max-w-[min(360px,calc(100vw-2rem))] text-sm pointer-events-none">
+        <div v-if="savedLoadError" role="alert" class="pointer-events-auto flex items-start gap-3 rounded-xl border border-red-400 bg-red-950 px-4 py-3 text-white shadow-2xl ring-2 ring-white/80">
+          <ExclamationTriangleIcon class="h-6 w-6 shrink-0 text-red-300" aria-hidden="true" />
+          <div><p class="font-semibold">{{ selectedTestnr ? 'No se pudo abrir el ensayo ' + selectedTestnr : 'No se pudo verificar la carpeta' }}</p>
+            <p class="mt-1 text-xs leading-relaxed text-red-100">{{ savedLoadError }}</p>
+            <p class="mt-1 text-xs text-red-200">{{ selectedTestnr ? 'Seleccioná nuevamente el ensayo para reintentar.' : 'Actualizá o seleccioná nuevamente la carpeta.' }}</p></div>
+        </div>
+        <div v-else-if="isLoadingSaved" role="status" class="flex items-start gap-3 rounded-xl border border-blue-300 bg-blue-100 px-4 py-3 text-blue-900 shadow-2xl ring-2 ring-white/80">
+          <ArrowPathIcon class="h-6 w-6 shrink-0 animate-spin text-blue-600 motion-reduce:animate-none" aria-hidden="true" />
+          <div><p class="font-semibold">Abriendo ensayo {{ selectedTestnr }}</p>
+            <p class="mt-1 text-xs leading-relaxed text-blue-800">Recuperando los datos guardados en la base.</p></div>
+        </div>
+        <div v-else-if="hasUnsavedChanges" role="status" class="pointer-events-auto flex items-start gap-3 rounded-xl border border-amber-400 bg-amber-950 px-4 py-3 text-white shadow-2xl ring-2 ring-white/80">
+          <PencilSquareIcon class="h-6 w-6 shrink-0 text-amber-300" aria-hidden="true" />
+          <div><p class="font-semibold">Ensayo {{ selectedTestnr }} · edición pendiente</p>
+            <p class="mt-1 text-xs leading-relaxed text-amber-100">Tus cambios todavía no están guardados.</p>
+            <button type="button" :disabled="isSaving" @click="discardChanges" class="mt-2 rounded border border-amber-400/50 px-2 py-1 text-xs font-semibold text-amber-100 hover:bg-amber-800 focus-visible:outline-2 focus-visible:outline-white"
+              v-tippy="{ content: 'Restaurar los datos anteriores a esta edición', theme: 'light' }">Descartar cambios</button></div>
+        </div>
+      </div>
+      </Teleport>
+      <div class="grid uster-grid">
         <!-- Columna 1: Lista de Ensayos, Botones y Estado -->
         <div class="flex flex-col gap-3">
           <!-- Filtros de visualización -->
@@ -90,22 +113,22 @@
             <div class="flex items-center gap-4 text-xs">
               <label
                 class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" v-model="filterShowAll"
-                  @change="() => { if (filterShowAll) { filterShowNotSaved = false; filterShowSaved = false; clearSelection(); } }"
+                <input type="checkbox" :checked="filterShowAll"
+                  @change="changeFilter('all')"
                   class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
                 <span class="text-slate-700 font-medium">Mostrar todos</span>
               </label>
               <label
                 class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" v-model="filterShowNotSaved"
-                  @change="() => { if (filterShowNotSaved) { filterShowAll = false; filterShowSaved = false; clearSelection(); } }"
+                <input type="checkbox" :checked="filterShowNotSaved"
+                  @change="changeFilter('pending')"
                   class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
                 <span class="text-slate-700 font-medium">No guardados</span>
               </label>
               <label
                 class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" v-model="filterShowSaved"
-                  @change="() => { if (filterShowSaved) { filterShowAll = false; filterShowNotSaved = false; clearSelection(); } }"
+                <input type="checkbox" :checked="filterShowSaved"
+                  @change="changeFilter('saved')"
                   class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
                 <span class="text-slate-700 font-medium">Guardados</span>
               </label>
@@ -178,7 +201,7 @@
                     </svg>
                   </td>
                   <td class="px-3 py-2 border-b border-slate-200 text-center text-xs col-imp">
-                    <span v-if="item.imp === true" title="Guardado en la base de datos">
+                    <span v-if="item.imp === true" v-tippy="{ content: 'Guardado en la base de datos', theme: 'light' }">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-green-600 mx-auto" fill="none"
                         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
@@ -200,7 +223,7 @@
         </div>
 
         <!-- Columna 2: Nro / Titulo (ahora en el medio) -->
-        <div style="width:220px;">
+        <div class="uster-manual-column min-w-0">
           <!-- Input para ESTIRAJE -->
           <div class="mb-2 rounded-xl border border-slate-200 bg-white p-2">
             <div class="flex items-center justify-between gap-2">
@@ -210,7 +233,7 @@
                 v-model="estiraje" 
                 type="text" 
                 maxlength="5"
-                :disabled="!selectedTestnr"
+                :disabled="!selectedTestnr || isLoadingSaved || isSaving || !!savedLoadError"
                 @input="handleEstirajeInput"
                 @keydown.enter.prevent="handleEstirajeEnter"
                 @keydown="handleEstirajeKeydown"
@@ -234,7 +257,7 @@
                     v-model="pasador" 
                     type="radio" 
                     value="Si"
-                    :disabled="!selectedTestnr"
+                    :disabled="!selectedTestnr || isLoadingSaved || isSaving || !!savedLoadError"
                     @keydown="handlePasadorKeydown"
                     :class="[
                       'w-3.5 h-3.5 text-blue-600 border-slate-300 focus:ring-2 focus:ring-blue-500',
@@ -249,7 +272,7 @@
                     v-model="pasador" 
                     type="radio" 
                     value="No"
-                    :disabled="!selectedTestnr"
+                    :disabled="!selectedTestnr || isLoadingSaved || isSaving || !!savedLoadError"
                     @keydown="handlePasadorKeydown"
                     :class="[
                       'w-3.5 h-3.5 text-blue-600 border-slate-300 focus:ring-2 focus:ring-blue-500',
@@ -268,24 +291,24 @@
               <thead>
                 <tr class="bg-linear-to-r from-slate-50 to-slate-100">
                   <th class="px-3 py-3 text-center font-semibold text-slate-700 border-b border-slate-200 text-xs"
-                    style="width:68px">Huso</th>
+                    >Huso</th>
                   <th class="px-3 py-3 text-center font-semibold text-slate-700 border-b border-slate-200 text-xs"
-                    style="width:152px">Titulo</th>
+                    >Titulo</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(r, idx) in tituloList" :key="idx"
                   class="hover:bg-blue-50/30 transition-colors duration-150">
-                  <td class="px-3 py-2 border-b border-slate-200 text-xs text-center text-slate-700 font-mono" style="width:68px">
+                  <td class="px-3 py-2 border-b border-slate-200 text-xs text-center text-slate-700 font-mono">
                     <div v-if="r.srcIndex !== null">
                       {{ r.nro }}
                     </div>
                     <div v-else class="text-xs text-slate-400">—</div>
                   </td>
-                  <td class="px-2 py-0 border-b border-slate-200 text-xs text-center" style="width:152px">
+                  <td class="px-2 py-0 border-b border-slate-200 text-xs text-center">
                     <div v-if="r.srcIndex !== null">
                       <div class="flex items-center gap-2">
-                        <input :id="'titulo-input-' + r.srcIndex" v-model="tblData[r.srcIndex].TITULO" inputmode="decimal"
+                        <input :disabled="isLoadingSaved || isSaving || !!savedLoadError" :id="'titulo-input-' + r.srcIndex" v-model="tblData[r.srcIndex].TITULO" inputmode="decimal"
                           maxlength="5" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                           @focus="onTituloFocus(r.srcIndex)" @blur="onTituloBlur(r.srcIndex)"
                           @input="onTituloInput(r.srcIndex, $event)" @keydown.enter.prevent="focusNextTitulo(r.srcIndex)"
@@ -296,11 +319,11 @@
                             getTituloToleranceClasses(r.srcIndex),
                             isFocusedIndex === r.srcIndex ? 'ring-2 ring-yellow-400' : ''
                           ]"
-                          :title="getTituloToleranceMessage(r.srcIndex)"
+                          v-tippy="{ content: getTituloToleranceMessage(r.srcIndex), allowHTML: false, theme: 'light' }"
                           style="box-sizing: border-box; margin:0; border-radius:0;" />
                         <span
                           :class="['w-14 shrink-0 text-[11px] text-right font-semibold tabular-nums', getTituloDeviationTextClasses(r.srcIndex)]"
-                          :title="getTituloToleranceMessage(r.srcIndex)">
+                          v-tippy="{ content: getTituloToleranceMessage(r.srcIndex), allowHTML: false, theme: 'light' }">
                           {{ getTituloDeviationLabel(r.srcIndex) }}
                         </span>
                       </div>
@@ -332,13 +355,14 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="c in compactFields" :key="c.code" class="hover:bg-blue-50/30 transition-colors duration-150">
+                <tr v-for="c in compactFields" :key="c.code" :class="{ 'uster-observations-row': c.code === 'OBS' }" class="hover:bg-blue-50/30 transition-colors duration-150">
                   <td class="px-3 py-2 border-b border-slate-200 font-medium text-xs text-slate-700 col-dato">{{ c.label }}</td>
                   <td class="px-3 py-2 border-b border-slate-200 font-mono text-xs text-slate-700 col-valor">
                     <!-- Select para Tipo Material -->
                     <select 
                       v-if="c.code === 'MATCLASS'" 
                       v-model="matclass"
+                      :disabled="isLoadingSaved || isSaving || !!savedLoadError"
                       class="w-[calc(100%-5px)] px-2 py-1 border border-slate-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-400"
                     >
                       <option value="Hilo">Hilo</option>
@@ -353,7 +377,7 @@
           </div>
 
           <div class="mt-3 flex gap-2">
-            <button ref="saveButton" v-if="canSave" @click="saveCurrentTest" :disabled="isSaving"
+            <button ref="saveButton" v-if="selectedTestnr" @click="saveCurrentTest" :disabled="isSaving || !canSave"
               v-tippy="{ content: 'Guardar ensayo seleccionado', theme: 'light', placement: 'bottom' }"
               @keydown.up.prevent="focusLastTitulo"
               class="inline-flex items-center gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 shadow-sm hover:shadow-md">
@@ -410,7 +434,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, nextTick, watch } from 'vue'
+import { apiFetch } from '@/services/authSession.js';
+import { requestJson } from '@/services/apiClient.js';
+import { restoreSavedUster } from '@/services/usterSaved.js';
+import { scanUsterFiles } from '@/services/usterScan.js';
+import { ArrowPathIcon, ExclamationTriangleIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+
+import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
+import { onBeforeRouteLeave } from 'vue-router'
 import Swal from 'sweetalert2'
 
 // refs and state
@@ -422,8 +453,36 @@ const pasadorNoInput = ref(null)
 const selectedFolderName = ref('')
 const scanList = ref([])
 const selectedTestnr = ref('')
+const savedPar = ref(null)
+const savedLoadError = ref('')
+const isLoadingSaved = ref(false)
+const savedVersion = ref(null)
+const confirmedDraft = ref(null)
+function manualDraft() {
+  return { estiraje: estiraje.value, pasador: pasador.value, matclass: matclass.value,
+    titulos: currentTblRows.value.map(row => ({ huso: row.NO, titulo: row.TITULO })) }
+}
+const hasUnsavedChanges = computed(() => confirmedDraft.value !== null && JSON.stringify(manualDraft()) !== JSON.stringify(confirmedDraft.value))
+function allowDiscard() { return !hasUnsavedChanges.value || window.confirm('Hay cambios sin guardar. ¿Descartarlos?') }
+function discardChanges() {
+  if (!confirmedDraft.value || isSaving.value) return
+  const draft = confirmedDraft.value
+  estiraje.value = draft.estiraje; pasador.value = draft.pasador; matclass.value = draft.matclass
+  currentTblRows.value.forEach((row, i) => { row.TITULO = draft.titulos[i].titulo })
+}
+function changeFilter(mode) {
+  if (isSaving.value || isLoadingSaved.value || !allowDiscard()) return
+  confirmedDraft.value = null
+  filterShowAll.value = mode === 'all'; filterShowNotSaved.value = mode === 'pending'; filterShowSaved.value = mode === 'saved'
+  clearSelection()
+}
+function beforeUnload(event) { if (hasUnsavedChanges.value || isSaving.value) { event.preventDefault(); event.returnValue = '' } }
+onMounted(() => window.addEventListener('beforeunload', beforeUnload))
+onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
+onBeforeRouteLeave(() => !isSaving.value && allowDiscard())
 const scanStatus = ref('')
-const initialLoadBannerState = ref('loading')
+const initialLoadBannerState = ref('checking-folder')
+const scanProgress = ref({ completed: 0, total: 0, detected: 0, databaseDone: false, verified: 0 })
 const tblWriteWarning = ref('')
 
 const fileText = ref('')
@@ -444,14 +503,7 @@ const pasador = ref('')
 const matclass = ref('')
 
 // Watch para guardar cambios de matclass en scanList automáticamente
-watch(matclass, (newValue) => {
-  if (selectedTestnr.value && newValue) {
-    const item = scanList.value.find(x => x.testnr === selectedTestnr.value)
-    if (item) {
-      item.matclass = newValue
-    }
-  }
-})
+// Manual edits belong to the draft, never to the scanned file metadata.
 
 // Filtros para la lista de ensayos
 const filterShowAll = ref(false)
@@ -559,9 +611,11 @@ function onTituloInput(srcIndex, ev) {
 }
 
 async function selectFolder() {
+  if (initialLoadBannerState.value === 'checking-folder') return
+  if (isSaving.value || isLoadingSaved.value || !allowDiscard()) return
+  discardChanges()
   try {
     if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
-      initialLoadBannerState.value = 'loading'
       // use File System Access API — pedir readwrite desde el inicio para evitar
       // el diálogo de confirmación nativo del navegador al guardar archivos PAR/TBL
       // @ts-ignore
@@ -662,6 +716,8 @@ async function verifyPermission(handle, mode = 'read') {
 // revalidateFolder removed: permission revalidation handled in refreshFolder and onMounted flow
 
 async function refreshFolder() {
+  if (isSaving.value || isLoadingSaved.value || !allowDiscard()) return
+  discardChanges()
   try {
     initialLoadBannerState.value = 'loading'
     const dirHandle = await getDirHandleFromIDB()
@@ -695,202 +751,70 @@ async function refreshFolder() {
 }
 
 // Manual path editing removed: UI simplified to selector + refresh
-async function scanDirectory(dirHandle) {
-  console.log('Iniciando scanDirectory con handle:', dirHandle.name);
-  const map = {};
-  const rejectedTestnrs = new Set();
-  let fileCount = 0;
-  try {
-    for await (const [name, handle] of dirHandle.entries()) {
-      fileCount++;
-      if (!handle || handle.kind !== 'file') continue;
-      const ln = String(name || '').toLowerCase();
-      if (!(ln.endsWith('.par') || ln.endsWith('.tbl'))) continue;
-
-      const t = getTestnrFromName(name);
-      if (!t) continue;
-      if (rejectedTestnrs.has(t)) continue;
-
-      if (!map[t]) {
-        map[t] = { testnr: t, hasPar: false, hasTbl: false, parHandle: null, tblHandle: null, imp: false, nomcount: null, maschnr: null, timeStamp: null };
-      }
-      if (ln.endsWith('.par')) {
-        try {
-          const f = await handle.getFile();
-          const txt = await f.text();
-          if (isCardasParText(txt, name)) {
-            rejectedTestnrs.add(t)
-            delete map[t]
-            continue
-          }
-          map[t].hasPar = true;
-          map[t].parHandle = handle;
-          map[t].nomcount = extractTsvCell(txt, 15, 5) || '';
-          map[t].maschnr = extractTsvCell(txt, 13, 5) || '';
-          map[t].matclass = extractTsvCell(txt, 14, 8) || '';
-          // Extraer timestamp numérico de fila 9, columna 5
-          const tValue = extractTsvCell(txt, 9, 5)
-          if (tValue) {
-            map[t].timeStamp = formatTimestampToDatetime(tValue)
-          }
-        } catch (err) {
-          console.warn('Error leyendo .PAR durante el escaneo', name, err);
-        }
-      }
-      if (ln.endsWith('.tbl')) {
-        map[t].hasTbl = true;
-        map[t].tblHandle = handle;
-      }
-    }
-  } catch (err) {
-    console.error('Error durante el bucle de escaneo de directorio:', err);
-    scanStatus.value = `Error al escanear: ${err.message}`;
-  }
-
-  console.log(`Escaneo finalizado. Total de archivos en el directorio: ${fileCount}. Ensayos mapeados: ${Object.keys(map).length}`);
-
-  let newScanList = Object.values(map)
-    .filter((item) => item.hasPar)
-    .sort((a, b) => a.testnr.localeCompare(b.testnr));
-
-  if (newScanList.length > 0) {
-    console.log('Llamando a checkExistingTests...');
-    try {
-      const existingTests = await checkExistingTests(newScanList.map(item => item.testnr));
-      console.log('existingTests recibido:', existingTests);
-      console.log('Tipo de existingTests:', typeof existingTests, Array.isArray(existingTests));
-
-      const existingSet = new Set(existingTests);
-      console.log('existingSet creado:', existingSet);
-
-      // **LA CORRECCIÓN ESTÁ AQUÍ**
-      // Creamos un array completamente nuevo usando .map() para asegurar la reactividad
-      newScanList = newScanList.map(item => {
-        const isInDb = existingSet.has(item.testnr);
-        console.log(`Verificando ${item.testnr}: existingSet.has() = ${isInDb}`);
-        return {
-          ...item, // Copiamos todas las propiedades existentes del item
-          imp: isInDb // Sobrescribimos 'imp' con el valor correcto
-        };
-      });
-
-      console.log('checkExistingTests completado. Lista para actualizar el DOM:', newScanList);
-    } catch (err) {
-      console.error('Fallo en la llamada a checkExistingTests desde scanDirectory', err);
-    }
-  }
-
-  scanList.value = newScanList;
-  // Forzar a Vue a esperar la actualización del DOM antes de continuar
-  await nextTick();
-  console.log('scanList.value ha sido asignado y el DOM actualizado.', scanList.value);
-  console.log('Verificación de valores imp:', scanList.value.map(item => ({ testnr: item.testnr, imp: item.imp })));
-
-  selectedFolderName.value = dirHandle.name || 'Carpeta seleccionada';
-  const count = scanList.value.length;
-  scanStatus.value = count ? (`Encontrados ${count} ensayos`) : 'No se encontraron archivos .PAR/.TBL válidos en la carpeta seleccionada';
+function scanHeader(text, name) {
+  if (isCardasParText(text, name)) return null
+  const rows = text.split(/\r?\n/).map(line => line.split('\t'))
+  const cell = (row, col) => String(rows[row - 1]?.[col - 1] ?? '').trim()
+  const time = cell(9, 5)
+  return { nomcount: cell(15, 5), maschnr: cell(13, 5), matclass: cell(14, 8),
+    timeStamp: time ? formatTimestampToDatetime(time) : null }
 }
-
 
 async function checkExistingTests(testnrs) {
-  if (!testnrs || testnrs.length === 0) {
-    console.log('checkExistingTests: No hay testnrs para verificar.');
-    return [];
-  }
-  console.log('checkExistingTests: Verificando los siguientes testnrs:', testnrs);
-  try {
-    const endpoint = '/api/uster/status';
-    const resp = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ testnrs }),
-      credentials: 'include'
-    });
-
-    if (!resp.ok) {
-      console.error('checkExistingTests: La respuesta del servidor no fue OK.', resp.status, resp.statusText);
-      const errorText = await resp.text();
-      console.error('checkExistingTests: Respuesta de error del servidor:', errorText);
-      return [];
-    }
-
-    const data = await resp.json();
-    console.log('checkExistingTests: Datos recibidos del servidor:', data);
-
-    if (data && Array.isArray(data.existing)) {
-      return data.existing;
-    }
-    return [];
-  } catch (err) {
-    console.error('Error en checkExistingTests:', err);
-    // Devuelve un array vacío en caso de error para no romper el flujo
-    return [];
-  }
+  if (!testnrs.length) return []
+  const data = await requestJson('/uster/status', { method: 'POST', body: { testnrs } })
+  if (!Array.isArray(data.existing)) throw new Error('Respuesta inválida al verificar ensayos.')
+  return data.existing
 }
 
-// no snapshot persistence function: we persist only the DirectoryHandle in IDB
+async function scanEntries(entries) {
+  savedLoadError.value = ''
+  scanProgress.value = { completed: 0, total: 0, detected: entries.filter(entry => /\.(par|tbl)$/i.test(entry.name)).length, databaseDone: false, verified: 0 }
+  const ids = [...new Set(entries.map(entry => /\.(par|tbl)$/i.test(entry.name) && getTestnrFromName(entry.name)).filter(Boolean))]
+  const [items, existing] = await Promise.all([
+    scanUsterFiles(entries, { getTestnr: getTestnrFromName, readHeader: scanHeader,
+      onProgress: ({ completed, total }) => { scanProgress.value.completed = completed; scanProgress.value.total = total } }),
+    checkExistingTests(ids).then(existing => {
+      scanProgress.value.databaseDone = true; scanProgress.value.verified = ids.length
+      return existing
+    }),
+  ])
+  const saved = new Set(existing.map(String))
+  scanList.value = items.map(item => ({ ...item, imp: saved.has(String(item.testnr)) }))
+  scanStatus.value = items.length ? `Encontrados ${items.length} ensayos` : 'No se encontraron archivos .PAR/.TBL válidos en la carpeta.'
+}
+
+async function scanDirectory(dirHandle) {
+  scanProgress.value = { completed: 0, total: 0, detected: 0, databaseDone: false, verified: 0 }
+  initialLoadBannerState.value = 'loading'
+  try {
+    const entries = []
+    for await (const [name, handle] of dirHandle.entries()) {
+      if (handle.kind === 'file' && /\.(par|tbl)$/i.test(name)) { entries.push(handle); scanProgress.value.detected = entries.length }
+    }
+    await scanEntries(entries)
+    selectedFolderName.value = dirHandle.name || 'Carpeta seleccionada'
+  } catch (error) {
+    savedLoadError.value = error.message || 'No se pudo escanear la carpeta.'
+    scanList.value = []
+  } finally { initialLoadBannerState.value = 'hidden' }
+}
 
 async function onFolderInputChange(e) {
+  initialLoadBannerState.value = 'loading'
   try {
-    initialLoadBannerState.value = 'loading'
-    const files = (e && e.target && e.target.files) || []
-    const map = {}
-    const rejectedTestnrs = new Set()
-    for (let i = 0; i < files.length; i++) {
-      const f = files[i]
-      const name = f.name || ''
-      const ln = name.toLowerCase()
-      if (!(ln.endsWith('.par') || ln.endsWith('.tbl'))) continue
-      const t = getTestnrFromName(name)
-      if (!t) continue
-      if (rejectedTestnrs.has(t)) continue
-      if (!map[t]) map[t] = { testnr: t, hasPar: false, hasTbl: false, parHandle: null, tblHandle: null, imp: null, nomcount: null, maschnr: null, timeStamp: null }
-      if (ln.endsWith('.par')) {
-        try {
-          const txt = await f.text()
-          if (isCardasParText(txt, name)) {
-            rejectedTestnrs.add(t)
-            delete map[t]
-            continue
-          }
-          map[t].hasPar = true
-          map[t].parHandle = f
-          map[t].nomcount = extractTsvCell(txt, 15, 5) || ''
-          map[t].maschnr = extractTsvCell(txt, 13, 5) || ''
-          map[t].matclass = extractTsvCell(txt, 14, 8) || ''
-          // Extraer timestamp numérico de fila 9, columna 5
-          const tValue = extractTsvCell(txt, 9, 5)
-          if (tValue) {
-            map[t].timeStamp = formatTimestampToDatetime(tValue)
-          }
-        } catch (err) { console.warn('reading .PAR fallback', name, err) }
-      }
-      if (ln.endsWith('.tbl')) {
-        map[t].hasTbl = true
-        map[t].tblHandle = f
-      }
-    }
-    scanList.value = Object.values(map)
-      .filter((item) => item.hasPar)
-      .sort((a, b) => a.testnr.localeCompare(b.testnr))
-    selectedFolderName.value = 'Carpeta seleccionada (local)'
-    scanStatus.value = scanList.value.length ? (`Encontrados ${scanList.value.length} ensayos (fallback)`) : 'No se encontraron archivos .PAR/.TBL en la selección local'
-    // After scanning, check which ones are already in the DB
-    if (scanList.value.length > 0) {
-      await checkExistingTests(scanList.value.map(item => item.testnr))
-    }
-    // derive a best-effort folder path from the first file's webkitRelativePath
-    if (files.length > 0 && files[0].webkitRelativePath) {
-      const rel = files[0].webkitRelativePath
-      const parts = rel.split('/')
-      if (parts.length > 1) folderPath.value = parts.slice(0, parts.length - 1).join('/')
-    }
+    const files = Array.from(e?.target?.files || [])
+    const relative = files[0]?.webkitRelativePath || ''
+    folderPath.value = relative.split('/').slice(0, -1).join('/')
+    selectedFolderName.value = folderPath.value || 'Carpeta seleccionada (local)'
+    folderPathFull.value = folderPath.value
     hasPersistedHandle.value = false
-    // when using fallback, set folderPathFull to the derived relative path
-    folderPathFull.value = folderPath.value || ''
     isAbsolutePath.value = false
-    initialLoadBannerState.value = 'hidden'
-  } catch (err) { console.warn('onFolderInputChange error', err) }
+    await scanEntries(files)
+  } catch (error) {
+    savedLoadError.value = error.message || 'No se pudo escanear la carpeta.'
+    scanList.value = []
+  } finally { initialLoadBannerState.value = 'hidden' }
 }
 
 onMounted(() => {
@@ -902,6 +826,10 @@ onMounted(() => {
       let dirHandle = null
       try { dirHandle = await getDirHandleFromIDB() } catch { /* ignore */ }
       if (dirHandle) {
+        selectedFolderName.value = dirHandle.name || 'Carpeta recordada'
+        folderPathFull.value = selectedFolderName.value
+        hasPersistedHandle.value = true
+        isAbsolutePath.value = false
         const ok = await verifyPermission(dirHandle, 'read')
         if (ok) {
           try {
@@ -932,13 +860,18 @@ onMounted(() => {
       initialLoadBannerState.value = 'needs-folder'
     } catch (err) { console.warn('onMounted load snapshot error', err) }
     finally {
-      if (initialLoadBannerState.value === 'loading') initialLoadBannerState.value = 'hidden'
+      if (initialLoadBannerState.value === 'checking-folder') initialLoadBannerState.value = 'needs-folder'
+      else if (initialLoadBannerState.value === 'loading') initialLoadBannerState.value = 'hidden'
     }
   })()
 })
 
 // Función para limpiar la selección actual (deseleccionar ensayo y limpiar datos)
 function clearSelection() {
+  confirmedDraft.value = null
+  savedVersion.value = null
+  savedPar.value = null
+  savedLoadError.value = ''
   selectedTestnr.value = ''
   fileText.value = ''
   selectedName.value = ''
@@ -955,6 +888,11 @@ function clearSelection() {
 }
 
 async function selectRow(testnr) {
+  if (isLoadingSaved.value || isSaving.value || !allowDiscard()) return
+  confirmedDraft.value = null
+  isLoadingSaved.value = true
+  savedPar.value = null
+  savedLoadError.value = ''
   // Select the TESTNR and load associated files (PAR/TBL) so preview and Save are available.
   selectedTestnr.value = testnr
   
@@ -986,7 +924,21 @@ async function selectRow(testnr) {
       matclass.value = savedMatclass
     }
     // Si matclass en scanList es "Hilo", dejamos que detectFlameInObs() determine el valor correcto
-  } catch (err) { console.warn('selectRow loadSelectedFiles failed', err) }
+    if (item?.imp === true) {
+      const saved = await requestJson(`/uster/tests/${encodeURIComponent(testnr)}`)
+      if (String(selectedTestnr.value) !== String(testnr)) return
+      tblData.value = restoreSavedUster(tblData.value, saved.tbl)
+      savedPar.value = saved.par
+      savedVersion.value = saved.version
+      estiraje.value = saved.par.ESTIRAJE ?? ''
+      pasador.value = saved.par.PASADOR ?? ''
+      matclass.value = saved.par.MATCLASS ?? ''
+    }
+  } catch (err) {
+    savedLoadError.value = err.message || 'No se pudo recuperar el ensayo.'
+    return
+  } finally { isLoadingSaved.value = false }
+  confirmedDraft.value = structuredClone(manualDraft())
 
   // After files are loaded and DOM updated, focus the ESTIRAJE input first for editing.
   try {
@@ -1085,10 +1037,21 @@ const scanDisplayList = computed(() => {
 });
 
 const initialLoadBanner = computed(() => {
+  if (initialLoadBannerState.value === 'checking-folder') {
+    return {
+      title: 'Comprobando carpeta recordada...',
+      message: 'Estamos comprobando si este navegador tiene una carpeta de Uster seleccionada.',
+      containerClass: 'border border-slate-200 bg-slate-50 text-slate-900',
+      messageClass: 'text-slate-700/80',
+      iconClass: 'h-5 w-5 animate-spin text-slate-500'
+    }
+  }
   if (initialLoadBannerState.value === 'loading') {
     return {
       title: 'Recopilando datos de Uster...',
-      message: 'Se está validando la carpeta guardada y cargando los ensayos pendientes.',
+      message: scanProgress.value.total
+        ? `PAR leídos: ${scanProgress.value.completed} de ${scanProgress.value.total}. ${scanProgress.value.databaseDone ? 'Verificados en la base: ' + scanProgress.value.verified + ' ensayos.' : 'Consultando cuáles están guardados...'}`
+        : `Detectados ${scanProgress.value.detected} archivos PAR/TBL. Preparando la lectura...`,
       containerClass: 'border border-blue-200 bg-blue-50 text-blue-900',
       messageClass: 'text-blue-800/80',
       iconClass: 'h-5 w-5 animate-spin text-blue-600'
@@ -1128,7 +1091,8 @@ const scanStatusDisplay = computed(() => {
   const total = scanList.value.length;
 
   if (filterShowAll.value) {
-    return `Encontrados ${total} ensayos (mostrando todos)`;
+    const saved = scanList.value.filter(item => item.imp === true).length;
+    return `${total} ensayos · ${saved} guardados · ${total - saved} no guardados`;
   } else if (filterShowNotSaved.value) {
     const notSaved = scanList.value.filter(item => item.testnr && item.imp !== true).length;
     return `Encontrados ${total} ensayos (${notSaved} no guardados)`;
@@ -1371,11 +1335,10 @@ async function updateTblFileWithTitulos() {
       if (lineIndex >= lines.length) break
 
       const titulo = row['TITULO'] || ''
-      if (titulo === '') continue // Si no hay título, no modificar
 
       // Formatear el título a 6 caracteres (con espacios si es necesario)
       // El formato es ##.## pero necesitamos asegurar 6 caracteres de ancho
-      let formattedTitulo = String(titulo).padStart(6, ' ')
+      let formattedTitulo = titulo === '' ? '' : String(titulo).padStart(6, ' ')
       if (formattedTitulo.length > 6) formattedTitulo = formattedTitulo.slice(0, 6)
 
       // Obtener la línea actual y dividirla por tabuladores
@@ -1405,6 +1368,7 @@ async function updateTblFileWithTitulos() {
     const writable = await handle.createWritable()
     await writable.write(newContent)
     await writable.close()
+    tblText.value = newContent
 
     console.log('Archivo .TBL actualizado exitosamente con los valores de Titulo')
     return true
@@ -1486,7 +1450,7 @@ const currentTblRows = computed(() => {
 
 // whether we can save: need a selected TESTNR and at least one row or a parsed .PAR preview
 const canSave = computed(() => {
-  return (selectedTestnr.value && (currentTblRows.value.length > 0 || fileText.value))
+  return (!isLoadingSaved.value && !savedLoadError.value && selectedTestnr.value && (currentTblRows.value.length > 0 || fileText.value))
 })
 const isSaving = ref(false)
 const isDeleting = ref(false)
@@ -1500,7 +1464,7 @@ const isTestSaved = computed(() => {
 
 function buildParObject() {
   // Build par object from oracleFields (prefer fileText; fallback to scanList values)
-  const par = {}
+  const par = savedPar.value ? { ...savedPar.value } : {}
   for (const f of oracleFields) {
     const key = f.field
     const val = getFieldValueByCode(key)
@@ -1538,43 +1502,35 @@ async function saveCurrentTest() {
   if (!canSave.value) return
   const par = buildParObject()
 
-  // Helper para convertir string a número, limpiando espacios y manejando punto decimal
-  const toNum = (val) => {
-    if (val == null || val === '') return null
-    const str = String(val).trim()
-    if (str === '') return null
-    const num = parseFloat(str)
-    return isNaN(num) ? null : num
-  }
-
+  // Preserve raw values: the backend validates the complete batch before writing.
   const tblRows = currentTblRows.value.map((r, idx) => ({
     SEQNO: r.SEQNO != null ? Number(r.SEQNO) : (idx + 1),
-    NO_: toNum(r['NO']),
-    U_PERCENT: toNum(r['U%_%']),
-    CVM_PERCENT: toNum(r['CVM_%']),
-    INDICE_PERCENT: toNum(r['INDICE_%']),
-    CVM_1M_PERCENT: toNum(r['CVM_1M_%']),
-    CVM_3M_PERCENT: toNum(r['CVM_3M_%']),
-    CVM_10M_PERCENT: toNum(r['CVM_10M_%']),
-    TITULO: toNum(r['TITULO']),
-    TITULO_REL_PERC: toNum(r['TITULO_REL_±_%']),
-    H: toNum(r['H']),
-    SH: toNum(r['SH']),
-    SH_1M: toNum(r['SH_1M']),
-    SH_3M: toNum(r['SH_3M']),
-    SH_10M: toNum(r['SH_10M']),
-    DELG_MINUS30_KM: toNum(r['DELG_-30%_KM']),
-    DELG_MINUS40_KM: toNum(r['DELG_-40%_KM']),
-    DELG_MINUS50_KM: toNum(r['DELG_-50%_KM']),
-    DELG_MINUS60_KM: toNum(r['DELG_-60%_KM']),
-    GRUE_35_KM: toNum(r['GRUE_35%_KM']),
-    GRUE_50_KM: toNum(r['GRUE_50%_KM']),
-    GRUE_70_KM: toNum(r['GRUE_70%_KM']),
-    GRUE_100_KM: toNum(r['GRUE_100%_KM']),
-    NEPS_140_KM: toNum(r['NEPS_140%_KM']),
-    NEPS_200_KM: toNum(r['NEPS_200%_KM']),
-    NEPS_280_KM: toNum(r['NEPS_280%_KM']),
-    NEPS_400_KM: toNum(r['NEPS_400%_KM'])
+    NO_: r['NO'] ?? null,
+    U_PERCENT: r['U%_%'] ?? null,
+    CVM_PERCENT: r['CVM_%'] ?? null,
+    INDICE_PERCENT: r['INDICE_%'] ?? null,
+    CVM_1M_PERCENT: r['CVM_1M_%'] ?? null,
+    CVM_3M_PERCENT: r['CVM_3M_%'] ?? null,
+    CVM_10M_PERCENT: r['CVM_10M_%'] ?? null,
+    TITULO: r['TITULO'] ?? null,
+    TITULO_REL_PERC: r['TITULO_REL_±_%'] ?? null,
+    H: r['H'] ?? null,
+    SH: r['SH'] ?? null,
+    SH_1M: r['SH_1M'] ?? null,
+    SH_3M: r['SH_3M'] ?? null,
+    SH_10M: r['SH_10M'] ?? null,
+    DELG_MINUS30_KM: r['DELG_-30%_KM'] ?? null,
+    DELG_MINUS40_KM: r['DELG_-40%_KM'] ?? null,
+    DELG_MINUS50_KM: r['DELG_-50%_KM'] ?? null,
+    DELG_MINUS60_KM: r['DELG_-60%_KM'] ?? null,
+    GRUE_35_KM: r['GRUE_35%_KM'] ?? null,
+    GRUE_50_KM: r['GRUE_50%_KM'] ?? null,
+    GRUE_70_KM: r['GRUE_70%_KM'] ?? null,
+    GRUE_100_KM: r['GRUE_100%_KM'] ?? null,
+    NEPS_140_KM: r['NEPS_140%_KM'] ?? null,
+    NEPS_200_KM: r['NEPS_200%_KM'] ?? null,
+    NEPS_280_KM: r['NEPS_280%_KM'] ?? null,
+    NEPS_400_KM: r['NEPS_400%_KM'] ?? null
   }))
 
   if (isSaving.value) return
@@ -1591,24 +1547,11 @@ async function saveCurrentTest() {
       timerProgressBar: true
     })
 
-    const endpoint = '/api/uster/upload'
-
-    const fetchWithTimeout = (url, opts = {}, timeout = 30000) => {
-      return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error('Timeout contacting server')), timeout)
-        fetch(url, opts).then(r => { clearTimeout(timer); resolve(r) }).catch(e => { clearTimeout(timer); reject(e) })
-      })
-    }
-
-    const resp = await fetchWithTimeout(endpoint, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ par, tbl: tblRows }),
-      credentials: 'include'
-    }, 30000)
-
-    let data = null
-    try { data = await resp.json() } catch { data = null }
-    if (!resp.ok) throw new Error(data && data.error ? data.error : (data && data.message) || `HTTP ${resp.status}`)
+    const data = savedPar.value
+      ? await requestJson(`/uster/tests/${encodeURIComponent(par.TESTNR)}/manual`, { method: 'PATCH', body: { ...manualDraft(), version: savedVersion.value } })
+      : await requestJson('/uster/upload', { method: 'POST', body: { par, tbl: tblRows } })
+    confirmedDraft.value = structuredClone(manualDraft())
+    if (data.version) savedVersion.value = data.version
 
     // Actualizar el archivo .TBL con los valores de Titulo editados ANTES de hacer cualquier otra cosa
     // Esto es CRÍTICO: debe ejecutarse antes de marcar imp=true y antes de limpiar cualquier dato
@@ -1646,6 +1589,9 @@ async function saveCurrentTest() {
       await nextTick();
     }
 
+    // The database write has completed. Auto-advance may now select another test.
+    isSaving.value = false
+    confirmedDraft.value = null
     // Limpia los inputs de TITULO correspondientes al TESTNR guardado
     try {
       for (let i = 0; i < tblData.value.length; i++) {
@@ -1749,6 +1695,7 @@ async function saveCurrentTest() {
 }
 
 async function deleteCurrentTest() {
+  if (isSaving.value || isLoadingSaved.value || !allowDiscard()) return
   if (!selectedTestnr.value || !isTestSaved.value) return
 
   // Confirmar antes de eliminar
@@ -1786,7 +1733,7 @@ async function deleteCurrentTest() {
     const fetchWithTimeout = (url, opts = {}, timeout = 30000) => {
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error('Timeout contacting server')), timeout)
-        fetch(url, opts).then(r => { clearTimeout(timer); resolve(r) }).catch(e => { clearTimeout(timer); reject(e) })
+        apiFetch(url, opts).then(r => { clearTimeout(timer); resolve(r) }).catch(e => { clearTimeout(timer); reject(e) })
       })
     }
 
@@ -2344,6 +2291,10 @@ const compactFields = [
 ]
 
 function getFieldValueByCode(code) {
+  if (savedPar.value) {
+    const key = code === 'TIME' ? 'TIME_STAMP' : code
+    if (Object.hasOwn(savedPar.value, key)) return savedPar.value[key] ?? ''
+  }
   // prefer using the parsed fileText when available
   const def = oracleFields.find(x => x.field === code)
   if (def && fileText.value) {
@@ -2863,6 +2814,74 @@ table.w-full {
   accent-color: #94a3b8 !important;
   filter: grayscale(0.3) !important;
   opacity: 0.7 !important;
+}
+/* Adapt to the actual working area, including the sidebar and browser zoom.
+   Columns have useful upper bounds instead of stretching across large monitors. */
+.uster-component {
+  container-type: inline-size;
+}
+.uster-component .uster-grid {
+  grid-template-columns: minmax(280px, 400px) minmax(180px, 220px) minmax(240px, 340px);
+  gap: 12px;
+  max-width: 984px;
+  width: 100%;
+}
+.uster-toolbar { flex-wrap: wrap; }
+.uster-toolbar > .flex-1 { min-width: 180px; }
+.uster-manual-column { width: 100%; }
+.uster-component .scan-table { table-layout: fixed; }
+.uster-component .scan-table th,
+.uster-component .scan-table td { padding-left: 5px; padding-right: 5px; }
+.uster-component .scan-table .col-ensayo { width: 24%; }
+.uster-component .scan-table .col-par,
+.uster-component .scan-table .col-tbl { width: 12%; }
+.uster-component .scan-table .col-imp { width: 14%; }
+.uster-component .scan-table .col-ne { width: 16%; }
+.uster-component .scan-table .col-maq { width: 22%; }
+.uster-component .titulo-table { table-layout: fixed; }
+.uster-component .titulo-table th:first-child,
+.uster-component .titulo-table td:first-child { width: 48px; padding-left: 4px; padding-right: 4px; }
+.uster-component .titulo-table th:last-child,
+.uster-component .titulo-table td:last-child { padding-left: 4px; padding-right: 4px; }
+.uster-component .titulo-table td:last-child .flex { gap: 4px; }
+.uster-component .titulo-table td:last-child span { width: 48px; }
+.uster-component .compact-table .col-dato { width: 38%; }
+.uster-component .compact-table .col-valor { width: 62%; }
+.uster-component .compact-table th,
+.uster-component .compact-table td { padding-left: 7px; padding-right: 7px; }
+.uster-component .compact-table .uster-observations-row {
+  height: 72px !important;
+  max-height: none !important;
+}
+.uster-component .compact-table .uster-observations-row td {
+  vertical-align: top !important;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.4 !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+@container (max-width: 1400px) {
+  .uster-component .uster-grid {
+    grid-template-columns: minmax(260px, 330px) 190px minmax(220px, 300px);
+    max-width: 844px;
+  }
+}
+@container (max-width: 780px) {
+  .uster-component .uster-grid {
+    grid-template-columns: minmax(250px, 1fr) 170px 220px;
+    gap: 8px;
+    max-width: 736px;
+  }
+  .uster-component .scan-table th,
+  .uster-component .scan-table td { padding-left: 3px; padding-right: 3px; }
+  .uster-component .titulo-table th:first-child,
+  .uster-component .titulo-table td:first-child { width: 40px; }
+  .uster-component .titulo-table td:last-child span { width: 44px; }
+}
+@container (max-width: 660px) {
+  .uster-component .uster-grid { grid-template-columns: minmax(250px, 1fr) 180px; }
+  .uster-component .uster-grid > div:last-child { grid-column: 1 / -1; max-width: 340px; }
 }
 </style>
 

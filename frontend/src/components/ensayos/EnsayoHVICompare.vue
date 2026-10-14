@@ -99,6 +99,8 @@
 </template>
 
 <script setup>
+import { apiFetch } from '@/services/authSession.js';
+
 import { ref, onMounted, computed } from 'vue';
 
 const comparativa = ref([]);
@@ -107,7 +109,7 @@ const cargando = ref(false);
 const cargarDatos = async () => {
   cargando.value = true;
   try {
-    const response = await fetch('/api/hvi/comparacion-muestra');
+    const response = await apiFetch('/api/hvi/comparacion-muestra');
     const data = await response.json();
     if (data.success) {
       comparativa.value = data.data;
