@@ -1,10 +1,53 @@
 import { mount } from '@vue/test-utils';
 import { afterEach, expect, it, vi } from 'vitest';
 import Uster from './Uster.vue';
+import Swal from 'sweetalert2';
 
 vi.mock('sweetalert2', () => ({ default: { fire: vi.fn().mockResolvedValue({}) } }));
 let wrapper;
 afterEach(() => { wrapper?.unmount(); vi.unstubAllGlobals(); });
+
+it('navega con flechas sin reescribir títulos ni actualizar tooltips de 1449 ensayos', async () => {
+  const updated=vi.fn();
+  wrapper=mount(Uster,{attachTo:document.body,global:{directives:{tippy:{mounted:()=>{},updated}}}});
+  wrapper.vm.filterShowNotSaved=false;wrapper.vm.filterShowAll=true;
+  wrapper.vm.scanList=Array.from({length:1449},(_,i)=>({testnr:String(i+1).padStart(5,'0'),imp:true}));
+  wrapper.vm.selectedTestnr='00001';
+  wrapper.vm.tblData=Array.from({length:10},(_,i)=>({TESTNR:'00001',NO:i+1,TITULO:20.5}));
+  wrapper.vm.pasador='No';
+  wrapper.vm.confirmedDraft=structuredClone(wrapper.vm.manualDraft());
+  await wrapper.vm.$nextTick();
+  wrapper.vm.focusPasadorAndSelectSi();
+  await wrapper.vm.$nextTick();
+  expect(wrapper.vm.pasador).toBe('No');
+  expect(wrapper.vm.hasUnsavedChanges).toBe(false);
+  updated.mockClear();
+  const first=wrapper.find('#titulo-input-0').element;
+  first.focus();
+  await wrapper.find('#titulo-input-0').trigger('keydown',{key:'ArrowDown'});
+  expect(document.activeElement.id).toBe('titulo-input-1');
+  await wrapper.find('#titulo-input-1').trigger('keydown',{key:'ArrowUp'});
+  expect(document.activeElement.id).toBe('titulo-input-0');
+  expect(wrapper.vm.tblData.every(row=>row.TITULO===20.5)).toBe(true);
+  expect(wrapper.vm.hasUnsavedChanges).toBe(false);
+  expect(updated.mock.calls.filter(([element])=>element.closest('.scan-table'))).toHaveLength(0);
+});
+
+it('selecciona el primer pendiente al escanear y enfoca Estiraje', async () => {
+  vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({ existing: ['00259'] }))));
+  wrapper = mount(Uster, { attachTo: document.body, global: { directives: { tippy: () => {} } } });
+  const par = Array.from({ length: 34 }, () => Array(12).fill('').join('\t')).join('\n');
+  const files = ['00259', '00260', '00261'].flatMap(id => [
+    { name: `STC03_${id}.PAR`, text: async () => par },
+    { name: `STC03_${id}.TBL`, text: async () => '' },
+  ]);
+  await wrapper.vm.onFolderInputChange({ target: { files } });
+  expect(wrapper.vm.selectedTestnr).toBe('00260');
+  expect(document.activeElement).toBe(wrapper.vm.$.setupState.estirajeInput);
+  await wrapper.vm.selectRow('00261');
+  await wrapper.vm.scanEntries(files);
+  expect(wrapper.vm.selectedTestnr).toBe('00261');
+});
 
 it('el selector alternativo aplica el estado remoto y permite filtrar guardados', async () => {
   const rows = Array.from({ length: 34 }, () => Array(12).fill(''));
@@ -49,10 +92,20 @@ it('al reabrir recupera Estiraje, Pasador y títulos de la base, aunque el TBL s
   expect(wrapper.vm.tblData.map(row => row.TITULO)).toEqual(Array(10).fill(20.5));
   expect(wrapper.vm.savedLoadError).toBe('');
   expect(wrapper.vm.canSave).toBeTruthy();
+  await wrapper.find('#titulo-input-0').trigger('focus');
+  expect(wrapper.vm.hasUnsavedChanges).toBe(false);
+  await wrapper.find('#titulo-input-0').trigger('blur');
+  expect(Number(wrapper.vm.tblData[0].TITULO)).toBe(20.5);
+  expect(wrapper.vm.hasUnsavedChanges).toBe(false);
+  wrapper.vm.tblData[0].TITULO='20.50';
+  expect(wrapper.vm.hasUnsavedChanges).toBe(false);
+  wrapper.vm.tblData[0].TITULO='20.51';
+  expect(wrapper.vm.hasUnsavedChanges).toBe(true);
+  wrapper.vm.tblData[0].TITULO=20.5;
   wrapper.vm.estiraje = '2.00';
   wrapper.vm.tblData[0].TITULO = '';
   expect(wrapper.vm.hasUnsavedChanges).toBe(true);
-  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  Swal.fire.mockResolvedValueOnce({ isDismissed: true });
   await wrapper.vm.selectRow('another');
   expect(wrapper.vm.selectedTestnr).toBe('00260');
   expect(wrapper.vm.estiraje).toBe('2.00');
@@ -61,7 +114,6 @@ it('al reabrir recupera Estiraje, Pasador y títulos de la base, aunque el TBL s
   expect(wrapper.vm.estiraje).toBe('1.25');
   expect(wrapper.vm.tblData[0].TITULO).toBe(20.5);
   expect(wrapper.vm.hasUnsavedChanges).toBe(false);
-  confirm.mockRestore();
   wrapper.vm.estiraje = '';
   await wrapper.vm.saveCurrentTest();
   const [url, options] = fetch.mock.calls.at(-1);

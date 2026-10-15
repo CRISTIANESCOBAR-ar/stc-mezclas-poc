@@ -1,5 +1,6 @@
 import { requiredNumber } from '../../../shared/numbers.js';
 import { parseDateFallback } from '../../../shared/dates.js';
+import { normalizeYarnLot } from '../../../shared/yarnLot.js';
 
 function invalid(message) {
   throw Object.assign(new Error(message), { statusCode: 400 });
@@ -36,6 +37,7 @@ export function validateTestImport(body, kind) {
   body = record(body, 'Carga');
   const par = record(body.par, 'PAR');
   par.TESTNR = text(par.TESTNR, 'PAR.TESTNR');
+  par.LOTE = normalizeYarnLot(par.LOTE);
   const fields = kind === 'uster' ? USTER_FIELDS : kind === 'carda' ? CARDA_FIELDS : TENSO_FIELDS;
   const tbl = rows(body.tbl, 'TBL').map((row, index) => {
     const label = `TBL, fila ${index + 1}`;

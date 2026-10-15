@@ -105,35 +105,34 @@
         </div>
       </div>
       </Teleport>
+      <section class="uster-tables-container rounded-xl" aria-label="Ensayos Uster y datos de carga">
       <div class="grid uster-grid">
         <!-- Columna 1: Lista de Ensayos, Botones y Estado -->
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3 uster-scan-column min-w-0">
           <!-- Filtros de visualización -->
-          <div class="bg-slate-50 rounded-lg p-3 border border-slate-200">
-            <div class="flex items-center gap-4 text-xs">
+            <div class="flex items-center gap-3 text-sm shrink-0 uster-filters">
               <label
                 class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" :checked="filterShowAll"
+                <input type="radio" name="uster-filter" value="all" :checked="filterShowAll"
                   @change="changeFilter('all')"
-                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
-                <span class="text-slate-700 font-medium">Mostrar todos</span>
+                  class="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-400" />
+                <span class="text-slate-700 font-medium">Todos</span>
               </label>
               <label
                 class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" :checked="filterShowNotSaved"
+                <input type="radio" name="uster-filter" value="pending" :checked="filterShowNotSaved"
                   @change="changeFilter('pending')"
-                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
+                  class="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-400" />
                 <span class="text-slate-700 font-medium">No guardados</span>
               </label>
               <label
                 class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 px-2 py-1.5 rounded-lg transition-colors duration-150">
-                <input type="checkbox" :checked="filterShowSaved"
+                <input type="radio" name="uster-filter" value="saved" :checked="filterShowSaved"
                   @change="changeFilter('saved')"
-                  class="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-400" />
+                  class="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-400" />
                 <span class="text-slate-700 font-medium">Guardados</span>
               </label>
             </div>
-          </div>
 
           <div v-if="initialLoadBanner" :class="initialLoadBanner.containerClass" class="rounded-xl px-4 py-3 text-sm shadow-sm">
             <div class="flex items-center gap-3">
@@ -148,7 +147,7 @@
           </div>
 
           <div class="scan-container rounded-xl border border-slate-200 overflow-hidden bg-white">
-            <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs scan-table">
+            <table v-memo="[scanDisplayList, selectedTestnr]" class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs scan-table">
               <colgroup>
                 <col class="col-ensayo" />
                 <col class="col-par" />
@@ -180,6 +179,7 @@
                 </tr>
               </thead>
               <tbody>
+                <tr v-if="!scanDisplayList.length" class="uster-empty-row"><td colspan="6" class="text-center text-slate-500 p-5">{{filterShowNotSaved ? 'No hay ensayos pendientes de guardar' : 'No hay ensayos en esta lista'}}</td></tr>
                 <tr v-for="(item, idx) in scanDisplayList" :key="idx"
                   class="hover:bg-blue-50/30 cursor-pointer transition-colors duration-150"
                   @click="item.testnr && selectRow(item.testnr)"
@@ -217,15 +217,15 @@
             </table>
           </div>
 
-          <div class="text-sm text-slate-600 font-medium">
+          <div class="text-sm text-slate-600 font-medium uster-scan-footer">
             {{ scanStatusDisplay }}
           </div>
         </div>
 
         <!-- Columna 2: Nro / Titulo (ahora en el medio) -->
-        <div class="uster-manual-column min-w-0">
+        <div class="uster-manual-column min-w-0 rounded-xl border border-slate-200 bg-white">
           <!-- Input para ESTIRAJE -->
-          <div class="mb-2 rounded-xl border border-slate-200 bg-white p-2">
+          <div class="mb-1 uster-manual-field">
             <div class="flex items-center justify-between gap-2">
               <label class="text-xs font-semibold text-slate-700">Estiraje</label>
               <input 
@@ -247,7 +247,7 @@
           </div>
 
           <!-- Radio buttons para PASADOR -->
-          <div class="mb-2 rounded-xl border border-slate-200 bg-white p-2">
+          <div class="mb-1 uster-manual-field">
             <div class="flex items-center justify-between gap-2">
               <label class="text-xs font-semibold text-slate-700">Pasador</label>
               <div class="flex items-center gap-3">
@@ -315,11 +315,10 @@
                           @keydown.up.prevent="focusPrevTitulo(r.srcIndex)"
                           @keydown.down.prevent="focusNextTituloWrap(r.srcIndex)"
                           :class="[
-                            'min-w-0 flex-1 box-border px-1 py-0.5 text-sm text-center border text-slate-900 focus:outline-none focus:ring-2 focus:border-blue-500 transition-all',
-                            getTituloToleranceClasses(r.srcIndex),
-                            isFocusedIndex === r.srcIndex ? 'ring-2 ring-yellow-400' : ''
+                            'min-w-0 flex-1 box-border px-1 py-0.5 text-sm text-center border text-slate-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400',
+                            getTituloToleranceClasses(r.srcIndex)
                           ]"
-                          v-tippy="{ content: getTituloToleranceMessage(r.srcIndex), allowHTML: false, theme: 'light' }"
+                          v-tippy="{ content: getTituloToleranceMessage(r.srcIndex), allowHTML: false, theme: 'light', trigger: 'mouseenter focus', placement: 'bottom', popperOptions: { modifiers: [{ name: 'flip', enabled: false }] } }"
                           style="box-sizing: border-box; margin:0; border-radius:0;" />
                         <span
                           :class="['w-14 shrink-0 text-[11px] text-right font-semibold tabular-nums', getTituloDeviationTextClasses(r.srcIndex)]"
@@ -337,8 +336,8 @@
         </div>
 
         <!-- Columna 3: Detalle Compacto (moved to right) -->
-        <div>
-          <div class="rounded-xl border border-slate-200 overflow-hidden bg-white">
+        <div class="uster-summary-column">
+          <div class="rounded-xl border border-slate-200 overflow-hidden bg-white uster-summary-panel">
             <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs compact-table">
               <colgroup>
                 <col class="col-dato" />
@@ -376,7 +375,7 @@
             </table>
           </div>
 
-          <div class="mt-3 flex gap-2">
+          <div class="flex gap-2 uster-summary-actions">
             <button ref="saveButton" v-if="selectedTestnr" @click="saveCurrentTest" :disabled="isSaving || !canSave"
               v-tippy="{ content: 'Guardar ensayo seleccionado', theme: 'light', placement: 'bottom' }"
               @keydown.up.prevent="focusLastTitulo"
@@ -403,8 +402,12 @@
       </div>
 
       <!-- Bottom: TBL import results (full width) -->
-      <div v-if="tblData.length" class="mt-4 rounded-xl border border-slate-200">
-        <div class="_minimal-scroll" style="overflow-x:auto;">
+      <div class="mt-4 shrink-0 rounded-xl border border-slate-200 uster-tbl-detail" aria-label="Detalle de mediciones TBL">
+        <div v-if="!tblData.length" class="uster-tbl-empty text-center text-slate-500" role="status">
+          <span class="text-sm font-medium">Detalle de mediciones .TBL</span>
+          <p class="mt-1 text-xs">Selecciona un ensayo para ver aquí sus mediciones.</p>
+        </div>
+        <div v-else class="_minimal-scroll" style="overflow-x:auto;">
           <table class="w-full text-sm border-collapse tbl-import-table compact-table"
             :style="{ minWidth: tblMinWidth + 'px', tableLayout: 'fixed' }">
             <colgroup>
@@ -429,11 +432,13 @@
           </table>
         </div>
       </div>
+      </section>
     </main>
   </div>
 </template>
 
 <script setup>
+import { confirmDiscard } from '@/services/confirmDiscard.js';
 import { apiFetch } from '@/services/authSession.js';
 import { requestJson } from '@/services/apiClient.js';
 import { restoreSavedUster } from '@/services/usterSaved.js';
@@ -462,16 +467,25 @@ function manualDraft() {
   return { estiraje: estiraje.value, pasador: pasador.value, matclass: matclass.value,
     titulos: currentTblRows.value.map(row => ({ huso: row.NO, titulo: row.TITULO })) }
 }
-const hasUnsavedChanges = computed(() => confirmedDraft.value !== null && JSON.stringify(manualDraft()) !== JSON.stringify(confirmedDraft.value))
-function allowDiscard() { return !hasUnsavedChanges.value || window.confirm('Hay cambios sin guardar. ¿Descartarlos?') }
+function comparableDraft(draft) {
+  const numeric=value=>{
+    if(value==null || String(value).trim()==='') return null
+    const normalized=String(value).trim().replace(',','.')
+    const number=Number(normalized)
+    return Number.isFinite(number) ? number : normalized
+  }
+  return {...draft,estiraje:numeric(draft.estiraje),titulos:draft.titulos.map(row=>({...row,titulo:numeric(row.titulo)}))}
+}
+const hasUnsavedChanges = computed(() => confirmedDraft.value !== null && JSON.stringify(comparableDraft(manualDraft())) !== JSON.stringify(comparableDraft(confirmedDraft.value)))
+async function allowDiscard() { return !hasUnsavedChanges.value || confirmDiscard('Hay cambios sin guardar. ¿Descartarlos?') }
 function discardChanges() {
   if (!confirmedDraft.value || isSaving.value) return
   const draft = confirmedDraft.value
   estiraje.value = draft.estiraje; pasador.value = draft.pasador; matclass.value = draft.matclass
   currentTblRows.value.forEach((row, i) => { row.TITULO = draft.titulos[i].titulo })
 }
-function changeFilter(mode) {
-  if (isSaving.value || isLoadingSaved.value || !allowDiscard()) return
+async function changeFilter(mode) {
+  if (isSaving.value || isLoadingSaved.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   confirmedDraft.value = null
   filterShowAll.value = mode === 'all'; filterShowNotSaved.value = mode === 'pending'; filterShowSaved.value = mode === 'saved'
   clearSelection()
@@ -479,7 +493,7 @@ function changeFilter(mode) {
 function beforeUnload(event) { if (hasUnsavedChanges.value || isSaving.value) { event.preventDefault(); event.returnValue = '' } }
 onMounted(() => window.addEventListener('beforeunload', beforeUnload))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
-onBeforeRouteLeave(() => !isSaving.value && allowDiscard())
+onBeforeRouteLeave(async () => !isSaving.value && allowDiscard())
 const scanStatus = ref('')
 const initialLoadBannerState = ref('checking-folder')
 const scanProgress = ref({ completed: 0, total: 0, detected: 0, databaseDone: false, verified: 0 })
@@ -603,7 +617,6 @@ function onTituloInput(srcIndex, ev) {
       const dotPos = raw.indexOf('.')
       // Verify format: 2 digits before dot, 2 digits after dot
       if (dotPos === 2 && raw.length - dotPos - 1 === 2) {
-        // small timeout to ensure the input value is applied before moving focus
         setTimeout(() => focusNextTituloWrap(srcIndex), 0)
       }
     }
@@ -612,7 +625,7 @@ function onTituloInput(srcIndex, ev) {
 
 async function selectFolder() {
   if (initialLoadBannerState.value === 'checking-folder') return
-  if (isSaving.value || isLoadingSaved.value || !allowDiscard()) return
+  if (isSaving.value || isLoadingSaved.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
   try {
     if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
@@ -716,7 +729,7 @@ async function verifyPermission(handle, mode = 'read') {
 // revalidateFolder removed: permission revalidation handled in refreshFolder and onMounted flow
 
 async function refreshFolder() {
-  if (isSaving.value || isLoadingSaved.value || !allowDiscard()) return
+  if (isSaving.value || isLoadingSaved.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
   try {
     initialLoadBannerState.value = 'loading'
@@ -782,6 +795,15 @@ async function scanEntries(entries) {
   const saved = new Set(existing.map(String))
   scanList.value = items.map(item => ({ ...item, imp: saved.has(String(item.testnr)) }))
   scanStatus.value = items.length ? `Encontrados ${items.length} ensayos` : 'No se encontraron archivos .PAR/.TBL válidos en la carpeta.'
+  if (!selectedTestnr.value) {
+    const firstPending = scanList.value.find(item => item.imp !== true)
+    if (firstPending) {
+      filterShowAll.value = false
+      filterShowSaved.value = false
+      filterShowNotSaved.value = true
+      await selectRow(firstPending.testnr)
+    }
+  }
 }
 
 async function scanDirectory(dirHandle) {
@@ -888,7 +910,7 @@ function clearSelection() {
 }
 
 async function selectRow(testnr) {
-  if (isLoadingSaved.value || isSaving.value || !allowDiscard()) return
+  if (isLoadingSaved.value || isSaving.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   confirmedDraft.value = null
   isLoadingSaved.value = true
   savedPar.value = null
@@ -1028,6 +1050,7 @@ const scanDisplayList = computed(() => {
   }
 
   // Si la lista es más pequeña, la rellenamos con placeholders hasta llegar a maxRows.
+  if (!items.length) return [];
   const placeholder = { testnr: '', hasPar: false, hasTbl: false, imp: null, nomcount: '', maschnr: '' };
   while (items.length < maxRows) {
     items.push(placeholder);
@@ -1695,7 +1718,7 @@ async function saveCurrentTest() {
 }
 
 async function deleteCurrentTest() {
-  if (isSaving.value || isLoadingSaved.value || !allowDiscard()) return
+  if (isSaving.value || isLoadingSaved.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   if (!selectedTestnr.value || !isTestSaved.value) return
 
   // Confirmar antes de eliminar
@@ -1779,8 +1802,10 @@ async function deleteCurrentTest() {
   }
 }
 
+let focusedTituloIndex, focusedTituloValue
 function onTituloFocus(srcIndex) {
-  isFocusedIndex.value = srcIndex
+  focusedTituloIndex=srcIndex
+  focusedTituloValue=tblData.value[srcIndex]?.TITULO
 }
 
 function parseNeValue(value) {
@@ -1861,6 +1886,7 @@ function getTituloToleranceMessage(srcIndex) {
 }
 
 function validateAndNormalizeTitulo(srcIndex) {
+  if(focusedTituloIndex===srcIndex && tblData.value[srcIndex]?.TITULO===focusedTituloValue) return true
   const raw = (tblData.value && tblData.value[srcIndex] && String(tblData.value[srcIndex]['TITULO'] || '').trim()) || ''
   if (raw === '') return true
 
@@ -2142,23 +2168,20 @@ function handleEstirajeKeydown(event) {
   }
 }
 
-// Función para enfocar Pasador y pre-seleccionar "Sí"
+// Navigation moves focus without changing the saved Pasador choice.
 function focusPasadorAndSelectSi() {
   if (!selectedTestnr.value) return
-  pasador.value = 'Si'
   nextTick(() => {
-    if (pasadorSiInput.value) {
-      pasadorSiInput.value.focus()
-    }
+    const target=pasador.value==='No' ? pasadorNoInput.value : pasadorSiInput.value
+    target?.focus()
   })
 }
 
 function focusPasador() {
   if (!selectedTestnr.value) return
   nextTick(() => {
-    if (pasadorSiInput.value) {
-      pasadorSiInput.value.focus()
-    }
+    const target=pasador.value==='No' ? pasadorNoInput.value : pasadorSiInput.value
+    target?.focus()
   })
 }
 
@@ -2821,14 +2844,45 @@ table.w-full {
   container-type: inline-size;
 }
 .uster-component .uster-grid {
+  flex:1 0 auto;min-height:auto;align-items:stretch;
   grid-template-columns: minmax(280px, 400px) minmax(180px, 220px) minmax(240px, 340px);
   gap: 12px;
   max-width: 984px;
   width: 100%;
 }
+.uster-tables-container{
+  display:flex;flex-direction:column;flex:1 0 auto;
+  width:100%;min-width:0;box-sizing:border-box;
+  margin-top:8px;padding:8px;
+  border:1px solid #e2e8f0;background:#fff;
+  container:uster-tables / inline-size;
+}
+.uster-tbl-detail{display:flex;flex-direction:column;flex:1 0 auto;min-height:140px;}
+.uster-tbl-empty{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;min-height:140px;padding:20px;}
 .uster-toolbar { flex-wrap: wrap; }
+.uster-scan-column{min-height:0;gap:8px;}
+.uster-scan-footer{margin-top:auto;min-height:32px;display:flex;align-items:center;flex-shrink:0;}
+.uster-summary-column{display:flex;flex-direction:column;gap:8px;min-width:0;}
+.uster-summary-panel{flex:1 0 auto;}
+.uster-summary-actions{min-height:32px;align-items:center;flex-shrink:0;}
+.uster-filters{gap:16px;padding:0;}
+.uster-filters label{padding:4px 0;white-space:nowrap;font-size:12px;}
+.uster-component .scan-container{flex:1;min-height:260px;height:auto;position:relative;isolation:isolate;border-radius:4px;border-color:#cbd5e1;overflow-y:auto;max-height:var(--titulo-total-h);}
+.uster-tables-container .uster-grid{flex:0 0 auto;}
+.uster-manual-field{padding:0;min-height:24px;}
+.uster-component .scan-table{border-collapse:separate;border-spacing:0;}
+.uster-component .scan-table thead th{background:#f1f5f9;box-shadow:inset 0 -1px 0 #cbd5e1;}
+.uster-component .scan-table:has(.uster-empty-row){height:100%;}
+.uster-component .scan-table:has(.uster-empty-row) thead{height:32px;}
+.uster-empty-row td{vertical-align:middle;}
 .uster-toolbar > .flex-1 { min-width: 180px; }
-.uster-manual-column { width: 100%; }
+.uster-manual-column {
+  width:100%;padding:4px;box-sizing:border-box;align-self:start;
+}
+.uster-manual-column .titulo-container{border-radius:8px;}
+@container (min-width:1401px){
+  .uster-manual-column{padding:8px;}
+}
 .uster-component .scan-table { table-layout: fixed; }
 .uster-component .scan-table th,
 .uster-component .scan-table td { padding-left: 5px; padding-right: 5px; }

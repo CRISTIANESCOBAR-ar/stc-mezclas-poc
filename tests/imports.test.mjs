@@ -19,6 +19,21 @@ const payloads = [
   { filename: 'test.txt', data: [{ Lote: '123', Proveedor: 'TEST', Fecha: '2026-10-13', Bale_ID: '01', Str: '30,5' }] }
 ];
 
+test('normaliza guiones repetidos del lote en Uster, TensoRapid y Cardas antes de guardar', () => {
+  for (const [index, kind] of ['uster', 'tenso', 'carda'].entries()) {
+    const body = structuredClone(payloads[index]);
+    for (const [source, expected] of [
+      [' HD-141--26 ', 'HD-141-26'], ['HD-141---26', 'HD-141-26'],
+      ['HD-0141-26', 'HD-0141-26'], ['hd-141-26', 'hd-141-26'],
+      [null, null], [undefined, undefined],
+    ]) {
+      body.par.LOTE = source;
+      assert.equal(validateTestImport(body, kind).par.LOTE, expected);
+      assert.equal(body.par.LOTE, source);
+    }
+  }
+});
+
 async function invoke(index, body) {
   const endpoint = index === 3 ? '/save' : '/upload';
   const layer = routes[index].stack.find(layer => layer.route?.path === endpoint && layer.route.methods.post);

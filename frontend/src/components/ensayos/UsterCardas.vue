@@ -296,6 +296,7 @@
 </template>
 
 <script setup>
+import { confirmDiscard } from '@/services/confirmDiscard.js';
 import { apiFetch, can } from '@/services/authSession.js';
 import { requestJson } from '@/services/apiClient.js';
 import { scanUsterFiles } from '@/services/usterScan.js';
@@ -318,16 +319,16 @@ const savedVersion = ref(null)
 const confirmedTitles = ref(null)
 const scanProgress = ref({ completed: 0, total: 0, detected: 0, verified: false })
 const hasUnsavedChanges = computed(() => confirmedTitles.value !== null && JSON.stringify(tituloInputs.value) !== JSON.stringify(confirmedTitles.value))
-function allowDiscard() { return !hasUnsavedChanges.value || window.confirm('Hay títulos sin guardar. ¿Descartarlos?') }
+async function allowDiscard() { return !hasUnsavedChanges.value || confirmDiscard('Hay títulos sin guardar. ¿Descartarlos?') }
 function discardChanges() { if (confirmedTitles.value && !isSaving.value) tituloInputs.value = [...confirmedTitles.value] }
-function changeFilter(mode) {
-  if (isSaving.value || batchImporting.value || isLoadingSaved.value || !allowDiscard()) return
+async function changeFilter(mode) {
+  if (isSaving.value || batchImporting.value || isLoadingSaved.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   confirmedTitles.value = null; filterMode.value = mode; clearSelection()
 }
 function beforeUnload(e) { if (hasUnsavedChanges.value || isSaving.value || batchImporting.value) { e.preventDefault(); e.returnValue = '' } }
 onMounted(() => window.addEventListener('beforeunload', beforeUnload))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', beforeUnload))
-onBeforeRouteLeave(() => !isSaving.value && !batchImporting.value && allowDiscard())
+onBeforeRouteLeave(async () => !isSaving.value && !batchImporting.value && allowDiscard())
 
 const scanList = ref([])
 const selectedTestnr = ref('')
@@ -888,7 +889,7 @@ async function readFileFromHandle(handle) {
 }
 
 async function selectRow(recordKey) {
-  if (isSaving.value || batchImporting.value || isLoadingSaved.value || !allowDiscard()) return
+  if (isSaving.value || batchImporting.value || isLoadingSaved.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   const item=scanList.value.find(x=>x.recordKey===recordKey)
   if (!item) return
   confirmedTitles.value=null; savedVersion.value=null; loadError.value=''; isLoadingSaved.value=true
@@ -985,7 +986,7 @@ async function saveCurrentTest() {
 }
 
 async function deleteCurrentTest() {
-  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || !allowDiscard()) return
+  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
   if (!selectedTestnr.value || !isTestSaved.value || isDeleting.value) return
 
@@ -1030,7 +1031,7 @@ async function deleteCurrentTest() {
 }
 
 async function batchImportPending() {
-  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || !allowDiscard()) return
+  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
   const pending = scanList.value.filter((i) => !i.imp && i.hasPar && i.hasTbl)
   if (!pending.length) {
@@ -1156,7 +1157,7 @@ async function verifyPermission(handle, mode = 'read') {
 }
 
 async function selectFolder() {
-  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || !allowDiscard()) return
+  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
   try {
     if (typeof window !== 'undefined' && 'showDirectoryPicker' in window) {
@@ -1174,7 +1175,7 @@ async function selectFolder() {
 }
 
 async function refreshFolder() {
-  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || !allowDiscard()) return
+  if (initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || batchImporting.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
   initialLoadBannerState.value = 'loading'
   const dirHandle = await getDirHandleFromIDB()

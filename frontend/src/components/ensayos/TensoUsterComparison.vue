@@ -27,7 +27,7 @@
       </table>
     </div>
     <p v-if="comparisonRows.some(row => row.label === 'Husos' && row.status === 'Difiere')" class="mt-2 rounded bg-amber-50 p-2 text-amber-900">Los números de huso difieren. Puede deberse a cómo se identificaron en cada equipo; esta comparación no establece una correspondencia física ni reasigna husos.</p>
-    <p class="mt-2 text-slate-500">La coincidencia indica compatibilidad de datos; no identifica por sí sola una pareja única de ensayos.</p>
+    <p class="mt-2 text-slate-500 tenso-comparison-footer">La coincidencia indica compatibilidad de datos; no identifica por sí sola una pareja única de ensayos.</p>
   </section>
 </template>
 <script setup>
@@ -39,7 +39,9 @@ const comparisonRows=computed(()=>compareEnsayos(props.tenso,props.uster || {},p
 const rows=computed(()=>comparisonRows.value.filter(row=>row.label!=='Husos'));
 </script>
 <style scoped>
-.tenso-cross-check { position:relative; box-sizing:border-box; overflow-wrap:anywhere; container: tenso-comparison / inline-size; }
+.tenso-cross-check { display:flex;flex-direction:column;position:relative; box-sizing:border-box; overflow-wrap:anywhere; container: tenso-comparison / inline-size; }
+.tenso-cross-check > *{flex-shrink:0;}
+.tenso-comparison-footer{margin-top:auto;padding-top:8px;}
 .tenso-cross-check table { table-layout:fixed; }
 .tenso-cross-check th:first-child { width:25%; }
 .tenso-cross-check th:last-child { width:22%; }

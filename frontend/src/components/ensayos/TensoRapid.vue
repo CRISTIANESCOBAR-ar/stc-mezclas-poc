@@ -7,6 +7,7 @@
 	</div>
 	<div class="hidden md:flex w-full h-screen flex-col p-1 tenso-component">
 		<main
+			:class="{ 'tenso-empty-workspace': !filteredTensoItems.length }"
 			class="w-full flex-1 min-h-0 bg-white rounded-2xl shadow-xl px-4 py-3 border border-slate-200 flex flex-col overflow-y-auto tenso-workspace">
 			<!-- Selector de carpeta (con título principal delante) -->
 			<div class="shrink-0 mb-3 flex items-center gap-3 tenso-toolbar">
@@ -114,7 +115,7 @@
 									<!-- Acción increased by ~15% (212px -> 244px) -->
 									<col class="col-accion" />
 								</colgroup>
-								<thead class="sticky top-0 bg-linear-to-r from-slate-50 to-slate-100 z-10">
+								<thead>
 									<tr>
 										<th
 											class="px-2 py-1 border border-slate-200 text-xs text-center font-semibold text-slate-700">
@@ -143,6 +144,14 @@
 									</tr>
 								</thead>
 								<tbody>
+                  <tr v-if="!filteredTensoItems.length" class="tenso-empty-row">
+                    <td colspan="8" class="text-center text-slate-500">
+                      <div class="flex flex-col items-center justify-center gap-2 p-6">
+                        <InboxIcon class="h-8 w-8 text-slate-400" aria-hidden="true" />
+                        <span class="text-sm font-medium">{{isScanning ? 'Buscando ensayos...' : filterMode==='not' ? 'No hay ensayos pendientes de guardar' : 'No hay ensayos en esta lista'}}</span>
+                      </div>
+                    </td>
+                  </tr>
 									<tr v-for="(item, idx) in tensoDisplayList" :key="idx"
 										class="hover:bg-blue-50/30 cursor-pointer transition-colors duration-150"
 										:class="{ 'bg-blue-50': selectedTensoTestnr === item.testnr }"
@@ -226,7 +235,7 @@
 													<button @click="saveToOracle(item)" :disabled="isSaving"
 														:ref="el => setSaveButtonRef(el, item.testnr)"
 														@keydown.left.prevent="focusUsterInput(item)"
-														@keydown.right.prevent="focusDeleteButton(item)"
+														@keydown.right.prevent="focusCancelButton(item)"
 														class="inline-flex items-center justify-center w-28 gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md disabled:opacity-50">
 														<svg xmlns="http://www.w3.org/2000/svg"
 															class="h-4 w-4 text-indigo-600" fill="none"
@@ -236,7 +245,9 @@
 														</svg>
 														<span>{{ isSaving ? 'Guardando...' : 'Guardar' }}</span>
 													</button>
-													<button v-if="item.isEditing" @click="cancelEditing(item)"
+													<button @click="cancelEditing(item)"
+														:ref="el => cancelButtonRefs[item.testnr] = el"
+														@keydown.left.prevent="focusSaveButton(item)"
 														:disabled="isSaving"
 														class="inline-flex items-center justify-center w-28 gap-2 px-3 py-1 border border-slate-200 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors duration-150 shadow-sm hover:shadow-md disabled:opacity-50">
 														<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
@@ -246,13 +257,6 @@
 														</svg>
 														Cancelar
 													</button>
-													<button v-if="!item.isEditing && can('administrador')" @click.stop="deleteTensorapid(item)" v-tippy="{content:'Eliminar ensayo TensoRapid',theme:'light'}"
-														:disabled="isDeleting"
-														:ref="el => setDeleteButtonRef(el, item.testnr)"
-														@keydown.left.prevent="focusSaveButton(item)"
-														class="inline-flex items-center justify-center w-28 px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium disabled:opacity-50 transition-colors duration-200 shadow-sm hover:shadow-md">
-														{{ isDeleting ? 'Eliminando...' : 'Eliminar' }}
-													</button>
 												</div>
 											</transition>
 										</td>
@@ -260,26 +264,27 @@
 								</tbody>
 							</table>
 						</div>
-						<div class="shrink-0 flex items-center gap-2 mt-3">
-							<div class="text-sm font-medium text-slate-600">{{ tensoScanStatus }}</div>
-							<div v-if="isScanning" class="text-sm text-slate-500 flex items-center gap-2">
-								<svg class="w-4 h-4 animate-spin text-slate-600" viewBox="0 0 24 24" fill="none">
-									<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-										stroke-width="4">
-									</circle>
-									<path class="opacity-75" fill="currentColor"
-										d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z">
-									</path>
-								</svg>
-								<span>Escaneando...</span>
-							</div>
-						</div>
-					<div v-if="scanPageCount>1" class="mt-2 flex items-center gap-3 text-xs text-slate-600">
-            <button :disabled="scanPage===1 || isSaving" @click="scanPage--" class="rounded border px-2 py-1 disabled:opacity-40">Anterior</button>
-            <span>Página {{scanPage}} de {{scanPageCount}} · {{filteredTensoItems.length}} ensayos</span>
-            <button :disabled="scanPage===scanPageCount || isSaving" @click="scanPage++" class="rounded border px-2 py-1 disabled:opacity-40">Siguiente</button>
+						<div class="tenso-pagination-shell mt-3 shrink-0">
+              <div class="tenso-pagination-row text-sm font-medium text-slate-700">
+                <span class="tenso-pagination-status" v-tippy="{content:tensoScanStatus,theme:'light'}"><span class="tenso-status-full">{{tensoScanStatus}}</span><span class="tenso-status-compact">{{tensoScanList.length}} ensayos · {{tensoScanList.filter(item=>item.saved).length}} guardados</span></span>
+                <ArrowPathIcon v-if="isScanning" class="h-4 w-4 shrink-0 animate-spin" aria-label="Escaneando" />
+                <nav v-if="scanPageCount>1" class="tenso-pagination-controls" aria-label="Páginas de ensayos TensoRapid">
+                  <template v-for="(action,index) in [
+                    {label:'Inicio',icon:ChevronDoubleLeftIcon,page:1,disabled:scanPage===1},
+                    {label:'Anterior',icon:ChevronLeftIcon,page:scanPage-1,disabled:scanPage===1},
+                    {label:'Siguiente',icon:ChevronRightIcon,page:scanPage+1,disabled:scanPage===scanPageCount},
+                    {label:'Final',icon:ChevronDoubleRightIcon,page:scanPageCount,disabled:scanPage===scanPageCount}
+                  ]" :key="action.label">
+                    <span v-if="index===2" class="whitespace-nowrap" aria-live="polite"><span class="tenso-page-word">Página </span>{{scanPage}}<span class="tenso-page-word"> de </span><span class="tenso-page-slash">/</span>{{scanPageCount}}</span>
+                    <button :disabled="action.disabled || isSaving" @click="scanPage=action.page" :aria-label="action.label" v-tippy="{content:action.label,theme:'light'}" class="tenso-page-button">
+                      <component :is="action.icon" class="tenso-page-icon h-4 w-4" aria-hidden="true" />
+                      <span class="tenso-page-label">{{action.label}}</span>
+                    </button>
+                  </template>
+                </nav>
+              </div>
+            </div>
           </div>
-						</div>
           <!-- Fin columna izquierda -->
 
 					<!-- Columna derecha: Tabla TBL (sin contenedor exterior) -->
@@ -382,15 +387,17 @@
 </template>
 
 <script setup>
+import { confirmDiscard } from '@/services/confirmDiscard.js';
 import { apiFetch, can } from '@/services/authSession.js';
 import { requestJson } from '@/services/apiClient.js';
 import { scanUsterFiles } from '@/services/usterScan.js';
-import { ArrowPathIcon, ExclamationTriangleIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import { ArrowPathIcon, ExclamationTriangleIcon, PencilSquareIcon, ChevronDoubleLeftIcon, ChevronLeftIcon, ChevronRightIcon, ChevronDoubleRightIcon, InboxIcon } from '@heroicons/vue/24/outline';
 import { onBeforeRouteLeave } from 'vue-router';
 import TensoUsterComparison from './TensoUsterComparison.vue';
 import { formatStoredSpindle } from '@/services/tensorapidFormat.js';
 
 import { ref, shallowRef, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
+import { compareEnsayos } from '../../services/compareEnsayos.js'
 import Swal from 'sweetalert2'
 
 // UI state
@@ -425,13 +432,24 @@ watch([comparisonUsterId,selectedTensoTestnr,isLoadingSaved],([id,testnr,loading
 onUnmounted(()=>{clearTimeout(comparisonTimer);comparisonRevision++})
 const scanProgress=ref({completed:0,total:0,detected:0,verified:false})
 const hasUnsavedChanges=computed(()=>tensoScanList.value.some(item=>String(item.usterTestnr || '')!==String(item.confirmedUster || '')))
-function allowDiscard(){return !hasUnsavedChanges.value || window.confirm('Hay vínculos Uster sin guardar. ¿Descartarlos?')}
+async function allowDiscard(){return !hasUnsavedChanges.value || confirmDiscard('Hay vínculos Uster sin guardar. ¿Descartarlos?')}
 function discardChanges(){if(!isSaving.value) tensoScanList.value.forEach(item=>{item.usterTestnr=item.confirmedUster || '';item.isEditing=false})}
-function changeFilter(mode){if(isSaving.value || isLoadingSaved.value || isScanning.value || !allowDiscard()) return;discardChanges();filterMode.value=mode;recalcStatus()}
+async function changeFilter(mode){
+  if(isSaving.value || isLoadingSaved.value || isScanning.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
+  discardChanges();filterMode.value=mode;recalcStatus()
+  if(!filteredTensoItems.value.some(item=>item.testnr===selectedTensoTestnr.value)) clearSelectedTest()
+}
+function clearSelectedTest(){
+  localReadRevision++;comparisonRevision++;clearTimeout(comparisonTimer)
+  selectedTensoTestnr.value='';fileText.value='';tblText.value='';selectedTblName.value='';tblTestnr.value=''
+  parsedParData.value={};parsedTblData.value=[];loadError.value=''
+  comparisonTensoHeader.value={};comparisonTensoHusos.value=[];comparisonUster.value=null
+  comparisonLoading.value=false;comparisonLocalLoading.value=false;comparisonError.value='';comparisonSourceWarning.value=''
+}
 function beforeUnload(e){if(hasUnsavedChanges.value || isSaving.value){e.preventDefault();e.returnValue=''}}
 onMounted(()=>window.addEventListener('beforeunload',beforeUnload))
 onUnmounted(()=>window.removeEventListener('beforeunload',beforeUnload))
-onBeforeRouteLeave(()=>!isSaving.value && allowDiscard())
+onBeforeRouteLeave(async ()=>!isSaving.value && allowDiscard())
 const isScanning = ref(false)
 const isSaving = ref(false)
 const isDeleting = ref(false)
@@ -464,6 +482,7 @@ const inputRefs = shallowRef({})
 const saveButtonRefs = shallowRef({})
 const editButtonRefs = shallowRef({})
 const deleteButtonRefs = shallowRef({})
+const cancelButtonRefs = shallowRef({})
 
 // compute display list padded to maxRows and filtered by checkboxes
 const tensoDisplayList = computed(() => {
@@ -491,7 +510,6 @@ const tensoDisplayList = computed(() => {
 
 	const out = []
 	if (filtered.length === 0) {
-		for (let i = 0; i < maxRows; i++) out.push({ testnr: '', hasPar: false, hasTbl: false, nomcount: '', maschnr: '' })
 		return out
 	}
 
@@ -711,6 +729,30 @@ async function readComparisonFiles(item,revision){
 }
 onUnmounted(()=>{localReadRevision++})
 
+async function confirmCrossCheck(item,header,husos) {
+  // Read the requested assay now; the debounced preview may still show another link.
+  const uster=await requestJson(`/uster/tests/${encodeURIComponent(item.usterTestnr)}`)
+  if(!uster.par || !Array.isArray(uster.tbl) || !uster.tbl.length) throw new Error('No se pudo verificar el ensayo Uster o no tiene husos registrados.')
+  const rows=compareEnsayos(header,uster.par,husos,uster.tbl.map(row=>row.NO_))
+  const differences=rows.filter(row=>row.status!=='Coincide')
+  if(!differences.length) return true
+  const blocked=item.saved && rows.find(row=>row.label==='Husos').status!=='Coincide'
+  const result=await Swal.fire({
+    icon:'warning',title:'Revisar vínculo con Uster',
+    text:`TensoRapid ${item.testnr} · Uster ${item.usterTestnr}\n\n`+
+      differences.map(row=>`${row.label} (${row.status}):\nTensoRapid: ${row.tenso || 'Sin dato'}\nUster: ${row.uster || 'Sin dato'}`).join('\n\n')+
+      (blocked?'\n\nNo se puede cambiar un vínculo guardado con husos diferentes. Revisa el ensayo Uster.':'\n\nConfirma solo si corresponden al mismo hilo y máquina. Se conservarán los husos originales de cada equipo.'),
+    showConfirmButton:!blocked,showCancelButton:true,confirmButtonText:'Guardar de todas formas',cancelButtonText:'Volver a revisar',
+    focusCancel:true,allowEnterKey:false,width:650,
+    didOpen:()=>{const content=Swal.getHtmlContainer?.();if(content){content.style.whiteSpace='pre-wrap';content.style.textAlign='left'}}
+  })
+  if(result.isConfirmed && !blocked) return true
+  isSaving.value=false
+  await nextTick()
+  focusUsterInput(item)
+  return false
+}
+
 async function saveToOracle(item) {
 	if (!item || !item.testnr || !item.usterTestnr) return
 	if (isSaving.value || isLoadingSaved.value || isScanning.value || loadError.value) return
@@ -722,6 +764,8 @@ async function saveToOracle(item) {
         if(padUsterTestnr(saved.par.USTER_TESTNR || '')!==String(item.confirmedUster || '')) throw new Error('El vínculo cambió. Recarga antes de guardar.')
         item.version=saved.version
       }
+      const savedTest=await requestJson(`/tensorapid/tests/${encodeURIComponent(item.testnr)}`)
+      if(!await confirmCrossCheck(item,savedTest.par,savedTest.tbl.map(row=>row.HUSO_NUMBER))) return
       const data=await requestJson(`/tensorapid/tests/${encodeURIComponent(item.testnr)}/link`,{method:'PATCH',body:{version:item.version,usterTestnr:item.usterTestnr}})
       item.version=data.version;item.confirmedUster=item.usterTestnr;item.isEditing=false
       await Swal.fire({toast:true,position:'top-end',icon:'success',title: 'Vínculo Uster actualizado',showConfirmButton:false,timer:2400})
@@ -742,84 +786,7 @@ async function saveToOracle(item) {
 			throw new Error('No se pudieron cargar los datos del archivo .TBL')
 		}
 
-		// **VALIDACIÓN 1: Verificar que el USTER_TESTNR existe en la BD**
-		const usterExists = await validateUsterExists(item.usterTestnr)
-		if (!usterExists) {
-			throw new Error(`El ensayo Uster ${item.usterTestnr} no existe en la base de datos. Debe cargarse primero en la página Uster.`)
-		}
-
-		// **VALIDACIÓN 2: Verificar que los números de Huso coincidan**
-		const husoValidation = await validateHusoMatch(item.usterTestnr, parsedTblData.value)
-		if (!husoValidation.valid) {
-			// Si hay discrepancias pero podemos auto-corregir, mostrar modal con opciones
-			if (husoValidation.hasDiscrepancies && husoValidation.canAutoFix) {
-				// Cerrar toast de guardando
-				Swal.close()
-				
-				// Construir mensaje informativo
-				let message = '<div style="text-align: left; font-size: 14px;">'
-				message += '<p><strong>Se detectaron diferencias en los números de Huso:</strong></p>'
-				
-				if (husoValidation.husosInTensoNotInUster.length > 0) {
-					message += `<p>• Husos en TensoRapid que <strong>NO están</strong> en Uster: <code>${husoValidation.husosInTensoNotInUster.join(', ')}</code></p>`
-				}
-				if (husoValidation.husosInUsterNotInTenso.length > 0) {
-					message += `<p>• Husos en Uster que <strong>NO están</strong> en TensoRapid: <code>${husoValidation.husosInUsterNotInTenso.join(', ')}</code></p>`
-				}
-				
-				message += '<br><p><strong>¿Qué deseas hacer?</strong></p></div>'
-				
-				const result = await Swal.fire({
-					icon: 'warning',
-					title: 'Discrepancia en Husos',
-					html: message,
-					showDenyButton: true,
-					showCancelButton: true,
-					confirmButtonText: '✓ Usar Husos de Uster',
-					confirmButtonColor: '#10b981',
-					denyButtonText: 'Guardar de todas formas',
-					denyButtonColor: '#f59e0b',
-					cancelButtonText: 'Cancelar',
-					cancelButtonColor: '#6b7280',
-					width: '600px'
-				})
-				
-				if (result.isDismissed) {
-					// Usuario canceló, no guardar
-					isSaving.value = false
-				
-					// Seleccionar el contenido del input de USTER para facilitar corrección
-					await nextTick()
-					const input = inputRefs.value[item.testnr]
-					if (input && typeof input.select === 'function') {
-						input.focus()
-						input.select()
-					}
-				
-					return
-				}
-			
-				if (result.isConfirmed) {
-					// Usuario eligió usar Husos de Uster - reemplazar en parsedTblData
-					// Reemplazar los Husos de TensoRapid con los de Uster
-					for (let i = 0; i < parsedTblData.value.length && i < husoValidation.usterHusos.length; i++) {
-						const usterHuso = husoValidation.usterHusos[i]
-						// Actualizar columna 1 (formato "321/5" por ejemplo)
-						if (parsedTblData.value[i][1]) {
-							const match = parsedTblData.value[i][1].match(/^(\d+)\/(.+)$/)
-							if (match) {
-								parsedTblData.value[i][1] = `${usterHuso}/${match[2]}`
-							}
-						}
-					}
-				} else if (result.isDenied) {
-					// Usuario eligió guardar con los Husos actuales de TensoRapid
-				}
-			} else {
-				// Error que no se puede auto-corregir
-				throw new Error(husoValidation.error)
-			}
-		}
+		if(!await confirmCrossCheck(item,parsedParData.value,preparedTblPreview.value.map(row=>row.HUSO_NUMBER))) return
 
 		// Agregar el TESTNR de USTER a los datos PAR
 		const parDataToSave = {
@@ -896,9 +863,6 @@ async function saveToOracle(item) {
 		item.isEditing = false
 		recalcStatus()
 
-		// Enfocar siguiente input vacío en la columna USTER
-		try { await focusNextEmptyUster(item.testnr) } catch (e) { /* ignore */ }
-
 		// Toast de éxito
 		Swal.fire({
 			toast: true,
@@ -910,6 +874,10 @@ async function saveToOracle(item) {
 			timer: 3000,
 			timerProgressBar: true
 		})
+
+		// Enable the next field before focusing it: disabled inputs cannot receive focus.
+		isSaving.value = false
+		await focusNextEmptyUster(item.testnr)
 	} catch (err) {
 		// Cerrar toast de "Guardando..." si existe
 		Swal.close()
@@ -943,7 +911,7 @@ async function saveToOracle(item) {
 
 // Eliminar ensayo de TENSORAPID_PAR y TENSORAPID_TBL
 async function deleteTensorapid(item) {
-  if(isSaving.value || isLoadingSaved.value || isScanning.value || !allowDiscard()) return
+  if(isSaving.value || isLoadingSaved.value || isScanning.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
 	if (!item || !item.testnr) return
 	if (!item.saved) return
@@ -998,15 +966,19 @@ function startEditing(item) {
 }
 
 // Cancelar edición y restaurar valor original
-function cancelEditing(item) {
+async function cancelEditing(item) {
   if(isSaving.value || isLoadingSaved.value) return
 	if (!item) return
 	// Restaurar el valor original
-	if (item.originalUsterTestnr !== undefined) {
-		item.usterTestnr = item.originalUsterTestnr
-	}
+	item.usterTestnr = item.saved ? (item.confirmedUster ?? item.originalUsterTestnr ?? '') : ''
 	item.isEditing = false
 	item.originalUsterTestnr = undefined
+	await nextTick()
+	focusUsterInput(item)
+}
+
+function focusCancelButton(item) {
+  cancelButtonRefs.value[item?.testnr]?.focus()
 }
 
 // Guardar referencia al input para poder enfocarlo
@@ -1129,7 +1101,7 @@ async function focusNextEmptyUster(currentTestnr) {
 				if (filterMode.value === 'saved') return !!it.saved
 				return true
 			})
-			.filter(it => !it.usterTestnr || String(it.usterTestnr).trim() === '')
+			.filter(it => !it.saved)
 			.map(it => String(it.testnr))
 
 		if (candidates.length === 0) {
@@ -1167,15 +1139,17 @@ async function focusNextEmptyUster(currentTestnr) {
 
 		// Cargar los datos del .TBL del siguiente ensayo para actualizar la tabla
 		try {
-			await loadSelectedTensoFiles(targetTestnr)
-			selectedTensoTestnr.value = targetTestnr
+			await loadTensoTestFiles(targetTestnr)
 		} catch (e) {
 			console.warn('Failed to load files for next test', targetTestnr, e)
 		}
 
+		await nextTick()
+		if (loadError.value) return false
 		const input = inputRefs.value[targetTestnr]
 		if (input && typeof input.focus === 'function') {
 			input.focus()
+			input.select()
 			try { input.scrollIntoView({ block: 'center', behavior: 'smooth' }) } catch { /* ignore */ }
 			// add temporary highlight class
 			try {
@@ -1510,7 +1484,8 @@ async function scanEntries(entries){
   ])
   if(!Array.isArray(status.existing)) throw new Error('No se pudo verificar el estado de los ensayos.')
   const existing=new Set(status.existing.map(String))
-  tensoScanList.value=items.map(item=>{const link=padUsterTestnr(status.details?.[item.testnr]?.usterTestnr || '');return {...item,version:status.details?.[item.testnr]?.version,saved:existing.has(item.testnr),usterTestnr:link,confirmedUster:link,isEditing:false,parFile:item.parHandle,tblFile:item.tblHandle}})
+  tensoScanList.value=items.sort((a,b)=>Number(b.testnr)-Number(a.testnr)).map(item=>{const link=padUsterTestnr(status.details?.[item.testnr]?.usterTestnr || '');return {...item,version:status.details?.[item.testnr]?.version,saved:existing.has(item.testnr),usterTestnr:link,confirmedUster:link,isEditing:false,parFile:item.parHandle,tblFile:item.tblHandle}})
+  scanPage.value=1
   scanProgress.value.verified=true;recalcStatus()
 }
 async function scanTensoDirectory(dirHandle){
@@ -1518,11 +1493,23 @@ async function scanTensoDirectory(dirHandle){
   try{const entries=[];for await(const [name,handle] of dirHandle.entries()) if(handle.kind==='file' && /\.(par|tbl)$/i.test(name)) entries.push(handle);await scanEntries(entries)}
   catch(error){loadError.value=error.message;tensoScanList.value=[]}
   finally{isScanning.value=false;initialLoadBannerState.value='hidden'}
+  await selectFirstPending()
+}
+
+async function selectFirstPending(){
+  if(selectedTensoTestnr.value || loadError.value) return
+  const firstPending=tensoScanList.value.find(item=>!item.saved)
+  if(!firstPending) return
+  filterMode.value='not';scanPage.value=1
+  await loadTensoTestFiles(firstPending.testnr)
+  if(loadError.value) return
+  await nextTick()
+  focusUsterInput(firstPending)
 }
 
 // Select folder (File System Access API) or fallback to hidden input
 async function selectTensoFolder() {
-  if(initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || isScanning.value || !allowDiscard()) return
+  if(initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || isScanning.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
 	try {
 		if (typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function') {
@@ -1541,7 +1528,7 @@ async function selectTensoFolder() {
 }
 
 async function refreshTensoFolder() {
-  if(initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || isScanning.value || !allowDiscard()) return
+  if(initialLoadBannerState.value==='checking-folder' || isSaving.value || isLoadingSaved.value || isScanning.value || (hasUnsavedChanges.value && !(await allowDiscard()))) return
   discardChanges()
 	try {
 		initialLoadBannerState.value = 'loading'
@@ -1568,6 +1555,7 @@ async function onTensoFolderInputChangeLocal(e){
   tensoFolderPathFull.value=files[0]?.webkitRelativePath?.split('/')[0] || 'Carpeta local seleccionada';tensoHasPersistedHandle.value=false
   try{await scanEntries(files)}catch(error){loadError.value=error.message;tensoScanList.value=[]}
   finally{isScanning.value=false;initialLoadBannerState.value='hidden'}
+  await selectFirstPending()
 }
 
 onMounted(() => {
@@ -1701,6 +1689,31 @@ onUnmounted(() => {
 
 <style scoped>
 .tenso-workspace{container-type:inline-size;scrollbar-gutter:stable;}
+.tenso-pagination-shell{container:tenso-pagination / inline-size;min-width:0;}
+.tenso-pagination-row{display:flex;align-items:center;gap:8px;white-space:nowrap;min-width:0;}
+.tenso-pagination-status{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.tenso-pagination-controls{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.tenso-page-button{
+  display:inline-flex;align-items:center;justify-content:center;min-width:30px;min-height:30px;
+  padding:4px 8px;border:1px solid transparent;border-radius:8px;background:#f8fafc;
+  color:#475569;font:inherit;cursor:pointer;
+  transition:background-color 150ms,border-color 150ms,box-shadow 150ms;
+}
+.tenso-page-button:hover:not(:disabled){background:#eff6ff;border-color:#bfdbfe;color:#2563eb;box-shadow:0 2px 6px rgb(15 23 42 / 12%);}
+.tenso-page-button:focus-visible{outline:2px solid #60a5fa;outline-offset:2px;}
+.tenso-page-button:active:not(:disabled){background:#dbeafe;box-shadow:inset 0 1px 2px rgb(15 23 42 / 10%);}
+.tenso-page-button:disabled{opacity:.35;cursor:default;}
+.tenso-page-icon,.tenso-page-slash{display:none;}
+.tenso-status-compact{display:none;}
+@container tenso-pagination (max-width:680px){
+  .tenso-status-full{display:none;}
+  .tenso-status-compact{display:inline;}
+  .tenso-page-label,.tenso-page-word{display:none;}
+  .tenso-page-icon{display:block;}
+  .tenso-page-slash{display:inline;}
+  .tenso-pagination-controls{gap:4px;}
+  .tenso-pagination-controls button{padding:5px;}
+}
 .tenso-toolbar { flex-wrap:nowrap; min-width:0; }
 .tenso-toolbar-title { flex-shrink:0; white-space:nowrap; }
 .tenso-toolbar-path { max-width:480px; }
@@ -1723,10 +1736,34 @@ onUnmounted(() => {
   .tenso-toolbar-label { display:none; }
   .tenso-toolbar-title { font-size:16px; }
 }
-.tenso-workspace .tenso-grid{display:grid;grid-template-columns:minmax(440px,620px) minmax(330px,480px);gap:12px;max-width:1112px;width:100%;align-items:start;}
+.tenso-workspace .tenso-grid{display:grid;grid-template-columns:minmax(440px,620px) minmax(330px,480px);gap:12px;max-width:1112px;width:100%;align-items:stretch;}
 .tenso-workspace .tenso-grid { flex:none; min-height:auto; }
 .tenso-workspace .tenso-grid > div { width:100%; min-width:0; height:auto; }
 .tenso-workspace .tenso-scan-scroll { max-height:calc(100dvh - 210px); }
+.tenso-workspace .tenso-scan-scroll {
+  position:relative;isolation:isolate;border:1px solid #cbd5e1;
+  background:#fff;border-radius:4px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(99,102,241,.35) transparent;
+}
+.tenso-scan-scroll::-webkit-scrollbar{width:8px;}
+.tenso-scan-scroll::-webkit-scrollbar-track{background:transparent;}
+.tenso-scan-scroll::-webkit-scrollbar-thumb{
+  background:rgba(99,102,241,.35);border-radius:999px;border:2px solid transparent;
+  background-clip:padding-box;box-shadow:0 0 8px rgba(99,102,241,.14);
+  transition:background 160ms linear,box-shadow 160ms linear;
+}
+.tenso-scan-scroll::-webkit-scrollbar-thumb:hover{background:rgba(99,102,241,.65);box-shadow:0 0 12px rgba(99,102,241,.24);}
+.tenso-scan-scroll::-webkit-scrollbar-thumb:active{box-shadow:0 0 16px rgba(99,102,241,.28);}
+.tenso-workspace .scan-table { border-collapse:separate;border-spacing:0; }
+.tenso-workspace .scan-table th,.tenso-workspace .scan-table td {
+  border-width:0 1px 1px 0;
+}
+.tenso-workspace .scan-table th:last-child,.tenso-workspace .scan-table td:last-child { border-right-width:0; }
+.tenso-workspace .scan-table thead th {
+  position:sticky;top:0;z-index:2;background:#f1f5f9;
+  box-shadow:inset 0 -1px 0 #cbd5e1;
+}
 .tenso-workspace .scan-container{max-height:calc(100dvh - 210px);overflow-x:auto;}
 .tenso-workspace .scan-table{min-width:440px;}
 .tenso-workspace .scan-table th,.tenso-workspace .scan-table td{padding-left:3px;padding-right:3px;}
@@ -1739,8 +1776,16 @@ onUnmounted(() => {
 .tenso-workspace .scan-table td:last-child .flex{flex-wrap:wrap;}
 .tenso-workspace .tbl-centered{min-width:472px;}
 .tenso-tables-container { flex-shrink:0; }
+.tenso-empty-workspace .tenso-tables-container{flex:1;min-height:360px;}
+.tenso-empty-workspace .tenso-grid{flex:1;min-height:0;align-items:stretch;}
+.tenso-empty-workspace .tenso-grid > div{height:100%;min-height:0;}
+.tenso-empty-workspace .tenso-scan-scroll{flex:1;max-height:none;}
+.tenso-empty-workspace .scan-table{height:100%;}
+.tenso-empty-workspace .scan-table thead{height:30px;}
+.tenso-empty-row td{vertical-align:middle;border-bottom:0;}
 .tenso-detail-column{width:100%;min-height:0;}
 .tenso-detail-column > * { flex-shrink:0; max-width:100%; }
+.tenso-detail-column :deep(.tenso-cross-check){flex:1 0 auto;}
 @container(max-width:1400px){.tenso-workspace .tenso-grid{grid-template-columns:minmax(440px,550px) minmax(330px,440px);max-width:1002px;}}
-@container(max-width:850px){.tenso-workspace .tenso-grid{grid-template-columns:minmax(0,1fr);max-width:736px;}.tenso-workspace .scan-container{max-height:260px;}}
+@container(max-width:850px){.tenso-workspace .tenso-grid{grid-template-columns:minmax(0,1fr);max-width:736px;}.tenso-workspace .scan-container{max-height:260px;}.tenso-detail-column :deep(.tenso-cross-check){flex:0 0 auto;}}
 </style>
