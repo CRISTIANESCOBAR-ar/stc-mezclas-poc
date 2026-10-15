@@ -179,7 +179,14 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="!scanDisplayList.length" class="uster-empty-row"><td colspan="6" class="text-center text-slate-500 p-5">{{filterShowNotSaved ? 'No hay ensayos pendientes de guardar' : 'No hay ensayos en esta lista'}}</td></tr>
+                <tr v-if="!scanDisplayList.length" class="uster-empty-row">
+                  <td colspan="6" class="text-center text-slate-500">
+                    <div class="uster-table-empty" role="status">
+                      <InboxIcon class="h-8 w-8 text-slate-400" aria-hidden="true" />
+                      <span class="text-sm font-medium">{{filterShowNotSaved ? 'No hay ensayos pendientes de guardar' : 'No hay ensayos en esta lista'}}</span>
+                    </div>
+                  </td>
+                </tr>
                 <tr v-for="(item, idx) in scanDisplayList" :key="idx"
                   class="hover:bg-blue-50/30 cursor-pointer transition-colors duration-150"
                   @click="item.testnr && selectRow(item.testnr)"
@@ -286,7 +293,8 @@
           </div>
 
           <!-- fixed-height container that shows 10 rows and scrolls when there are more -->
-          <div class="titulo-container rounded-xl border border-slate-200 overflow-hidden bg-white">
+          <div class="titulo-container rounded-xl border border-slate-200 overflow-hidden bg-white"
+            :class="{ 'titulo-container-fit': tituloList.length <= 10 }">
             <table class="min-w-full w-full table-auto divide-y divide-slate-200 text-xs titulo-table">
               <thead>
                 <tr class="bg-linear-to-r from-slate-50 to-slate-100">
@@ -305,19 +313,18 @@
                     </div>
                     <div v-else class="text-xs text-slate-400">—</div>
                   </td>
-                  <td class="px-2 py-0 border-b border-slate-200 text-xs text-center">
+                  <td class="px-2 py-0 border-b border-slate-200 text-xs text-center uster-title-cell"
+                    :data-tolerance="r.srcIndex !== null ? getTituloToleranceState(r.srcIndex) : 'none'"
+                    @click="$event.currentTarget.querySelector('input')?.focus()">
                     <div v-if="r.srcIndex !== null">
-                      <div class="flex items-center gap-2">
+                      <div class="flex items-center gap-2 uster-title-editor">
                         <input :disabled="isLoadingSaved || isSaving || !!savedLoadError" :id="'titulo-input-' + r.srcIndex" v-model="tblData[r.srcIndex].TITULO" inputmode="decimal"
                           maxlength="5" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
                           @focus="onTituloFocus(r.srcIndex)" @blur="onTituloBlur(r.srcIndex)"
                           @input="onTituloInput(r.srcIndex, $event)" @keydown.enter.prevent="focusNextTitulo(r.srcIndex)"
                           @keydown.up.prevent="focusPrevTitulo(r.srcIndex)"
                           @keydown.down.prevent="focusNextTituloWrap(r.srcIndex)"
-                          :class="[
-                            'min-w-0 flex-1 box-border px-1 py-0.5 text-sm text-center border text-slate-900 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400',
-                            getTituloToleranceClasses(r.srcIndex)
-                          ]"
+                          class="min-w-0 flex-1 box-border text-sm text-center text-slate-900"
                           v-tippy="{ content: getTituloToleranceMessage(r.srcIndex), allowHTML: false, theme: 'light', trigger: 'mouseenter focus', placement: 'bottom', popperOptions: { modifiers: [{ name: 'flip', enabled: false }] } }"
                           style="box-sizing: border-box; margin:0; border-radius:0;" />
                         <span
@@ -404,8 +411,9 @@
       <!-- Bottom: TBL import results (full width) -->
       <div class="mt-4 shrink-0 rounded-xl border border-slate-200 uster-tbl-detail" aria-label="Detalle de mediciones TBL">
         <div v-if="!tblData.length" class="uster-tbl-empty text-center text-slate-500" role="status">
+          <InboxIcon class="h-8 w-8 text-slate-400" aria-hidden="true" />
           <span class="text-sm font-medium">Detalle de mediciones .TBL</span>
-          <p class="mt-1 text-xs">Selecciona un ensayo para ver aquí sus mediciones.</p>
+          <p class="text-sm font-medium">Selecciona un ensayo para ver aquí sus mediciones.</p>
         </div>
         <div v-else class="_minimal-scroll" style="overflow-x:auto;">
           <table class="w-full text-sm border-collapse tbl-import-table compact-table"
@@ -443,7 +451,8 @@ import { apiFetch } from '@/services/authSession.js';
 import { requestJson } from '@/services/apiClient.js';
 import { restoreSavedUster } from '@/services/usterSaved.js';
 import { scanUsterFiles } from '@/services/usterScan.js';
-import { ArrowPathIcon, ExclamationTriangleIcon, PencilSquareIcon } from '@heroicons/vue/24/outline';
+import { assayTimestamp } from '@/services/assayTimestamp.js';
+import { ArrowPathIcon, ExclamationTriangleIcon, PencilSquareIcon, InboxIcon } from '@heroicons/vue/24/outline';
 
 import { ref, onMounted, onBeforeUnmount, computed, nextTick, watch } from 'vue'
 import { onBeforeRouteLeave } from 'vue-router'
@@ -770,7 +779,7 @@ function scanHeader(text, name) {
   const cell = (row, col) => String(rows[row - 1]?.[col - 1] ?? '').trim()
   const time = cell(9, 5)
   return { nomcount: cell(15, 5), maschnr: cell(13, 5), matclass: cell(14, 8),
-    timeStamp: time ? formatTimestampToDatetime(time) : null }
+    assayTime: assayTimestamp(time), timeStamp: time ? formatTimestampToDatetime(time) : null }
 }
 
 async function checkExistingTests(testnrs) {
@@ -793,7 +802,8 @@ async function scanEntries(entries) {
     }),
   ])
   const saved = new Set(existing.map(String))
-  scanList.value = items.map(item => ({ ...item, imp: saved.has(String(item.testnr)) }))
+  scanList.value = items.sort((a,b)=>(b.assayTime ?? -Infinity)-(a.assayTime ?? -Infinity) || a.testnr.localeCompare(b.testnr))
+    .map(item => ({ ...item, imp: saved.has(String(item.testnr)) }))
   scanStatus.value = items.length ? `Encontrados ${items.length} ensayos` : 'No se encontraron archivos .PAR/.TBL válidos en la carpeta.'
   if (!selectedTestnr.value) {
     const firstPending = scanList.value.find(item => item.imp !== true)
@@ -2617,26 +2627,28 @@ table.text-xs td {
      the input border doesn't increase layout size. */
   box-sizing: border-box !important;
   display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  max-height: 100% !important;
+  width: 0 !important;
+  height: var(--titulo-row-h, 2rem) !important;
+  max-height: var(--titulo-row-h, 2rem) !important;
   margin: 0 !important;
-  padding: 0 0.5rem !important;
+  padding: 0 4px !important;
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
   border-radius: 0 !important;
   line-height: 1 !important;
 }
 
-/* When the input receives focus, reduce its inner padding/height just a
-   touch to compensate for focus rings / shadows that can add visual
-   overflow on some browsers. This prevents the focused input from
-   increasing row height. */
 .uster-component .titulo-table td input:focus {
-  height: calc(var(--titulo-row-h, 2rem) - 0.8rem) !important;
-  max-height: calc(var(--titulo-row-h, 2rem) - 0.8rem) !important;
-  padding-top: 0.06rem !important;
-  padding-bottom: 0.06rem !important;
   outline: none !important;
 }
+.uster-component .titulo-table .uster-title-cell{padding:0!important;cursor:text;}
+.uster-title-editor{min-height:var(--titulo-row-h,2rem);padding:0 4px;}
+.uster-title-cell[data-tolerance="thicker"]{background:#fff1f2;}
+.uster-title-cell[data-tolerance="thinner"]{background:#f0f9ff;}
+.uster-title-cell:focus-within{background:#fef9c3;box-shadow:inset 0 0 0 2px #eab308;}
+.uster-title-cell[data-tolerance="thicker"]:focus-within{background:#ffe4e6;}
+.uster-title-cell[data-tolerance="thinner"]:focus-within{background:#e0f2fe;}
 
 /* Constrain checkboxes and svg icons so they don't push row height */
 .uster-component .scan-table tbody td input[type="checkbox"],
@@ -2858,12 +2870,15 @@ table.w-full {
   container:uster-tables / inline-size;
 }
 .uster-tbl-detail{display:flex;flex-direction:column;flex:1 0 auto;min-height:140px;}
-.uster-tbl-empty{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;min-height:140px;padding:20px;}
+.uster-tbl-empty{display:flex;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:140px;padding:24px;}
+.uster-table-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:24px;}
 .uster-toolbar { flex-wrap: wrap; }
 .uster-scan-column{min-height:0;gap:8px;}
 .uster-scan-footer{margin-top:auto;min-height:32px;display:flex;align-items:center;flex-shrink:0;}
 .uster-summary-column{display:flex;flex-direction:column;gap:8px;min-width:0;}
-.uster-summary-panel{flex:1 0 auto;}
+.uster-summary-panel{flex:1 0 auto;display:grid;}
+.uster-summary-panel > .compact-table{height:100%;}
+.uster-summary-panel > .compact-table thead{height:var(--titulo-header-h);}
 .uster-summary-actions{min-height:32px;align-items:center;flex-shrink:0;}
 .uster-filters{gap:16px;padding:0;}
 .uster-filters label{padding:4px 0;white-space:nowrap;font-size:12px;}
@@ -2880,6 +2895,7 @@ table.w-full {
   width:100%;padding:4px;box-sizing:border-box;align-self:start;
 }
 .uster-manual-column .titulo-container{border-radius:8px;}
+.uster-manual-column .titulo-container-fit{height:auto;overflow-y:hidden;}
 @container (min-width:1401px){
   .uster-manual-column{padding:8px;}
 }
@@ -2904,7 +2920,8 @@ table.w-full {
 .uster-component .compact-table th,
 .uster-component .compact-table td { padding-left: 7px; padding-right: 7px; }
 .uster-component .compact-table .uster-observations-row {
-  height: 72px !important;
+  height: 100% !important;
+  min-height:72px;
   max-height: none !important;
 }
 .uster-component .compact-table .uster-observations-row td {

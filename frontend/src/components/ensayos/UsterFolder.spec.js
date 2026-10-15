@@ -7,12 +7,26 @@ vi.mock('sweetalert2', () => ({ default: { fire: vi.fn().mockResolvedValue({}) }
 let wrapper;
 afterEach(() => { wrapper?.unmount(); vi.unstubAllGlobals(); });
 
+it('ordena por fecha del PAR descendente aunque el número de ensayo sea menor',async()=>{
+  vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({existing:['00999','00001','00002']}))));
+  wrapper=mount(Uster,{global:{directives:{tippy:()=>{}}}});
+  const files=[['00999','1700000000'],['00001','1791988223'],['00002','fecha inválida']].map(([id,time])=>{
+    const rows=Array.from({length:34},()=>Array(12).fill(''));
+    rows[8][4]=time;
+    return {name:`STC03_${id}.PAR`,text:async()=>rows.map(row=>row.join('\t')).join('\n')};
+  });
+  await wrapper.vm.scanEntries(files);
+  wrapper.vm.filterShowNotSaved=false;wrapper.vm.filterShowAll=true;
+  expect(wrapper.vm.scanDisplayList.filter(row=>row.testnr).map(row=>row.testnr)).toEqual(['00001','00999','00002']);
+});
+
 it('navega con flechas sin reescribir títulos ni actualizar tooltips de 1449 ensayos', async () => {
   const updated=vi.fn();
   wrapper=mount(Uster,{attachTo:document.body,global:{directives:{tippy:{mounted:()=>{},updated}}}});
   wrapper.vm.filterShowNotSaved=false;wrapper.vm.filterShowAll=true;
   wrapper.vm.scanList=Array.from({length:1449},(_,i)=>({testnr:String(i+1).padStart(5,'0'),imp:true}));
   wrapper.vm.selectedTestnr='00001';
+  wrapper.vm.savedPar={NOMCOUNT:20};
   wrapper.vm.tblData=Array.from({length:10},(_,i)=>({TESTNR:'00001',NO:i+1,TITULO:20.5}));
   wrapper.vm.pasador='No';
   wrapper.vm.confirmedDraft=structuredClone(wrapper.vm.manualDraft());
@@ -23,6 +37,7 @@ it('navega con flechas sin reescribir títulos ni actualizar tooltips de 1449 en
   expect(wrapper.vm.hasUnsavedChanges).toBe(false);
   updated.mockClear();
   const first=wrapper.find('#titulo-input-0').element;
+  expect(first.closest('td').dataset.tolerance).toBe('thinner');
   first.focus();
   await wrapper.find('#titulo-input-0').trigger('keydown',{key:'ArrowDown'});
   expect(document.activeElement.id).toBe('titulo-input-1');

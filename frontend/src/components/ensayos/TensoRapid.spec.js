@@ -3,6 +3,20 @@ import { expect,it,vi } from 'vitest';
 import TensoRapid from './TensoRapid.vue';
 import Swal from 'sweetalert2';
 vi.mock('sweetalert2',()=>({default:{fire:vi.fn().mockResolvedValue({isConfirmed:true}),close:vi.fn()}}));
+it('ordena Tensorapid por fecha del PAR y deja al final las fechas ausentes',async()=>{
+  vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({existing:['000071','000072','000073'],details:{}}))));
+  const wrapper=mount(TensoRapid,{global:{directives:{tippy:()=>{}}}});
+  try{
+    await flushPromises();
+    const files=[['000071','14.10.2026'],['000072','13.10.2026'],['000073','']].map(([id,date])=>{
+      const rows=Array.from({length:34},()=>Array(12).fill(''));
+      rows[8][7]=date;
+      return {name:`STC03_${id}.PAR`,text:async()=>rows.map(row=>row.join('\t')).join('\n')};
+    });
+    await wrapper.vm.onTensoFolderInputChangeLocal({target:{files}});
+    expect(wrapper.vm.tensoScanList.map(row=>row.testnr)).toEqual(['000071','000072','000073']);
+  }finally{wrapper.unmount();vi.unstubAllGlobals()}
+});
 it('limpia y oculta el detalle cuando el filtro excluye el ensayo seleccionado',async()=>{
   vi.stubGlobal('fetch',vi.fn(async()=>new Response(JSON.stringify({version:'42',par:{TESTNR:'000071',USTER_TESTNR:'00260'},tbl:[{HUSO_NUMBER:2,HUSO_ENSAYOS:5}]}))));
   const wrapper=mount(TensoRapid,{global:{directives:{tippy:()=>{}}}});

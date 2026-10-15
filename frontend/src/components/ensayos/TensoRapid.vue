@@ -395,6 +395,7 @@ import { ArrowPathIcon, ExclamationTriangleIcon, PencilSquareIcon, ChevronDouble
 import { onBeforeRouteLeave } from 'vue-router';
 import TensoUsterComparison from './TensoUsterComparison.vue';
 import { formatStoredSpindle } from '@/services/tensorapidFormat.js';
+import { assayTimestamp } from '@/services/assayTimestamp.js';
 
 import { ref, shallowRef, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { compareEnsayos } from '../../services/compareEnsayos.js'
@@ -1479,12 +1480,12 @@ async function scanEntries(entries){
   scanProgress.value={completed:0,total:0,detected:entries.length,verified:false}
   const ids=[...new Set(entries.map(file=>/\.(par|tbl)$/i.test(file.name)&&tensoId(file.name)).filter(Boolean))]
   const [items,status]=await Promise.all([
-    scanUsterFiles(entries,{getTestnr:tensoId,readHeader:text=>({nomcount:extractTsvCell(text,14,5),maschnr:extractTsvCell(text,12,5)}),onProgress:({completed,total})=>{scanProgress.value.completed=completed;scanProgress.value.total=total}}),
+    scanUsterFiles(entries,{getTestnr:tensoId,readHeader:text=>({nomcount:extractTsvCell(text,14,5),maschnr:extractTsvCell(text,12,5),assayTime:assayTimestamp(extractTsvCell(text,9,5)) ?? assayTimestamp(extractTsvCell(text,9,8))}),onProgress:({completed,total})=>{scanProgress.value.completed=completed;scanProgress.value.total=total}}),
     ids.length?requestJson('/tensorapid/status',{method:'POST',body:{testnrs:ids}}):Promise.resolve({existing:[],details:{}})
   ])
   if(!Array.isArray(status.existing)) throw new Error('No se pudo verificar el estado de los ensayos.')
   const existing=new Set(status.existing.map(String))
-  tensoScanList.value=items.sort((a,b)=>Number(b.testnr)-Number(a.testnr)).map(item=>{const link=padUsterTestnr(status.details?.[item.testnr]?.usterTestnr || '');return {...item,version:status.details?.[item.testnr]?.version,saved:existing.has(item.testnr),usterTestnr:link,confirmedUster:link,isEditing:false,parFile:item.parHandle,tblFile:item.tblHandle}})
+  tensoScanList.value=items.sort((a,b)=>(b.assayTime ?? -Infinity)-(a.assayTime ?? -Infinity) || Number(b.testnr)-Number(a.testnr)).map(item=>{const link=padUsterTestnr(status.details?.[item.testnr]?.usterTestnr || '');return {...item,version:status.details?.[item.testnr]?.version,saved:existing.has(item.testnr),usterTestnr:link,confirmedUster:link,isEditing:false,parFile:item.parHandle,tblFile:item.tblHandle}})
   scanPage.value=1
   scanProgress.value.verified=true;recalcStatus()
 }
